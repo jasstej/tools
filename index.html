@@ -641,7 +641,7 @@
                     commands: [
                         { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
                         { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
+                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o alive.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
                     ],
                     notes: "This filters out non-responsive domains, significantly reducing scope"
                 },
@@ -650,7 +650,7 @@
                     title: "Web Crawling & Endpoint Discovery",
                     description: "Crawl discovered live URLs to find all endpoints and parameters",
                     commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
+                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 alive.txt > live.txt` },
                         { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
                         { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
                     ],
@@ -815,7 +815,7 @@
                     commands: [
                         { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
                         { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
+                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o alive.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
                     ]
                 },
                 {
@@ -823,7 +823,7 @@
                     title: "Web Crawling & Endpoint Discovery",
                     description: "Crawl discovered live URLs to find all endpoints and parameters",
                     commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
+                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 alive.txt > live.txt` },
                         { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
                         { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
                     ]
