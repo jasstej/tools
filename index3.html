@@ -628,101 +628,93 @@
                     title: "Subdomain Enumeration",
                     description: "Discover all subdomains for the target domain",
                     commands: [
-                        { label: "Method A: Subfinder (Simple)", cmd: `subfinder -d ${domain} > subdomains.txt` },
-                        { label: "Method B: Subfinder (Advanced with list input)", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
-                        { label: "Method C: Multiple tools with wayback machine", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
+                        { label: "Subfinder with list input", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
+                        { label: "Alternative: Katana with wayback", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
                     ],
                     notes: "Save the output to subdomains.txt for use in next steps"
                 },
                 {
                     number: 2,
-                    title: "Probe for Live Hosts (HTTP/HTTPS)",
-                    description: "Identify which subdomains are responding to HTTP requests",
+                    title: "Filter Working URLs",
+                    description: "Identify which subdomains are responding with HTTP/HTTPS",
                     commands: [
-                        { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
-                        { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
+                        { label: "HTTPx-Toolkit filter", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
                     ],
                     notes: "This filters out non-responsive domains, significantly reducing scope"
                 },
                 {
                     number: 3,
-                    title: "Web Crawling & Endpoint Discovery",
-                    description: "Crawl discovered live URLs to find all endpoints and parameters",
+                    title: "Extract URLs & Crawl",
+                    description: "Extract clean URLs and crawl them for endpoints",
                     commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
-                        { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
-                        { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
+                        { label: "Cut URLs from results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
+                        { label: "Katana crawl with full options", cmd: `katana -u ${domain} \\
+  -d 5 \\
+  -ps -pss waybackarchive,commoncrawl,alienvault \\
+  -f qurl \\
+  -jc -xhr -kf -fx \\
+  -fs dn \\
+  -ef woff,css,png,svg,jpg,woff2,jpeg,gif \\
+  -silent | tee katanacrawl_${domain}.txt` }
                     ],
-                    notes: "Depth (-d) can be increased for more thorough crawling, but takes longer"
+                    notes: "This advanced crawl includes wayback data, JavaScript crawling, and passive sources. Crawling may take time based on domain size."
                 },
                 {
                     number: 4,
-                    title: "XSS Vulnerability Detection",
-                    description: "Filter for potential XSS vulnerable endpoints",
-                    commands: [
-                        { label: "Find XSS patterns", cmd: `cat katanacrawl_${domain}.txt | gfx xss* | tee xss_filter_${domain}.txt` },
-                        { label: "Then run XSS Vibes tool", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
-                    ],
-                    notes: "Review results in xss-vibes tool for manual validation and false positive filtering"
-                },
-                {
-                    number: 5,
                     title: "JavaScript File Discovery",
-                    description: "Extract all JavaScript files for code analysis and secret scanning",
+                    description: "Extract all JavaScript files for code analysis",
                     commands: [
-                        { label: "Filter JavaScript files", cmd: `cat katanacrawl_${domain}.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
+                        { label: "Filter JS files from crawl", cmd: `cat jsfiles.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
                     ],
                     notes: "JS files often contain API endpoints, secrets, and hardcoded credentials"
                 },
                 {
-                    number: 6,
+                    number: 5,
                     title: "Secret & API Key Discovery",
-                    description: "Scan JavaScript files and source code for exposed secrets",
+                    description: "Scan JavaScript files for exposed secrets",
                     commands: [
-                        { label: "Run SecretFinder on all JS files", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
-                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` },
-                        { label: "Filter for Google API secrets", cmd: `cat secrets_${domain}.txt | grep -i google` }
+                        { label: "Using SecretFinder", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
+                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` }
                     ],
                     notes: "Manually review discovered secrets - many are false positives"
                 },
                 {
-                    number: 7,
-                    title: "API Testing & Validation",
-                    description: "Test and validate discovered API keys and endpoints",
+                    number: 6,
+                    title: "XSS Vulnerability Detection",
+                    description: "Find potential XSS vulnerable endpoints",
                     commands: [
-                        { label: "Google Maps API Scanner", cmd: `python3 maps_api_scanner.py` },
-                        { label: "Manual API testing", cmd: `# Use discovered API keys and test endpoints for validity and permissions` }
+                        { label: "Filter XSS patterns", cmd: `cat jsfiles.txt | gfx xss | tee xss_filter_${domain}.txt` },
+                        { label: "Run XSS-Vibes", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
                     ],
-                    notes: "Only test APIs you have permission to test. Document findings securely."
+                    notes: "Review results for manual validation and false positive filtering"
                 },
                 {
-                    number: 8,
+                    number: 7,
                     title: "Vulnerability Scanning with Nuclei",
                     description: "Run Nuclei templates against discovered endpoints",
                     commands: [
-                        { label: "Full domain scan with templates", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg -silent | nuclei -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
+                        { label: "Full domain scan", cmd: `nuclei -l alive.txt -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
                     ],
-                    notes: "Ensure you have the latest Nuclei templates. Customize template path as needed."
+                    notes: "Ensure you have the latest Nuclei templates. Update with: nuclei -update-templates"
                 },
                 {
-                    number: 9,
+                    number: 8,
                     title: "Results Review & Analysis",
                     description: "Consolidate and analyze all findings",
                     commands: [
-                        { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
-                        { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
+                        { label: "View live hosts", cmd: `cat live_hosts.txt | less` },
+                        { label: "View secrets", cmd: `cat secrets_${domain}.txt | less` },
                         { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
                     ],
                     notes: "Perform manual verification of all automated findings to reduce false positives"
                 },
                 {
-                    number: 10,
+                    number: 9,
                     title: "Reporting & Documentation",
                     description: "Compile findings into a professional report",
                     commands: [
-                        { label: "Create summary directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
-                        { label: "Copy all results", cmd: `cp subdomains.txt alive.txt katanacrawl_${domain}.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
+                        { label: "Create report directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
+                        { label: "Copy all results", cmd: `cp all_subs.txt live_hosts.txt live.txt jsfiles.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
                     ],
                     notes: "Include risk assessment and remediation recommendations in your report"
                 }
@@ -803,92 +795,85 @@
                     title: "Subdomain Enumeration",
                     description: "Discover all subdomains for the target domain",
                     commands: [
-                        { label: "Method A: Subfinder (Simple)", cmd: `subfinder -d ${domain} > subdomains.txt` },
-                        { label: "Method B: Subfinder (Advanced with list input)", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
-                        { label: "Method C: Multiple tools with wayback machine", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
+                        { label: "Subfinder with list input", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
+                        { label: "Alternative: Katana with wayback", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
                     ]
                 },
                 {
                     number: 2,
-                    title: "Probe for Live Hosts (HTTP/HTTPS)",
-                    description: "Identify which subdomains are responding to HTTP requests",
+                    title: "Filter Working URLs",
+                    description: "Identify which subdomains are responding with HTTP/HTTPS",
                     commands: [
-                        { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
-                        { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
+                        { label: "HTTPx-Toolkit filter", cmd: `httpx-toolkit -l sub.txt -o live_hosts.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
                     ]
                 },
                 {
                     number: 3,
-                    title: "Web Crawling & Endpoint Discovery",
-                    description: "Crawl discovered live URLs to find all endpoints and parameters",
+                    title: "Extract URLs & Crawl",
+                    description: "Extract clean URLs and crawl them for endpoints",
                     commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
-                        { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
-                        { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
+                        { label: "Cut URLs from results", cmd: `cut -d " " -f1 live_hosts.txt > live.txt` },
+                        { label: "Katana crawl with full options", cmd: `katana -u ${domain} \\
+  -d 5 \\
+  -ps -pss waybackarchive,commoncrawl,alienvault \\
+  -f qurl \\
+  -jc -xhr -kf -fx \\
+  -fs dn \\
+  -ef woff,css,png,svg,jpg,woff2,jpeg,gif \\
+  -silent | tee katanacrawl_${domain}.txt` }
                     ]
                 },
                 {
                     number: 4,
-                    title: "XSS Vulnerability Detection",
-                    description: "Filter for potential XSS vulnerable endpoints",
+                    title: "JavaScript File Discovery",
+                    description: "Extract all JavaScript files for code analysis",
                     commands: [
-                        { label: "Find XSS patterns", cmd: `cat katanacrawl_${domain}.txt | gfx xss* | tee xss_filter_${domain}.txt` },
-                        { label: "Then run XSS Vibes tool", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
+                        { label: "Filter JS files from crawl", cmd: `cat jsfiles.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
                     ]
                 },
                 {
                     number: 5,
-                    title: "JavaScript File Discovery",
-                    description: "Extract all JavaScript files for code analysis and secret scanning",
+                    title: "Secret & API Key Discovery",
+                    description: "Scan JavaScript files for exposed secrets",
                     commands: [
-                        { label: "Filter JavaScript files", cmd: `cat katanacrawl_${domain}.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
+                        { label: "Using SecretFinder", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
+                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` }
                     ]
                 },
                 {
                     number: 6,
-                    title: "Secret & API Key Discovery",
-                    description: "Scan JavaScript files and source code for exposed secrets",
+                    title: "XSS Vulnerability Detection",
+                    description: "Find potential XSS vulnerable endpoints",
                     commands: [
-                        { label: "Run SecretFinder on all JS files", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
-                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` },
-                        { label: "Filter for Google API secrets", cmd: `cat secrets_${domain}.txt | grep -i google` }
+                        { label: "Filter XSS patterns", cmd: `cat jsfiles.txt | gfx xss | tee xss_filter_${domain}.txt` },
+                        { label: "Run XSS-Vibes", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
                     ]
                 },
                 {
                     number: 7,
-                    title: "API Testing & Validation",
-                    description: "Test and validate discovered API keys and endpoints",
+                    title: "Vulnerability Scanning with Nuclei",
+                    description: "Run Nuclei templates against discovered endpoints",
                     commands: [
-                        { label: "Google Maps API Scanner", cmd: `python3 maps_api_scanner.py` },
-                        { label: "Manual API testing", cmd: `# Use discovered API keys and test endpoints for validity and permissions` }
+                        { label: "Full domain scan", cmd: `nuclei -l alive.txt -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
                     ]
                 },
                 {
                     number: 8,
-                    title: "Vulnerability Scanning with Nuclei",
-                    description: "Run Nuclei templates against discovered endpoints",
-                    commands: [
-                        { label: "Full domain scan with templates", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg -silent | nuclei -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
-                    ]
-                },
-                {
-                    number: 9,
                     title: "Results Review & Analysis",
                     description: "Consolidate and analyze all findings",
                     commands: [
-                        { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
-                        { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
+                        { label: "View live hosts", cmd: `cat live_hosts.txt | less` },
+                        { label: "View secrets", cmd: `cat secrets_${domain}.txt | less` },
                         { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
                     ]
                 },
                 {
-                    number: 10,
+                    number: 9,
                     title: "Reporting & Documentation",
                     description: "Compile findings into a professional report",
                     commands: [
-                        { label: "Create summary directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
-                        { label: "Copy all results", cmd: `cp subdomains.txt alive.txt katanacrawl_${domain}.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
+                        { label: "Create report directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
+                        { label: "Copy all results", cmd: `cp all_subs.txt live_hosts.txt live.txt jsfiles.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
                     ]
                 }
             ];
