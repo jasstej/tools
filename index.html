@@ -537,6 +537,33 @@
                 ]
             },
             {
+                name: "Arjun",
+                description: "HTTP parameter discovery & testing tool",
+                install: [
+                    { cmd: "git clone https://github.com/s0md3v/Arjun.git && cd Arjun && pip install -r requirements.txt", label: "Clone & Install" },
+                    { cmd: "pip install arjun", label: "Install via pip" }
+                ],
+                usage: [
+                    { cmd: "arjun -u https://api.example.com/endpoint", label: "Scan Single URL" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -m POST", label: "Specify HTTP Method (POST)" },
+                    { cmd: "arjun -i targets.txt", label: "Import Targets from File" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -oJ result.json", label: "Export to JSON" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -m JSON --include='{\"root\":{\"a\":\"b\",$arjun$}}'", label: "JSON Injection Point" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -t 10", label: "Multi-threading (10 threads)" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -d 2", label: "Delay 2 seconds between requests" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -T 10", label: "Request Timeout (10 seconds)" },
+                    { cmd: "arjun -u https://api.example.com/endpoint --stable", label: "Stable Mode (avoid rate limits)" },
+                    { cmd: "arjun -u https://api.example.com/endpoint --ratelimit 2", label: "Rate Limit (2 req/sec)" },
+                    { cmd: "arjun -u https://api.example.com/endpoint --include 'api_key=xxxxx'", label: "Include API Key" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -w /path/to/wordlist.txt", label: "Custom Wordlist" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -w small", label: "Use Small Wordlist" },
+                    { cmd: "arjun -u https://api.example.com/endpoint -c 250", label: "Control Query Size (250 params)" },
+                    { cmd: "arjun -u https://api.example.com/endpoint --disable-redirects", label: "Disable Redirects" },
+                    { cmd: "arjun https://api.example.com/endpoint --passive example.com", label: "Passive Source Collection" },
+                    { cmd: "arjun -u https://api.example.com/endpoint --headers \"Accept-Language: en-US\\nCookie: null\"", label: "Custom HTTP Headers" }
+                ]
+            },
+            {
                 name: "GFX",
                 description: "Pattern-based filtering tool",
                 install: [
@@ -585,17 +612,41 @@
                             <div class="tool-description">${tool.description}</div>
                 `;
 
-                tool.install.forEach(inst => {
-                    html += `
-                        <div style="margin-bottom: 8px;">
-                            <div style="color: #00d4ff; font-size: 0.8em; margin-bottom: 3px;">${inst.label}</div>
-                            <div class="tool-command" onclick="copyToClipboard(this)">
-                                <button class="tool-copy-btn" onclick="event.stopPropagation(); copyToClipboard(this.parentElement)">Copy</button>
-                                <div class="tool-command-text">${escapeHtml(inst.cmd)}</div>
+                if (tool.install && tool.install.length > 0) {
+                    html += `<div style="border-bottom: 1px solid #00d4ff; padding-bottom: 10px; margin-bottom: 10px;"><div style="color: #00ff88; font-size: 0.9em; font-weight: bold; margin-bottom: 8px;">Installation</div>`;
+                    
+                    tool.install.forEach(inst => {
+                        html += `
+                            <div style="margin-bottom: 8px;">
+                                <div style="color: #00d4ff; font-size: 0.8em; margin-bottom: 3px;">${inst.label}</div>
+                                <div class="tool-command" onclick="copyToClipboard(this)">
+                                    <button class="tool-copy-btn" onclick="event.stopPropagation(); copyToClipboard(this.parentElement)">Copy</button>
+                                    <div class="tool-command-text">${escapeHtml(inst.cmd)}</div>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                });
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                if (tool.usage && tool.usage.length > 0) {
+                    html += `<div><div style="color: #00ff88; font-size: 0.9em; font-weight: bold; margin-bottom: 8px;">Usage Examples</div>`;
+                    
+                    tool.usage.forEach(use => {
+                        html += `
+                            <div style="margin-bottom: 8px;">
+                                <div style="color: #00d4ff; font-size: 0.8em; margin-bottom: 3px;">${use.label}</div>
+                                <div class="tool-command" onclick="copyToClipboard(this)">
+                                    <button class="tool-copy-btn" onclick="event.stopPropagation(); copyToClipboard(this.parentElement)">Copy</button>
+                                    <div class="tool-command-text">${escapeHtml(use.cmd)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
 
                 html += `
                         </div>
@@ -677,6 +728,21 @@
                 },
                 {
                     number: 6,
+                    title: "API Parameter Discovery with Arjun",
+                    description: "Discover hidden HTTP parameters in API endpoints using parameter fuzzing",
+                    commands: [
+                        { label: "Scan single API endpoint", cmd: `arjun -u https://api.${domain}/endpoint` },
+                        { label: "Scan multiple endpoints from file", cmd: `arjun -i alive.txt -o arjun_params_${domain}.txt` },
+                        { label: "Scan with specific HTTP method (POST)", cmd: `arjun -u https://api.${domain}/endpoint -m POST -oJ arjun_post_${domain}.json` },
+                        { label: "Scan with custom wordlist", cmd: `arjun -i alive.txt -w /path/to/custom_wordlist.txt -oJ arjun_results_${domain}.json` },
+                        { label: "Stable mode (avoid rate limits)", cmd: `arjun -i alive.txt --stable -oJ arjun_stable_${domain}.json` },
+                        { label: "Multi-threaded scan (faster)", cmd: `arjun -i alive.txt -t 10 -oJ arjun_${domain}.json` },
+                        { label: "Scan with custom headers", cmd: `arjun -u https://api.${domain}/endpoint --headers "Authorization: Bearer TOKEN\\nX-API-Key: KEY" -oJ arjun_auth_${domain}.json` }
+                    ],
+                    notes: "Parameters discovered can reveal admin panels, bypass mechanisms, or hidden functionality. Always test for authentication/authorization issues."
+                },
+                {
+                    number: 7,
                     title: "Secret & API Key Discovery",
                     description: "Scan JavaScript files and source code for exposed secrets",
                     commands: [
@@ -687,7 +753,7 @@
                     notes: "Manually review discovered secrets - many are false positives"
                 },
                 {
-                    number: 7,
+                    number: 8,
                     title: "API Testing & Validation",
                     description: "Test and validate discovered API keys and endpoints",
                     commands: [
@@ -697,7 +763,7 @@
                     notes: "Only test APIs you have permission to test. Document findings securely."
                 },
                 {
-                    number: 8,
+                    number: 9,
                     title: "Vulnerability Scanning with Nuclei",
                     description: "Run Nuclei templates against discovered endpoints",
                     commands: [
@@ -706,18 +772,19 @@
                     notes: "Ensure you have the latest Nuclei templates. Customize template path as needed."
                 },
                 {
-                    number: 9,
+                    number: 10,
                     title: "Results Review & Analysis",
                     description: "Consolidate and analyze all findings",
                     commands: [
                         { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
                         { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
+                        { label: "View Arjun parameters", cmd: `cat arjun_${domain}.json | less` },
                         { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
                     ],
                     notes: "Perform manual verification of all automated findings to reduce false positives"
                 },
                 {
-                    number: 10,
+                    number: 11,
                     title: "Reporting & Documentation",
                     description: "Compile findings into a professional report",
                     commands: [
@@ -847,6 +914,20 @@
                 },
                 {
                     number: 6,
+                    title: "API Parameter Discovery with Arjun",
+                    description: "Discover hidden HTTP parameters in API endpoints using parameter fuzzing",
+                    commands: [
+                        { label: "Scan single API endpoint", cmd: `arjun -u https://api.${domain}/endpoint` },
+                        { label: "Scan multiple endpoints from file", cmd: `arjun -i alive.txt -o arjun_params_${domain}.txt` },
+                        { label: "Scan with specific HTTP method (POST)", cmd: `arjun -u https://api.${domain}/endpoint -m POST -oJ arjun_post_${domain}.json` },
+                        { label: "Scan with custom wordlist", cmd: `arjun -i alive.txt -w /path/to/custom_wordlist.txt -oJ arjun_results_${domain}.json` },
+                        { label: "Stable mode (avoid rate limits)", cmd: `arjun -i alive.txt --stable -oJ arjun_stable_${domain}.json` },
+                        { label: "Multi-threaded scan (faster)", cmd: `arjun -i alive.txt -t 10 -oJ arjun_${domain}.json` },
+                        { label: "Scan with custom headers", cmd: `arjun -u https://api.${domain}/endpoint --headers "Authorization: Bearer TOKEN\\nX-API-Key: KEY" -oJ arjun_auth_${domain}.json` }
+                    ]
+                },
+                {
+                    number: 7,
                     title: "Secret & API Key Discovery",
                     description: "Scan JavaScript files and source code for exposed secrets",
                     commands: [
@@ -856,7 +937,7 @@
                     ]
                 },
                 {
-                    number: 7,
+                    number: 8,
                     title: "API Testing & Validation",
                     description: "Test and validate discovered API keys and endpoints",
                     commands: [
@@ -865,7 +946,7 @@
                     ]
                 },
                 {
-                    number: 8,
+                    number: 9,
                     title: "Vulnerability Scanning with Nuclei",
                     description: "Run Nuclei templates against discovered endpoints",
                     commands: [
@@ -873,17 +954,18 @@
                     ]
                 },
                 {
-                    number: 9,
+                    number: 10,
                     title: "Results Review & Analysis",
                     description: "Consolidate and analyze all findings",
                     commands: [
                         { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
                         { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
+                        { label: "View Arjun parameters", cmd: `cat arjun_${domain}.json | less` },
                         { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
                     ]
                 },
                 {
-                    number: 10,
+                    number: 11,
                     title: "Reporting & Documentation",
                     description: "Compile findings into a professional report",
                     commands: [
