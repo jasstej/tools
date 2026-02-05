@@ -542,25 +542,6 @@
                 install: [
                     { cmd: "git clone https://github.com/s0md3v/Arjun.git && cd Arjun && pip install -r requirements.txt", label: "Clone & Install" },
                     { cmd: "pip install arjun", label: "Install via pip" }
-                ],
-                usage: [
-                    { cmd: "arjun -u https://api.example.com/endpoint", label: "Scan Single URL" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -m POST", label: "Specify HTTP Method (POST)" },
-                    { cmd: "arjun -i targets.txt", label: "Import Targets from File" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -oJ result.json", label: "Export to JSON" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -m JSON --include='{\"root\":{\"a\":\"b\",$arjun$}}'", label: "JSON Injection Point" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -t 10", label: "Multi-threading (10 threads)" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -d 2", label: "Delay 2 seconds between requests" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -T 10", label: "Request Timeout (10 seconds)" },
-                    { cmd: "arjun -u https://api.example.com/endpoint --stable", label: "Stable Mode (avoid rate limits)" },
-                    { cmd: "arjun -u https://api.example.com/endpoint --ratelimit 2", label: "Rate Limit (2 req/sec)" },
-                    { cmd: "arjun -u https://api.example.com/endpoint --include 'api_key=xxxxx'", label: "Include API Key" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -w /path/to/wordlist.txt", label: "Custom Wordlist" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -w small", label: "Use Small Wordlist" },
-                    { cmd: "arjun -u https://api.example.com/endpoint -c 250", label: "Control Query Size (250 params)" },
-                    { cmd: "arjun -u https://api.example.com/endpoint --disable-redirects", label: "Disable Redirects" },
-                    { cmd: "arjun https://api.example.com/endpoint --passive example.com", label: "Passive Source Collection" },
-                    { cmd: "arjun -u https://api.example.com/endpoint --headers \"Accept-Language: en-US\\nCookie: null\"", label: "Custom HTTP Headers" }
                 ]
             },
             {
