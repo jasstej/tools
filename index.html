@@ -662,7 +662,6 @@
                     commands: [
                         { label: "Method A: Subfinder (Simple)", cmd: `subfinder -d ${domain} > subdomains.txt` },
                         { label: "Method B: Subfinder (Advanced with list input)", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
-                        { label: "Method C: Multiple tools with wayback machine", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
                     ],
                     notes: "Save the output to subdomains.txt for use in next steps"
                 },
