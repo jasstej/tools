@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulnScout - Your Bug Hunting Arsenal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="./index.html" class="logo">
+            <i class="fas fa-crosshairs"></i>
+            VulnScout
+        </a>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <a href="#">Reconnaissance</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./index.html">Subdomains</a></li>
+                        <li><a href="./dorking.html">Dorking</a></li>
+                        <li><a href="./recon.html">Recon</a></li>
+                        <li><a href="./forensics.html">Forensics</a></li>
+                        <li><a href="./advanced-dorks.html">Advanced Dorks</a></li>
+                    </ul>
+                </li>
+                <li class="nav-dropdown">
+                    <a href="#">Resources</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./wordlists.html">Wordlists</a></li>
+                        <li><a href="./tools.html">Tools</a></li>
+                    </ul>
+                </li>
+                <li class="nav-dropdown">
+                    <a href="#">Security References</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./tech-detector.html">Tech Detector</a></li>
+                        <li><a href="./cve-database.html">CVE Database</a></li>
+                        <li><a href="./http-status-codes.html">HTTP Status Codes</a></li>
+                        <li><a href="./common-ports.html">Common Ports</a></li>
+                        <li><a href="./owasp-top10.html">OWASP Top 10</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Tools Sidebar -->
+    <div class="tools-sidebar">
+        <div class="sidebar-header">
+            <h2>Security Tools</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="tools-list"></div>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay"></div>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">VulnScout</h1>
+            <p class="hero-subtitle">Advanced Bug Hunting Toolkit & Reconnaissance Platform</p>
+            
+            <div class="search-form">
+                <input type="text" id="domainInput" class="search-input" placeholder="example.com" aria-label="Enter domain">
+                <button class="search-btn" id="updateBtn">
+                    <i class="fas fa-magic"></i>
+                    <span>Update Commands</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Subdomain Enumeration Section -->
+        <section id="subdomain">
+            <h2 class="section-title">
+                <i class="fas fa-sitemap"></i>
+                Subdomain Enumeration
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Subfinder Recursive</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('subdomain-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Discover subdomains using recursive enumeration</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="subdomain-1">subfinder -d example.com -all -recursive -o subdomains.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Assetfinder</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('subdomain-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Find domains and subdomains quickly</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="subdomain-2">assetfinder --subs-only example.com > assetfinder.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Certificate Transparency (crt.sh)</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('subdomain-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Find subdomains via certificate transparency logs</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="subdomain-3">curl -s "https://crt.sh/?q=example.com&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u > crtsh.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Merge & De-duplicate All Subdomains</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('subdomain-4')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Always combine outputs before probing</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="subdomain-4">cat subdomains.txt assetfinder.txt crtsh.txt | sort -u > all_subdomains.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Live Subdomain Check</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('subdomain-5')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Filter alive subdomains with httpx</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="subdomain-5">cat all_subdomains.txt | httpx -silent -o subdomains_alive.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- URL Collection Section -->
+        <section id="urls">
+            <h2 class="section-title">
+                <i class="fas fa-link"></i>
+                URL Collection
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Katana Crawling</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('url-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Advanced crawling with multiple sources</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="url-1">katana -l subdomains_alive.txt -d 5 -ps -o allurls.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">GAU + Wayback</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('url-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Fetch URLs from multiple archives</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="url-2">cat subdomains_alive.txt | gau | urldedupe >> allurls.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Parameter Extraction</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('url-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Extract URLs with parameters</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="url-3">cat allurls.txt | grep '=' | sort -u > urls_with_params.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sensitive Data Section -->
+        <section id="sensitive">
+            <h2 class="section-title">
+                <i class="fas fa-lock"></i>
+                Sensitive Data Discovery
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Sensitive Files</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Find exposed sensitive files</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-1">cat allurls.txt | grep -E '\.(bak|sql|zip|conf|env|key)$' > sensitive_findings.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">S3 Bucket Finder</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Discover S3 buckets</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-2">s3scanner scan -d example.com -o s3_buckets.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Git Repository Check</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Detect exposed git repos</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-3">cat allurls.txt | httpx -path '/.git/' -mc 200 -o git_repos.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Information Disclosure Scanner</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-4')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Checks for information disclosure vulnerabilities using a scanner</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-4">cat allurls.txt | grep -E "\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|zip|tar\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|tar|xz|7zip|p12|pem|key|crt|csr|sh|pl|py|java|class|jar|war|ear|sqlitedb|sqlite3|dbf|db3|accdb|mdb|sqlcipher|gitignore|env|ini|conf|properties|plist|cfg)$" > sensitive_disclosure.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">AWS S3 Bucket Finder</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-5')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Searches for AWS S3 buckets associated with the target</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-5">s3scanner scan -d example.com -o s3_buckets_full.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">API Key Finder</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('sensitive-6')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Searches for exposed API keys and tokens in JavaScript files</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="sensitive-6">cat allurls.txt | grep -E "\.js$" | httpx -mc 200 -content-type | grep -E "application/javascript|text/javascript" | cut -d' ' -f1 | xargs -I{} curl -s {} | grep -E "(API_KEY|api_key|apikey|secret|token|password)" > api_keys.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- XSS Section -->
+        <section id="xss">
+            <h2 class="section-title">
+                <i class="fas fa-code"></i>
+                XSS Testing
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">XSS Finding Pipeline</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('xss-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Comprehensive XSS hunting</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="xss-1">cat allurls.txt | gf xss | Gxss | tee xss_findings.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Dalfox Scanner</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('xss-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Advanced XSS vulnerability scanner</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="xss-2">cat urls_with_params.txt | dalfox pipe -o xss_dalfox.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Stored XSS Check</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('xss-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Find stored XSS in forms</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="xss-3">nuclei -l allurls.txt -t xss -o xss_nuclei.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">DOM XSS Detection</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('xss-4')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Detects potential DOM-based XSS vulnerabilities</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="xss-4">cat allurls.txt | grep -E "\.js$" > js_files.txt && cat js_files.txt | Gxss -c 100 | sort -u | dalfox pipe -o dom_xss_results.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LFI Section -->
+        <section id="lfi">
+            <h2 class="section-title">
+                <i class="fas fa-file"></i>
+                LFI Testing
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">LFI Parameter Hunt</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('lfi-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Find LFI vulnerable parameters</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="lfi-1">cat allurls.txt | gf lfi | uro > lfi_findings.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">FFUF LFI Fuzzing</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('lfi-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Fuzz for LFI vulnerabilities</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="lfi-2">ffuf -l lfi_findings.txt -w payloads/lfi.txt -mr "root:" -o lfi_results.json</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Path Traversal Check</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('lfi-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Test path traversal payloads</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="lfi-3">cat lfi_findings.txt | head -1 | xargs -I{} curl -s '{}' > lfi_test.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CORS Section -->
+        <section id="cors">
+            <h2 class="section-title">
+                <i class="fas fa-globe"></i>
+                CORS Testing
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">Basic CORS Check</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('cors-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Check CORS policy of a website</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="cors-1">cat subdomains_alive.txt | head -1 | xargs -I{} curl -I -H "Origin: http://example.com" {} > cors_check.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">CORScanner</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('cors-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Fast CORS misconfiguration scanner</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="cors-2">python3 CORScanner.py -u subdomains_alive.txt -d -t 10 -o cors_results.txt</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">CORS Nuclei Scan</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('cors-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Scan for CORS misconfigurations</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="cors-3">cat subdomains_alive.txt | httpx -silent | nuclei -t cors -o cors_findings.txt</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WordPress Section -->
+        <section id="wordpress">
+            <h2 class="section-title">
+                <i class="fas fa-wordpress-simple"></i>
+                WordPress Scanning
+            </h2>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">WPScan Aggressive</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('wordpress-1')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Comprehensive WordPress vulnerability scan</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="wordpress-1">cat subdomains_alive.txt | grep -i "wordpress\|wp-" | head -1 | xargs -I{} wpscan --url {} --disable-tls-checks -e at,ap,u -o wordpress_scan.json</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">WordPress Theme Detection</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('wordpress-2')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Identify WordPress themes and vulnerabilities</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="wordpress-2">wpscan --url https://example.com --no-banner -e t -o theme_results.json</span>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <h3 class="tool-title">WordPress User Enumeration</h3>
+                        <button class="copy-btn" onclick="copyToClipboard('wordpress-3')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="tool-description">Enumerate WordPress users and plugins</p>
+                    <div class="terminal-box">
+                        <span class="terminal-prompt">$</span>
+                        <span id="wordpress-3">wpscan --url https://example.com -e u,ap -o wordpress_full.json</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Tools Installation Section -->
+        <section id="all-tools">
+            <h2 class="section-title">
+                <i class="fas fa-tools"></i>
+                All Security Tools
+            </h2>
+            
+            <div class="tools-info-box">
+                <p><strong>Download & Install Script:</strong> These tools are included in the <code>install-all-tools.sh</code> script</p>
+                <div class="installation-buttons">
+                    <a href="install-all-tools.sh" class="btn-install" download>
+                        <i class="fas fa-download"></i> Download Install Script
+                    </a>
+                    <a href="update-all-tools.sh" class="btn-install" download>
+                        <i class="fas fa-sync"></i> Download Update Script
+                    </a>
+                </div>
+            </div>
+
+            <!-- Go-based Tools -->
+            <h3 class="tools-category-header">
+                <i class="fas fa-code"></i> Go-based Tools
+            </h3>
+            <div class="tools-grid-display">
+                <div class="tool-badge" data-tool="subfinder" title="Subdomain enumeration and reconnaissance">
+                    <div class="tool-badge-icon"><i class="fas fa-search"></i></div>
+                    <div class="tool-badge-name">Subfinder</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Subfinder</strong><br>
+                        Fast passive subdomain enumeration tool<br>
+                        <a href="https://github.com/projectdiscovery/subfinder" target="_blank" rel="noopener">GitHub</a> | 
+                        <a href="https://docs.projectdiscovery.io/tools/subfinder" target="_blank" rel="noopener">Docs</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="httpx" title="HTTP probing with multiple features">
+                    <div class="tool-badge-icon"><i class="fas fa-globe"></i></div>
+                    <div class="tool-badge-name">HTTPx</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>HTTPx</strong><br>
+                        Fast HTTP prober with multiple features<br>
+                        <a href="https://github.com/projectdiscovery/httpx" target="_blank" rel="noopener">GitHub</a> | 
+                        <a href="https://docs.projectdiscovery.io/tools/httpx" target="_blank" rel="noopener">Docs</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="katana" title="Next-gen crawling and spidering framework">
+                    <div class="tool-badge-icon"><i class="fas fa-spider"></i></div>
+                    <div class="tool-badge-name">Katana</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Katana</strong><br>
+                        Next-generation web crawler and endpoint finder<br>
+                        <a href="https://github.com/projectdiscovery/katana" target="_blank" rel="noopener">GitHub</a> | 
+                        <a href="https://docs.projectdiscovery.io/tools/katana" target="_blank" rel="noopener">Docs</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="nuclei" title="Fast vulnerability scanner with templates">
+                    <div class="tool-badge-icon"><i class="fas fa-radiation"></i></div>
+                    <div class="tool-badge-name">Nuclei</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Nuclei</strong><br>
+                        Fast customizable vulnerability scanner<br>
+                        <a href="https://github.com/projectdiscovery/nuclei" target="_blank" rel="noopener">GitHub</a> | 
+                        <a href="https://docs.projectdiscovery.io/tools/nuclei" target="_blank" rel="noopener">Docs</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="assetfinder" title="Find domains and subdomains">
+                    <div class="tool-badge-icon"><i class="fas fa-compass"></i></div>
+                    <div class="tool-badge-name">Assetfinder</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Assetfinder</strong><br>
+                        Find all domains and subdomains owned by a given domain<br>
+                        <a href="https://github.com/tomnomnom/assetfinder" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="waybackurls" title="Fetch URLs from Wayback Machine">
+                    <div class="tool-badge-icon"><i class="fas fa-history"></i></div>
+                    <div class="tool-badge-name">Waybackurls</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Waybackurls</strong><br>
+                        Fetch all URLs from Wayback Machine for a domain<br>
+                        <a href="https://github.com/tomnomnom/waybackurls" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="gf" title="Grep patterns for URLs">
+                    <div class="tool-badge-icon"><i class="fas fa-filter"></i></div>
+                    <div class="tool-badge-name">GF</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>GF</strong><br>
+                        A wrapper around grep for patterns<br>
+                        <a href="https://github.com/tomnomnom/gf" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="amass" title="In-depth DNS enumeration">
+                    <div class="tool-badge-icon"><i class="fas fa-network-wired"></i></div>
+                    <div class="tool-badge-name">Amass</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Amass</strong><br>
+                        In-depth DNS enumeration and mapping<br>
+                        <a href="https://github.com/OWASP/Amass" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Python-based Tools -->
+            <h3 class="tools-category-header">
+                <i class="fas fa-python"></i> Python-based Tools
+            </h3>
+            <div class="tools-grid-display">
+                <div class="tool-badge" data-tool="LinkFinder" title="Extract endpoints from JavaScript">
+                    <div class="tool-badge-icon"><i class="fas fa-link"></i></div>
+                    <div class="tool-badge-name">LinkFinder</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>LinkFinder</strong><br>
+                        Extract endpoints and URLs from JavaScript files<br>
+                        <a href="https://github.com/GerbenJavado/LinkFinder" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="commix" title="Automated injection testing">
+                    <div class="tool-badge-icon"><i class="fas fa-syringe"></i></div>
+                    <div class="tool-badge-name">Commix</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Commix</strong><br>
+                        Automated injection testing framework<br>
+                        <a href="https://github.com/commixproject/commix" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="ghauri" title="SQL injection detection tool">
+                    <div class="tool-badge-icon"><i class="fas fa-database"></i></div>
+                    <div class="tool-badge-name">Ghauri</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Ghauri</strong><br>
+                        Advanced SQL injection detection and exploitation<br>
+                        <a href="https://github.com/r0oth3x49/ghauri" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="paramspider" title="Parameter discovery tool">
+                    <div class="tool-badge-icon"><i class="fas fa-spider"></i></div>
+                    <div class="tool-badge-name">ParamSpider</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>ParamSpider</strong><br>
+                        Parameter discovery tool for security testing<br>
+                        <a href="https://github.com/devanshbatham/ParamSpider" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="wafw00f" title="WAF identification tool">
+                    <div class="tool-badge-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="tool-badge-name">WAFW00f</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>WAFW00f</strong><br>
+                        Identify and fingerprint WAFs<br>
+                        <a href="https://github.com/EnableSecurity/wafw00f" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="jwt-tool" title="JWT token analysis">
+                    <div class="tool-badge-icon"><i class="fas fa-key"></i></div>
+                    <div class="tool-badge-name">JWT-Tool</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>JWT-Tool</strong><br>
+                        JWT token testing and exploitation<br>
+                        <a href="https://github.com/ticarpi/jwt_tool" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="arjun" title="Parameter discovery">
+                    <div class="tool-badge-icon"><i class="fas fa-magnifying-glass"></i></div>
+                    <div class="tool-badge-name">Arjun</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>Arjun</strong><br>
+                        HTTP parameter discovery tool<br>
+                        <a href="https://github.com/s0md3v/Arjun" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GitHub Tools -->
+            <h3 class="tools-category-header">
+                <i class="fab fa-github"></i> Advanced Tools
+            </h3>
+            <div class="tools-grid-display">
+                <div class="tool-badge" data-tool="S3Scanner" title="S3 bucket discovery">
+                    <div class="tool-badge-icon"><i class="fas fa-cube"></i></div>
+                    <div class="tool-badge-name">S3Scanner</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>S3Scanner</strong><br>
+                        Discover and exploit S3 buckets<br>
+                        <a href="https://github.com/sa7mon/S3Scanner" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="SSTImap" title="SSTI vulnerability scanner">
+                    <div class="tool-badge-icon"><i class="fas fa-map"></i></div>
+                    <div class="tool-badge-name">SSTImap</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>SSTImap</strong><br>
+                        Server-Side Template Injection scanner<br>
+                        <a href="https://github.com/vladko312/SSTImap" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="SSRFmap" title="SSRF testing and exploitation">
+                    <div class="tool-badge-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="tool-badge-name">SSRFmap</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>SSRFmap</strong><br>
+                        SSRF vulnerability testing and exploitation<br>
+                        <a href="https://github.com/swisskyrepo/SSRFmap" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="LFISuite" title="LFI exploitation suite">
+                    <div class="tool-badge-icon"><i class="fas fa-file"></i></div>
+                    <div class="tool-badge-name">LFISuite</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>LFISuite</strong><br>
+                        Local File Inclusion exploitation suite<br>
+                        <a href="https://github.com/D35m0nd142/LFISuite" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="tool-badge" data-tool="x8" title="Hidden parameters discovery">
+                    <div class="tool-badge-icon"><i class="fas fa-eye"></i></div>
+                    <div class="tool-badge-name">X8</div>
+                    <div class="tool-badge-tooltip">
+                        <strong>X8</strong><br>
+                        Hidden parameters and endpoints discovery<br>
+                        <a href="https://github.com/Sh1Yo/x8" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay"></div>
+
+    <!-- Extensions Sidebar -->
+    <aside class="extensions-sidebar">
+        <div class="sidebar-header">
+            <h2>Browser Extensions</h2>
+            <button class="close-extensions-sidebar" aria-label="Close sidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="extensions-list">
+            <div class="tool-item">
+                <h3>Burp Suite</h3>
+                <p>Professional web security testing platform and intercepting proxy</p>
+                <a href="https://portswigger.net/burp" target="_blank">
+                    <i class="fas fa-link"></i> Get Burp Suite
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Wappalyzer</h3>
+                <p>Identify technologies, CMS, and frameworks used by websites</p>
+                <a href="https://www.wappalyzer.com/" target="_blank">
+                    <i class="fas fa-download"></i> Get Wappalyzer
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>FoxyProxy</h3>
+                <p>Essential proxy management for Burp Suite and other MITM applications</p>
+                <a href="https://getfoxyproxy.org/" target="_blank">
+                    <i class="fas fa-download"></i> Get FoxyProxy
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>TruffleHog</h3>
+                <p>Find hidden API keys and secrets in websites and source code</p>
+                <a href="https://github.com/trufflesecurity/trufflehog" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>HackTools</h3>
+                <p>Collection of useful payloads and tools for penetration testing</p>
+                <a href="https://github.com/LasCC/Hack-Tools" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Cookie Editor</h3>
+                <p>Advanced cookie management with security flag detection</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/edit-cookie/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Retire.js</h3>
+                <p>Identify vulnerable JavaScript libraries and dependencies</p>
+                <a href="https://github.com/RetireJS/retire.js" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Change Method</h3>
+                <p>HTTP method changer for testing method bypass vulnerabilities</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/change-http-method/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Temp Mail</h3>
+                <p>Quick access to temporary email services for testing</p>
+                <a href="https://temp-mail.org/" target="_blank">
+                    <i class="fas fa-link"></i> Open Temp Mail
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Hunter.io</h3>
+                <p>Extract all email addresses from websites for reports</p>
+                <a href="https://www.hunter.io/" target="_blank">
+                    <i class="fas fa-link"></i> Visit Hunter.io
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>WebRTC Disable</h3>
+                <p>Protect VPN IP from WebRTC leaks during testing</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/webrtc-control/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Link Gopher</h3>
+                <p>Extract all domains and links from websites quickly</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/link-gopher/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>DotGit</h3>
+                <p>Find exposed .git repositories for information disclosure</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/dotgit/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>uBlock Origin</h3>
+                <p>Block ads and trackers for cleaner application testing</p>
+                <a href="https://github.com/gorhill/uBlock" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Dark Reader</h3>
+                <p>Dark mode for better night-time bug hunting sessions</p>
+                <a href="https://darkreader.org/" target="_blank">
+                    <i class="fas fa-link"></i> Visit Dark Reader
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>User-Agent Switcher</h3>
+                <p>Test sites with different user-agent strings for UAF bugs</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/uaswitcher/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Shodan</h3>
+                <p>View hosting details, IP ownership, and open services</p>
+                <a href="https://www.shodan.io/" target="_blank">
+                    <i class="fas fa-link"></i> Visit Shodan
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>SecurityHeaders Inspector</h3>
+                <p>Check security headers and their configuration status</p>
+                <a href="https://securityheaders.com/" target="_blank">
+                    <i class="fas fa-link"></i> Visit SecurityHeaders
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Open Multiple URLs</h3>
+                <p>Open multiple sites simultaneously for bulk testing</p>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/open-multiple-urls/" target="_blank">
+                    <i class="fas fa-download"></i> Get Extension
+                </a>
+            </div>
+            <div class="tool-item">
+                <h3>Wayback Machine</h3>
+                <p>Access archived versions of websites for historical analysis</p>
+                <a href="https://archive.org/web/" target="_blank">
+                    <i class="fas fa-link"></i> Visit Wayback Machine
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Copied to clipboard!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 VulnScout - Advanced Bug Hunting Toolkit</p>
+        <div class="footer-links">
+            <a href="./dorking.html">
+                <i class="fas fa-wand-magic-sparkles"></i> Dorking Tool
+            </a>
+            <a href="./recon.html">
+                <i class="fas fa-radar"></i> Recon Tools
+            </a>
+            <a href="https://github.com" target="_blank">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        function updateThemeIcon(theme) {
+            themeToggle.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        // Mobile Dropdown Toggle
+        const dropdowns = document.querySelectorAll('.nav-dropdown');
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    this.classList.toggle('active');
+                }
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768 && !e.target.closest('.nav-dropdown')) {
+                dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+            }
+        });
+
+        // Command template storage
+        const commandTemplates = {};
+        document.querySelectorAll('[id^="subdomain-"], [id^="url-"], [id^="sensitive-"], [id^="xss-"], [id^="lfi-"], [id^="cors-"], [id^="wordpress-"], [id^="ext-"]').forEach(el => {
+            commandTemplates[el.id] = el.textContent;
+        });
+
+        // Update commands with domain
+        const updateBtn = document.getElementById('updateBtn');
+        const domainInput = document.getElementById('domainInput');
+
+        function updateCommands(domain) {
+            for (const [id, template] of Object.entries(commandTemplates)) {
+                const updated = template.replace(/example\.com/g, domain);
+                document.getElementById(id).textContent = updated;
+            }
+            showNotification('Commands updated for: ' + domain);
+        }
+
+        updateBtn.addEventListener('click', () => {
+            const domain = domainInput.value.trim();
+            if (domain) {
+                updateCommands(domain);
+            }
+        });
+
+        domainInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                updateBtn.click();
+            }
+        });
+
+        // Copy to clipboard
+        function copyToClipboard(id) {
+            const element = document.getElementById(id);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Command copied!');
+                const btn = event.target.closest('.copy-btn');
+                btn.classList.add('copied');
+                setTimeout(() => btn.classList.remove('copied'), 500);
+            });
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 2500);
+        }
+
+        // Sidebar Functionality - Combined for Extensions and Tools
+        const extensionsLinkNav = document.getElementById('extensions-link-nav');
+        const extensionsSidebar = document.querySelector('.extensions-sidebar');
+        const closeExtensionsSidebar = document.querySelector('.close-extensions-sidebar');
+        const toolsLink = document.getElementById('tools-link');
+        const toolsSidebar = document.querySelector('.tools-sidebar');
+        const closeSidebar = document.querySelector('.close-sidebar');
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
+
+        function toggleExtensionsSidebar() {
+            if (!extensionsSidebar) return;
+            extensionsSidebar.classList.toggle('active');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+            document.body.style.overflow = extensionsSidebar.classList.contains('active') ? 'hidden' : '';
+        }
+
+        function toggleToolsSidebar() {
+            if (!toolsSidebar) return;
+            toolsSidebar.classList.toggle('active');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+        }
+
+        // Handle navbar Extensions link
+        if (extensionsLinkNav) {
+            extensionsLinkNav.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleExtensionsSidebar();
+            });
+        }
+
+        if (closeExtensionsSidebar) {
+            closeExtensionsSidebar.addEventListener('click', toggleExtensionsSidebar);
+        }
+
+        // Handle navbar Tools link
+        if (toolsLink) {
+            toolsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleToolsSidebar();
+            });
+        }
+
+        if (closeSidebar) {
+            closeSidebar.addEventListener('click', toggleToolsSidebar);
+        }
+
+        // Sidebar overlay click to close either sidebar
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                if (extensionsSidebar && extensionsSidebar.classList.contains('active')) {
+                    toggleExtensionsSidebar();
+                }
+                if (toolsSidebar && toolsSidebar.classList.contains('active')) {
+                    toggleToolsSidebar();
+                }
+            });
+        }
+
+        // Close sidebar with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (extensionsSidebar && extensionsSidebar.classList.contains('active')) {
+                    toggleExtensionsSidebar();
+                }
+                if (toolsSidebar && toolsSidebar.classList.contains('active')) {
+                    toggleToolsSidebar();
+                }
+            }
+        });
+
+        // Initialize with example.com
+        updateCommands('example.com');
+
+        // Security Tools data
+        const securityTools = [
+            { subtitle: 'Subfinder', info: 'Subdomain discovery and enumeration tool', downloadLink: 'https://github.com/projectdiscovery/subfinder' },
+            { subtitle: 'HTTPx', info: 'HTTP probe with multiple features', downloadLink: 'https://github.com/projectdiscovery/httpx' },
+            { subtitle: 'Katana', info: 'Next-gen crawling and spidering framework', downloadLink: 'https://github.com/projectdiscovery/katana' },
+            { subtitle: 'Nuclei', info: 'Fast customisable vulnerability scanner', downloadLink: 'https://github.com/projectdiscovery/nuclei' },
+            { subtitle: 'SSRFmap', info: 'SSRF testing and exploitation tool', downloadLink: 'https://github.com/swisskyrepo/SSRFmap' },
+            { subtitle: 'Ghauri', info: 'Advanced SQL injection detection tool', downloadLink: 'https://github.com/r0oth3x49/ghauri' },
+            { subtitle: 'Amass', info: 'In-depth DNS enumeration and mapping', downloadLink: 'https://github.com/OWASP/Amass' },
+            { subtitle: 'Assetfinder', info: 'Find domains and subdomains quickly', downloadLink: 'https://github.com/tomnomnom/assetfinder' },
+            { subtitle: 'Masscan', info: 'TCP port scanner with high speed', downloadLink: 'https://github.com/robertdavidgraham/masscan' },
+            { subtitle: 'Hakrawler', info: 'Web crawler for discovering endpoints', downloadLink: 'https://github.com/hakluke/hakrawler' },
+            { subtitle: 'URLFinder', info: 'Advanced URL extraction and discovery', downloadLink: 'https://github.com/projectdiscovery/urlfinder' },
+            { subtitle: 'LinkFinder', info: 'Extract endpoints from JavaScript files', downloadLink: 'https://github.com/GerbenJavado/LinkFinder' },
+            { subtitle: 'Waybackurls', info: 'Fetch URLs from Wayback Machine', downloadLink: 'https://github.com/tomnomnom/waybackurls' },
+            { subtitle: 'x8', info: 'Hidden parameters discovery tool', downloadLink: 'https://github.com/Sh1Yo/x8' },
+            { subtitle: 'Commix', info: 'Automated injection testing framework', downloadLink: 'https://github.com/commixproject/commix' },
+            { subtitle: 'DotDotPwn', info: 'LFI/RFI vulnerability scanner', downloadLink: 'https://github.com/wireghoul/dotdotpwn' },
+            { subtitle: 'LFISuite', info: 'Local File Inclusion exploitation suite', downloadLink: 'https://github.com/D35m0nd142/LFISuite' },
+            { subtitle: 'SSTImap', info: 'Server-Side Template Injection scanner', downloadLink: 'https://github.com/vladko312/SSTImap' },
+            { subtitle: 'S3Scanner', info: 'S3 bucket discovery and enumeration', downloadLink: 'https://github.com/sa7mon/S3Scanner' },
+            { subtitle: 'gf', info: 'A wrapper around grep for patterns', downloadLink: 'https://github.com/tomnomnom/gf' }
+        ];
+
+        // Function to render security tools in the sidebar
+        function renderSecurityTools() {
+            const toolsList = document.querySelector('.tools-sidebar .tools-list');
+            if (!toolsList) return;
+            toolsList.innerHTML = '';
+            
+            securityTools.forEach(tool => {
+                const toolItem = document.createElement('div');
+                toolItem.className = 'tool-item';
+                
+                toolItem.innerHTML = `
+                    <h3>${tool.subtitle}</h3>
+                    <p>${tool.info}</p>
+                    <a href="${tool.downloadLink}" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                `;
+                
+                toolsList.appendChild(toolItem);
+            });
+        }
+
+        // Render tools on page load
+        renderSecurityTools();
+    </script>
+</body>
+</html>
