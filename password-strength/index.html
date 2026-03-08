@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker — ~/tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #0f1117;
+            --foreground: #d8e0ea;
+            --card: #161b22;
+            --primary: #40c463;
+            --secondary: #58a6ff;
+            --muted: #21262d;
+            --muted-foreground: #8b949e;
+            --border: #30363d;
+            --radius: 0.5rem;
+            --weak: #da3633;
+            --fair: #f0883e;
+            --strong: #d4a72c;
+            --very-strong: #40c463;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--background);
+            background-image: radial-gradient(circle, rgba(64, 196, 99, 0.07) 1px, transparent 1px);
+            background-size: 28px 28px;
+            color: var(--foreground);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--background); }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(64, 196, 99, 0.4); }
+        ::selection { background: rgba(64, 196, 99, 0.3); }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 50;
+            border-bottom: 1px solid var(--border);
+            background-color: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .navbar-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(64, 196, 99, 0.3);
+            text-decoration: none;
+        }
+
+        .nav-back {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-back:hover { color: var(--primary); }
+
+        /* Main layout */
+        main {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: calc(60px + 3rem) 1.5rem 3rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            display: inline-block;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--foreground);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        /* Card */
+        .checker-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* Input group */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input {
+            width: 100%;
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.75rem 3rem 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9375rem;
+            color: var(--foreground);
+            outline: none;
+            transition: border-color 0.3s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .password-input::placeholder {
+            color: var(--muted-foreground);
+            letter-spacing: normal;
+        }
+
+        .password-input:focus {
+            border-color: var(--primary);
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted-foreground);
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-btn:hover { color: var(--primary); }
+
+        /* Strength bar */
+        .strength-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .strength-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .strength-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .strength-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .strength-track {
+            height: 6px;
+            background-color: var(--muted);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+
+        /* Criteria */
+        .criteria-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .criteria-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            margin-bottom: 0.25rem;
+        }
+
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .criteria-grid { grid-template-columns: 1fr; }
+        }
+
+        .criterion {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--muted-foreground);
+            transition: color 0.3s ease;
+        }
+
+        .criterion.met { color: var(--primary); }
+
+        .criterion-icon {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            width: 14px;
+            flex-shrink: 0;
+        }
+
+        .criterion.met .criterion-icon { color: var(--primary); }
+        .criterion:not(.met) .criterion-icon { color: var(--muted-foreground); }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+
+        .stat-box {
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary);
+            display: block;
+        }
+
+        .stat-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.625rem;
+            color: var(--muted-foreground);
+            margin-top: 0.15rem;
+        }
+
+        /* Crack time */
+        .crack-banner {
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .crack-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .crack-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--foreground);
+        }
+
+        /* Suggestions */
+        .suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .suggestion {
+            font-size: 0.8125rem;
+            color: var(--muted-foreground);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .suggestion::before {
+            content: "▸";
+            color: var(--secondary);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+        }
+
+        /* Empty state */
+        .empty-hint {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--muted-foreground);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+        }
+
+        .empty-hint span {
+            color: var(--primary);
+        }
+
+        /* Footer note */
+        .privacy-note {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">~/tools</a>
+            <a href="../index.html" class="nav-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                All Tools
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="page-label">$ ./password-strength --check</div>
+            <h1 class="page-title">Password Strength Checker</h1>
+            <p class="page-subtitle">Analyze password strength, entropy, and estimated crack time — entirely in your browser. Nothing is sent anywhere.</p>
+        </div>
+
+        <div class="checker-card">
+
+            <!-- Input -->
+            <div class="input-group">
+                <label class="input-label" for="passwordInput">$ enter_password</label>
+                <div class="input-wrapper">
+                    <input
+                        type="password"
+                        id="passwordInput"
+                        class="password-input"
+                        placeholder="Type your password..."
+                        autocomplete="new-password"
+                        spellcheck="false"
+                    >
+                    <button class="toggle-btn" id="toggleVisibility" title="Show/hide password" aria-label="Toggle password visibility">
+                        <svg id="eyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg id="eyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic content -->
+            <div id="results">
+                <div class="empty-hint">
+                    <span>▋</span> Start typing to analyze your password
+                </div>
+            </div>
+
+            <!-- Privacy note -->
+            <p class="privacy-note">🔒 Client-side only — your password never leaves this page</p>
+        </div>
+    </main>
+
+    <script>
+        const input = document.getElementById('passwordInput');
+        const resultsEl = document.getElementById('results');
+        const toggleBtn = document.getElementById('toggleVisibility');
+        const eyeOpen = document.getElementById('eyeOpen');
+        const eyeClosed = document.getElementById('eyeClosed');
+
+        // Toggle visibility
+        toggleBtn.addEventListener('click', () => {
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.style.display = 'none';
+                eyeClosed.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeOpen.style.display = 'block';
+                eyeClosed.style.display = 'none';
+            }
+        });
+
+        // Criteria checks
+        function getCriteria(pw) {
+            return [
+                { id: 'len8',    label: '8+ characters',       met: pw.length >= 8 },
+                { id: 'len12',   label: '12+ characters',      met: pw.length >= 12 },
+                { id: 'upper',   label: 'Uppercase (A–Z)',      met: /[A-Z]/.test(pw) },
+                { id: 'lower',   label: 'Lowercase (a–z)',      met: /[a-z]/.test(pw) },
+                { id: 'digit',   label: 'Numbers (0–9)',        met: /[0-9]/.test(pw) },
+                { id: 'special', label: 'Special characters',  met: /[^A-Za-z0-9]/.test(pw) },
+            ];
+        }
+
+        // Entropy calculation
+        function calcEntropy(pw) {
+            let pool = 0;
+            if (/[a-z]/.test(pw)) pool += 26;
+            if (/[A-Z]/.test(pw)) pool += 26;
+            if (/[0-9]/.test(pw)) pool += 10;
+            if (/[^A-Za-z0-9]/.test(pw)) pool += 32;
+            return pool > 0 ? Math.floor(pw.length * Math.log2(pool)) : 0;
+        }
+
+        // Strength level (0–4)
+        function getStrength(pw, criteria, entropy) {
+            const metCount = criteria.filter(c => c.met).length;
+            if (pw.length === 0) return -1;
+            if (entropy < 30 || pw.length < 6) return 0;       // Weak
+            if (entropy < 50 || metCount < 3) return 1;         // Fair
+            if (entropy < 70 || metCount < 5) return 2;         // Strong
+            return 3;                                            // Very Strong
+        }
+
+        const STRENGTH_LABELS = ['Weak', 'Fair', 'Strong', 'Very Strong'];
+        const STRENGTH_COLORS = ['#da3633', '#f0883e', '#d4a72c', '#40c463'];
+        const STRENGTH_WIDTHS = ['25%', '50%', '75%', '100%'];
+
+        // Crack time estimate (rough, assumes 10^10 guesses/sec offline attack)
+        function crackTime(entropy) {
+            if (entropy <= 0) return 'instant';
+            const guesses = Math.pow(2, entropy);
+            const gps = 1e10; // 10 billion/sec (offline GPU)
+            const seconds = guesses / gps;
+            if (seconds < 1) return 'instantly';
+            if (seconds < 60) return `~${Math.round(seconds)} seconds`;
+            if (seconds < 3600) return `~${Math.round(seconds / 60)} minutes`;
+            if (seconds < 86400) return `~${Math.round(seconds / 3600)} hours`;
+            if (seconds < 31536000) return `~${Math.round(seconds / 86400)} days`;
+            if (seconds < 3.15e9) return `~${Math.round(seconds / 31536000)} years`;
+            if (seconds < 3.15e12) return `~${Math.round(seconds / 3.15e9)} thousand years`;
+            if (seconds < 3.15e15) return `~${Math.round(seconds / 3.15e12)} million years`;
+            return 'centuries+';
+        }
+
+        function getSuggestions(pw, criteria) {
+            const tips = [];
+            if (!criteria.find(c => c.id === 'len12').met) tips.push('Use at least 12 characters for a stronger password.');
+            if (!criteria.find(c => c.id === 'upper').met) tips.push('Add uppercase letters (A–Z).');
+            if (!criteria.find(c => c.id === 'digit').met) tips.push('Include numbers (0–9).');
+            if (!criteria.find(c => c.id === 'special').met) tips.push('Add special characters like !@#$%^&*.');
+            if (/(.)\1{2,}/.test(pw)) tips.push('Avoid repeating characters (e.g. "aaa").');
+            if (/^[a-zA-Z]+$/.test(pw)) tips.push('Mix in numbers and symbols — letters-only is easier to crack.');
+            return tips.slice(0, 3);
+        }
+
+        function render(pw) {
+            if (!pw) {
+                resultsEl.innerHTML = `<div class="empty-hint"><span>▋</span> Start typing to analyze your password</div>`;
+                return;
+            }
+
+            const criteria = getCriteria(pw);
+            const entropy = calcEntropy(pw);
+            const level = getStrength(pw, criteria, entropy);
+            const label = STRENGTH_LABELS[level];
+            const color = STRENGTH_COLORS[level];
+            const fill = STRENGTH_WIDTHS[level];
+            const crack = crackTime(entropy);
+            const suggestions = getSuggestions(pw, criteria);
+            const charTypes = [
+                /[a-z]/.test(pw) ? 1 : 0,
+                /[A-Z]/.test(pw) ? 1 : 0,
+                /[0-9]/.test(pw) ? 1 : 0,
+                /[^A-Za-z0-9]/.test(pw) ? 1 : 0
+            ].reduce((a, b) => a + b, 0);
+
+            const criteriaHTML = criteria.map(c => `
+                <div class="criterion ${c.met ? 'met' : ''}">
+                    <span class="criterion-icon">${c.met ? '✓' : '○'}</span>
+                    <span>${c.label}</span>
+                </div>
+            `).join('');
+
+            const suggestionsHTML = suggestions.length > 0
+                ? `<div class="suggestions">${suggestions.map(s => `<div class="suggestion">${s}</div>`).join('')}</div>`
+                : '';
+
+            resultsEl.innerHTML = `
+                <div class="strength-section">
+                    <div class="strength-header">
+                        <span class="strength-label">// strength</span>
+                        <span class="strength-value" style="color: ${color}">${label}</span>
+                    </div>
+                    <div class="strength-track">
+                        <div class="strength-fill" style="width: ${fill}; background-color: ${color};"></div>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="stat-value">${pw.length}</span>
+                        <span class="stat-name">length</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-value">${entropy}</span>
+                        <span class="stat-name">bits entropy</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-value">${charTypes}</span>
+                        <span class="stat-name">char types</span>
+                    </div>
+                </div>
+
+                <div class="crack-banner">
+                    <span class="crack-label">$ crack_time --offline-gpu</span>
+                    <span class="crack-value">${crack}</span>
+                </div>
+
+                <div class="criteria-section">
+                    <div class="criteria-title">// requirements</div>
+                    <div class="criteria-grid">${criteriaHTML}</div>
+                </div>
+
+                ${suggestionsHTML}
+            `;
+        }
+
+        input.addEventListener('input', () => render(input.value));
+    </script>
+</body>
+</html>
