@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools - VulnScout</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tools-container {
+            max-width: 1400px;
+            margin: 6rem auto 2rem;
+            padding: 0 20px;
+        }
+
+        .tools-hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: transparent;
+            border-bottom: none;
+            margin-bottom: 50px;
+            margin-top: 6rem;
+        }
+
+        .tools-hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--success), var(--primary));
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            animation: gradientFlow 6s ease infinite;
+        }
+
+        .tools-hero p {
+            font-size: 1.2em;
+            color: var(--muted-text);
+            margin-bottom: 20px;
+        }
+
+        .tools-filter {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+        }
+
+        .filter-btn {
+            padding: 10px 25px;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            font-size: 1em;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--primary);
+            color: var(--dark);
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .tool-card {
+            background: var(--dark-secondary);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 30px var(--primary);
+            border-color: var(--secondary);
+        }
+
+        .tool-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .tool-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: var(--dark);
+        }
+
+        .tool-title {
+            flex: 1;
+        }
+
+        .tool-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--light-text);
+        }
+
+        .tool-type {
+            font-size: 0.85em;
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tool-description {
+            color: var(--muted-text);
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .tool-section {
+            margin-bottom: 20px;
+        }
+
+        .tool-section-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-commands {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+        }
+
+        .command-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .command-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .command-label {
+            color: var(--success);
+            font-weight: 600;
+            min-width: 60px;
+            flex-shrink: 0;
+        }
+
+        .command-text {
+            color: var(--light-text);
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            border-radius: 4px;
+            flex: 1;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .command-text:hover {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--primary);
+        }
+
+        .copy-btn {
+            background: var(--primary);
+            color: var(--dark);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .tool-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tool-link {
+            background: var(--primary);
+            color: var(--dark);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tool-link:hover {
+            background: var(--secondary);
+            transform: translateX(5px);
+        }
+
+        .category-section {
+            margin-bottom: 60px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed var(--primary);
+        }
+
+        .category-icon {
+            font-size: 2em;
+            color: var(--primary);
+        }
+
+        .category-header h2 {
+            font-size: 2em;
+            color: var(--light-text);
+        }
+
+        .category-count {
+            margin-left: auto;
+            background: var(--primary);
+            color: var(--dark);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .quick-setup {
+            background: var(--dark-secondary);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 50px;
+        }
+
+        .quick-setup h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .setup-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .setup-step {
+            background: var(--dark-secondary);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .setup-step h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .setup-step p {
+            color: var(--muted-text);
+            font-size: 0.95em;
+        }
+
+        .command-box {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid var(--success);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+            color: var(--success);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tools-hero h1 {
+                font-size: 2.5em;
+            }
+
+            .tool-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="./index.html" class="logo">
+            <i class="fas fa-crosshairs"></i>
+            VulnScout
+        </a>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <a href="#">Reconnaissance</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./index.html">Subdomains</a></li>
+                        <li><a href="./dorking.html">Dorking</a></li>
+                        <li><a href="./recon.html">Recon</a></li>
+                        <li><a href="./forensics.html">Forensics</a></li>
+                        <li><a href="./advanced-dorks.html">Advanced Dorks</a></li>
+                    </ul>
+                </li>
+                <li class="nav-dropdown">
+                    <a href="#">Resources</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./wordlists.html">Wordlists</a></li>
+                        <li><a href="./tools.html">Tools</a></li>
+                    </ul>
+                </li>
+                <li class="nav-dropdown">
+                    <a href="#">Security References</a>
+                    <ul class="nav-submenu">
+                        <li><a href="./tech-detector.html">Tech Detector</a></li>
+                        <li><a href="./cve-database.html">CVE Database</a></li>
+                        <li><a href="./http-status-codes.html">HTTP Status Codes</a></li>
+                        <li><a href="./common-ports.html">Common Ports</a></li>
+                        <li><a href="./owasp-top10.html">OWASP Top 10</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="tools-hero">
+        <h1><i class="fas fa-wrench"></i> Security Tools Arsenal</h1>
+        <p>Everything you need for reconnaissance and vulnerability assessment</p>
+    </div>
+
+    <div class="tools-container">
+        <!-- Quick Setup Guide -->
+        <div class="quick-setup">
+            <h3><i class="fas fa-rocket"></i> Quick Setup Guide</h3>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <h4>Step 1: Clone & Navigate</h4>
+                    <p>Clone the VulnScout repository and navigate to the directory</p>
+                    <div class="command-box">
+                        <span>cd c:\Users\spector\Documents\Tools\VulnScout</span>
+                        <button class="copy-btn" onclick="copyToClipboard('cd c:\\Users\\spector\\Documents\\Tools\\VulnScout')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>Step 2: Run Setup Script</h4>
+                    <p>Execute the setup script to install all tools automatically</p>
+                    <div class="command-box">
+                        <span>bash setup.sh</span>
+                        <button class="copy-btn" onclick="copyToClipboard('bash setup.sh')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>Step 3: Update Path (Linux/macOS)</h4>
+                    <p>Load the Go environment in your shell profile</p>
+                    <div class="command-box">
+                        <span>source ~/.bashrc</span>
+                        <button class="copy-btn" onclick="copyToClipboard('source ~/.bashrc')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>Step 4: Verify Installation</h4>
+                    <p>Check if tools are installed successfully</p>
+                    <div class="command-box">
+                        <span>which subfinder httpx katana</span>
+                        <button class="copy-btn" onclick="copyToClipboard('which subfinder httpx katana')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="tools-filter">
+            <button class="filter-btn active" onclick="filterTools('all')">All Tools</button>
+            <button class="filter-btn" onclick="filterTools('go')"><i class="fab fa-golang"></i> Go Tools</button>
+            <button class="filter-btn" onclick="filterTools('python')"><i class="fab fa-python"></i> Python Tools</button>
+            <button class="filter-btn" onclick="filterTools('github')"><i class="fab fa-github"></i> GitHub Tools</button>
+        </div>
+
+        <!-- GO-Based Tools Section -->
+        <div class="category-section" data-category="go">
+            <div class="category-header">
+                <i class="fab fa-golang category-icon"></i>
+                <h2>Go-Based Reconnaissance Tools</h2>
+                <div class="category-count">12 Tools</div>
+            </div>
+            <div class="tools-grid">
+                <!-- Subfinder -->
+                <div class="tool-card" data-tool="subfinder">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-search"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Subfinder</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Passive subdomain enumeration tool that discovers subdomains using multiple sources (DNS records, certificates, etc.).
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-gear"></i> Setup</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Configure:</span>
+                                <span class="command-text">mkdir -p ~/.config/subfinder && cp provider-config.yaml ~/.config/subfinder/</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Basic:</span>
+                                <span class="command-text">subfinder -d example.com -all</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Advanced:</span>
+                                <span class="command-text">subfinder -d example.com -all -recursive -o subs.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/subfinder" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                            <a href="https://docs.projectdiscovery.io/tools/subfinder" class="tool-link" target="_blank">
+                                <i class="fas fa-book"></i> Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HTTPx -->
+                <div class="tool-card" data-tool="httpx">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-globe"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">HTTPx</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Fast and multi-purpose HTTP toolkit designed for probing consistency across thousands of hosts. Checks HTTP response, headers, title, status codes.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Basic:</span>
+                                <span class="command-text">httpx -l subdomains.txt -status-code</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Full Info:</span>
+                                <span class="command-text">httpx -l subdomains.txt -title -status-code -tech-detect</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/httpx" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                            <a href="https://docs.projectdiscovery.io/tools/httpx" class="tool-link" target="_blank">
+                                <i class="fas fa-book"></i> Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Katana -->
+                <div class="tool-card" data-tool="katana">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-spider"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Katana</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A next generation crawling and spidering framework designed for security research. Crawls URLs and identifies endpoints, parameters, and technologies.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/katana/cmd/katana@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Basic:</span>
+                                <span class="command-text">katana -u https://example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Deep Crawl:</span>
+                                <span class="command-text">katana -u https://example.com -d 5 -ps exhaust</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/katana" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nuclei -->
+                <div class="tool-card" data-tool="nuclei">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-bomb"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Nuclei</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Fast and customizable vulnerability scanner. Uses YAML-based templates to perform security checks and exploit detection against targets.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan:</span>
+                                <span class="command-text">nuclei -l hosts.txt -t ~/nuclei-templates/</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Specific Template:</span>
+                                <span class="command-text">nuclei -u https://example.com -t cves/</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/nuclei" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                            <a href="https://docs.projectdiscovery.io/tools/nuclei" class="tool-link" target="_blank">
+                                <i class="fas fa-book"></i> Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Naabu -->
+                <div class="tool-card" data-tool="naabu">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-shield"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Naabu</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A fast port scanner written in Go. Designed to be used for target enumeration and network discovery during security assessments.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan Host:</span>
+                                <span class="command-text">naabu -host example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Custom Ports:</span>
+                                <span class="command-text">naabu -host example.com -ports 80,443,8080-8090</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/naabu" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DNSx -->
+                <div class="tool-card" data-tool="dnsx">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-network-wired"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">DNSx</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Fast and multi-purpose DNS toolkit designed for probes to validate, query and resolve DNS records. Supports multiple DNS record types.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Query DNS:</span>
+                                <span class="command-text">dnsx -l subdomains.txt -a</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Specific Record:</span>
+                                <span class="command-text">dnsx -domain example.com -a -mx -ns</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/dnsx" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assetfinder -->
+                <div class="tool-card" data-tool="assetfinder">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-map"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Assetfinder</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Find domains and subdomains related to a given domain. Uses multiple sources like crt.sh, certdb, hackertarget, SecurityTrails.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/tomnomnom/assetfinder@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Find Assets:</span>
+                                <span class="command-text">assetfinder example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">With Subs:</span>
+                                <span class="command-text">assetfinder --subs-only example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/tomnomnom/assetfinder" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waybackurls -->
+                <div class="tool-card" data-tool="waybackurls">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-history"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Waybackurls</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Fetch all the URLs that the Wayback Machine knows about for a domain. Useful for discovering endpoints and historical pages.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/tomnomnom/waybackurls@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Fetch URLs:</span>
+                                <span class="command-text">echo example.com | waybackurls</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Save Output:</span>
+                                <span class="command-text">echo example.com | waybackurls > urls.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/tomnomnom/waybackurls" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GF (Grepfield) -->
+                <div class="tool-card" data-tool="gf">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-filter"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">GF (Grepfield)</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A wrapper around grep to avoid typing long and complex patterns. Useful for extracting specific information from URLs and content.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/tomnomnom/gf@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-gear"></i> Setup</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Copy Patterns:</span>
+                                <span class="command-text">cp -r $GOPATH/src/github.com/tomnomnom/gf/examples ~/.gf</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Extract URLs:</span>
+                                <span class="command-text">cat output.txt | gf urls</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/tomnomnom/gf" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HTTProbe -->
+                <div class="tool-card" data-tool="httprobe">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">HTTProbe</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Takes a list of domains and probes for working HTTP and HTTPS servers. Simple tool to quickly discover live web servers.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/tomnomnom/httprobe@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Probe Domains:</span>
+                                <span class="command-text">cat subdomains.txt | httprobe</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Custom Ports:</span>
+                                <span class="command-text">cat subdomains.txt | httprobe -p 8080,8443</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/tomnomnom/httprobe" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notify -->
+                <div class="tool-card" data-tool="notify">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-bell"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Notify</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Sends notification of your findings to multiple platforms. Supports Slack, Discord, Telegram, and many other notification channels.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/projectdiscovery/notify/cmd/notify@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-gear"></i> Setup</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Configure:</span>
+                                <span class="command-text">mkdir -p ~/.config/notify && notify -config ~/.config/notify/config.yaml</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/projectdiscovery/notify" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OWASP Amass -->
+                <div class="tool-card" data-tool="amass">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">OWASP Amass</div>
+                            <div class="tool-type">Go Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Comprehensive subdomain enumeration tool with network mapping and asset discovery. Performs active and passive reconnaissance.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">go install -v github.com/OWASP/Amass/v3/...@latest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Passive Scan:</span>
+                                <span class="command-text">amass enum -passive -d example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Active Scan:</span>
+                                <span class="command-text">amass enum -d example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/OWASP/Amass" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                            <a href="https://owasp.org/www-project-amass/" class="tool-link" target="_blank">
+                                <i class="fas fa-book"></i> Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Python Tools Section -->
+        <div class="category-section" data-category="python">
+            <div class="category-header">
+                <i class="fab fa-python category-icon"></i>
+                <h2>Python-Based Security Tools</h2>
+                <div class="category-count">10 Tools</div>
+            </div>
+            <div class="tools-grid">
+                <!-- LinkFinder -->
+                <div class="tool-card" data-tool="linkfinder">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-link"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">LinkFinder</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A Python script to parse and extract endpoints from JavaScript files. Helps discover hidden endpoints and API paths.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install LinkFinder</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Parse JS:</span>
+                                <span class="command-text">linkfinder -i script.js -o cli</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">From URL:</span>
+                                <span class="command-text">linkfinder -i https://example.com/script.js -o cli</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/GerbenJavado/LinkFinder" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commix -->
+                <div class="tool-card" data-tool="commix">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-terminal"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Commix</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Automated command injection and OS command execution testing tool. Detects and exploits command injection vulnerabilities.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install commix</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan URL:</span>
+                                <span class="command-text">commix -u "http://example.com?id=1"</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">POST Data:</span>
+                                <span class="command-text">commix -u "http://example.com" --data="id=1"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/commixproject/commix" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DotDotPwn -->
+                <div class="tool-card" data-tool="dotdotpwn">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">DotDotPwn</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Directory traversal vulnerability scanner. Tests for path traversal vulnerabilities and accesses sensitive files.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install dotdotpwn</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan URL:</span>
+                                <span class="command-text">dotdotpwn -m http -h example.com -x 5</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/wireghoul/dotdotpwn" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wafw00f -->
+                <div class="tool-card" data-tool="wafw00f">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Wafw00f</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Identifies and fingerprints Web Application Firewall (WAF) products. Helps determine which WAF is protecting a website.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install wafw00f</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Detect WAF:</span>
+                                <span class="command-text">wafw00f http://example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Aggressive:</span>
+                                <span class="command-text">wafw00f -a http://example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/EnableSecurity/wafw00f" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ParamSpider -->
+                <div class="tool-card" data-tool="paramspider">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-spider"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">ParamSpider</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Finds parameters from dark corners of web apps. Crawls the web and discovers hidden parameters in URLs and forms.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install paramspider</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Crawl Domain:</span>
+                                <span class="command-text">paramspider -d example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Save Results:</span>
+                                <span class="command-text">paramspider -d example.com -o params.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/devanshbatham/ParamSpider" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ghauri -->
+                <div class="tool-card" data-tool="ghauri">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-database"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Ghauri</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        An advanced SQL injection detection and exploitation tool. Automatically detects and exploits SQL injection vulnerabilities.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install ghauri</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Test URL:</span>
+                                <span class="command-text">ghauri -u "http://example.com?id=1"</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Extract Data:</span>
+                                <span class="command-text">ghauri -u "http://example.com?id=1" --dbs</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/r0oth3x0g/ghauri" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JWT-Tool -->
+                <div class="tool-card" data-tool="jwt-tool">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-key"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">JWT-Tool</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A toolkit for testing, tweaking and cracking JWTs. Decode, forge, and exploit JWT vulnerabilities.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install jwt-tool</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Decode JWT:</span>
+                                <span class="command-text">jwt_tool <token></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/ticarpi/jwt_tool" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arjun -->
+                <div class="tool-card" data-tool="arjun">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-search"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Arjun</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        HTTP parameter discovery suite. Discovers hidden parameters in HTTP requests using various techniques and wordlists.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install arjun</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Discover Params:</span>
+                                <span class="command-text">arjun -u http://example.com</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Custom Wordlist:</span>
+                                <span class="command-text">arjun -u http://example.com -w /path/to/wordlist.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/s0md3v/Arjun" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SubDomainizer -->
+                <div class="tool-card" data-tool="subdomainizer">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-share-alt"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">SubDomainizer</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Finds subdomains and subdomains of subdomains by analyzing JavaScript files. Great for discovering hidden assets.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install SubDomainizer</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Analyze JS:</span>
+                                <span class="command-text">subdomainizer -u http://example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/nsonaniya2010/SubDomainizer" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anew -->
+                <div class="tool-card" data-tool="anew">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-plus"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">Anew</div>
+                            <div class="tool-type">Python Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A tool for adding new lines to files, without duplicates. Perfect for managing unique results across multiple scans.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Command:</span>
+                                <span class="command-text">pip3 install anew</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Add Unique:</span>
+                                <span class="command-text">cat new_findings.txt | anew findings.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/tomnomnom/anew" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Tools Section -->
+        <div class="category-section" data-category="github">
+            <div class="category-header">
+                <i class="fab fa-github category-icon"></i>
+                <h2>GitHub-Based Tools</h2>
+                <div class="category-count">6 Tools</div>
+            </div>
+            <div class="tools-grid">
+                <!-- LFISuite -->
+                <div class="tool-card" data-tool="lfisuite">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-folder-open"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">LFISuite</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A collection of tools for testing Local File Inclusion (LFI) vulnerabilities. Contains payloads and exploitation techniques.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/D35m0nd142/LFISuite ~/security-tools/LFISuite</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Navigate:</span>
+                                <span class="command-text">cd ~/security-tools/LFISuite && python3 lfisuite.py</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Interactive:</span>
+                                <span class="command-text">cd ~/security-tools/LFISuite && python3 lfisuite.py</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/D35m0nd142/LFISuite" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSTImap -->
+                <div class="tool-card" data-tool="sstimap">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-map"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">SSTImap</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Automatic SSTI (Server-Side Template Injection) detection and exploitation tool. Tests and exploits template injection vulnerabilities.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/vladko312/SSTImap ~/security-tools/SSTImap</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Install Deps:</span>
+                                <span class="command-text">cd ~/security-tools/SSTImap && pip3 install -r requirements.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan URL:</span>
+                                <span class="command-text">cd ~/security-tools/SSTImap && python3 sstimap.py -u "http://example.com"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/vladko312/SSTImap" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- S3Scanner -->
+                <div class="tool-card" data-tool="s3scanner">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-cloud"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">S3Scanner</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Scans for open AWS S3 buckets and lists their contents. Identifies misconfigured S3 buckets with public access.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/sa7mon/S3Scanner ~/security-tools/S3Scanner</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Install Deps:</span>
+                                <span class="command-text">cd ~/security-tools/S3Scanner && pip3 install -r requirements.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Scan Bucket:</span>
+                                <span class="command-text">cd ~/security-tools/S3Scanner && python3 s3scanner.py -b bucket-name</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/sa7mon/S3Scanner" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSRFmap -->
+                <div class="tool-card" data-tool="ssrfmap">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-exchange-alt"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">SSRFmap</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A tool to find and exploit SSRF (Server-Side Request Forgery) vulnerabilities. Tests for SSRF with various payload types.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/swisskyrepo/SSRFmap ~/security-tools/SSRFmap</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Install Deps:</span>
+                                <span class="command-text">cd ~/security-tools/SSRFmap && pip3 install -r requirements.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Test URL:</span>
+                                <span class="command-text">cd ~/security-tools/SSRFmap && python3 ssrfmap.py -u "http://example.com?url="</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/swisskyrepo/SSRFmap" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- x8 -->
+                <div class="tool-card" data-tool="x8">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-code"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">x8</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        A hidden parameter discovery tool. Finds hidden parameters in HTTP requests using multiple techniques and sources.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/Sh1Yo/x8 ~/security-tools/x8</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Install Deps:</span>
+                                <span class="command-text">cd ~/security-tools/x8 && pip3 install -r requirements.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Discover Params:</span>
+                                <span class="command-text">cd ~/security-tools/x8 && python3 x8.py -u "http://example.com"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/Sh1Yo/x8" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DotDotPwn (GitHub) -->
+                <div class="tool-card" data-tool="dotdotpwn-gh">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="tool-title">
+                            <div class="tool-name">DotDotPwn (Advanced)</div>
+                            <div class="tool-type">GitHub Tool</div>
+                        </div>
+                    </div>
+                    <div class="tool-description">
+                        Advanced directory traversal testing framework. Clone the repository for the latest version with more features and payloads.
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-download"></i> Install</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Clone:</span>
+                                <span class="command-text">git clone https://github.com/wireghoul/dotdotpwn ~/security-tools/dotdotpwn</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Navigate:</span>
+                                <span class="command-text">cd ~/security-tools/dotdotpwn && chmod +x dotdotpwn.pl</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-section-title"><i class="fas fa-terminal"></i> Usage</div>
+                        <div class="tool-commands">
+                            <div class="command-item">
+                                <span class="command-label">Test Host:</span>
+                                <span class="command-text">cd ~/security-tools/dotdotpwn && perl dotdotpwn.pl -m http -h example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-section">
+                        <div class="tool-links">
+                            <a href="https://github.com/wireghoul/dotdotpwn" class="tool-link" target="_blank">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Keys & Configuration Section -->
+        <div style="background: var(--dark-secondary); border: 2px solid var(--primary); border-radius: 12px; padding: 30px; margin-bottom: 50px;">
+            <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 1.5em;">
+                <i class="fas fa-key"></i> API Keys & Configuration
+            </h3>
+            <p style="color: var(--muted-text); margin-bottom: 20px;">
+                Many tools require API keys for enhanced functionality. Configure them for better results:
+            </p>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <h4>Subfinder Providers</h4>
+                    <p>Configure API keys for Shodan, SecurityTrails, and other providers in:</p>
+                    <div class="command-box">
+                        <span>~/.config/subfinder/provider-config.yaml</span>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>Tool Configuration</h4>
+                    <p>Store credentials and API keys in environment variables:</p>
+                    <div class="command-box">
+                        <span>export SHODAN_API_KEY="your_key_here"</span>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>AWS Credentials</h4>
+                    <p>Configure AWS credentials for S3Scanner:</p>
+                    <div class="command-box">
+                        <span>~/.aws/credentials</span>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <h4>Update Tools</h4>
+                    <p>Keep all tools updated with the update script:</p>
+                    <div class="command-box">
+                        <span>bash update-all-tools.sh</span>
+                        <button class="copy-btn" onclick="copyToClipboard('bash update-all-tools.sh')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: var(--dark-secondary); border-top: 2px solid var(--primary); padding: 40px 20px; margin-top: 60px; text-align: center;">
+        <p style="color: var(--muted-text); margin-bottom: 10px;">
+            VulnScout - Security Tools Arsenal | Created for Security Researchers and Penetration Testers
+        </p>
+        <p style="color: var(--muted-text); font-size: 0.9em;">
+            <i class="fas fa-shield-alt"></i> Use these tools responsibly and only on systems you have permission to test
+        </p>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        // Mobile Dropdown Toggle
+        const dropdowns = document.querySelectorAll('.nav-dropdown');
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    this.classList.toggle('active');
+                }
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768 && !e.target.closest('.nav-dropdown')) {
+                dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+            }
+        });
+
+        function updateThemeIcon(theme) {
+            themeToggle.innerHTML = theme === 'dark' 
+                ? '<i class="fas fa-moon"></i>' 
+                : '<i class="fas fa-sun"></i>';
+        }
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target.closest('.copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        // Filter tools
+        function filterTools(category) {
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter categories
+            if (category === 'all') {
+                document.querySelectorAll('.category-section').forEach(section => {
+                    section.style.display = 'block';
+                });
+            } else {
+                document.querySelectorAll('.category-section').forEach(section => {
+                    if (section.getAttribute('data-category') === category) {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
