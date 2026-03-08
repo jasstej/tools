@@ -3,1064 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Reconnaissance Workflow</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            color: #e0e0e0;
-            font-family: 'Courier New', monospace;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #00d4ff;
-            padding-bottom: 20px;
-        }
-
-        header h1 {
-            color: #00d4ff;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-
-        header p {
-            color: #a0a0a0;
-            font-size: 1.1em;
-        }
-
-        .input-section {
-            background: rgba(20, 25, 50, 0.8);
-            border: 2px solid #00d4ff;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-        }
-
-        .input-group {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        label {
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            min-width: 250px;
-            padding: 12px 15px;
-            background: #0a0e27;
-            border: 2px solid #00d4ff;
-            border-radius: 5px;
-            color: #00d4ff;
-            font-family: 'Courier New', monospace;
-            font-size: 1em;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-            border-color: #00ff88;
-        }
-
-        input[type="text"]::placeholder {
-            color: #555;
-        }
-
-        button {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
-            color: #0a0e27;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .steps-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
-            gap: 25px;
-        }
-
-        .step {
-            background: rgba(20, 25, 50, 0.8);
-            border-left: 4px solid #00d4ff;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .step:hover {
-            border-left-color: #00ff88;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-            transform: translateY(-5px);
-        }
-
-        .step-number {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
-            color: #0a0e27;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 50px;
-            font-weight: bold;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
-        }
-
-        .step-title {
-            color: #00ff88;
-            font-size: 1.3em;
-            margin-bottom: 12px;
-            font-weight: bold;
-        }
-
-        .step-description {
-            color: #a0a0a0;
-            margin-bottom: 15px;
-            font-size: 0.95em;
-        }
-
-        .command-block {
-            background: #0a0e27;
-            border: 1px solid #00d4ff;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 10px 0;
-            position: relative;
-            overflow-x: auto;
-        }
-
-        .command-text {
-            color: #00ff88;
-            word-break: break-all;
-            font-size: 0.9em;
-            line-height: 1.5;
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 6px 12px;
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background: rgba(0, 212, 255, 0.4);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        .notes {
-            background: rgba(255, 100, 0, 0.1);
-            border-left: 3px solid #ff6400;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 3px;
-            color: #ffb366;
-            font-size: 0.9em;
-        }
-
-        .info-box {
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 3px solid #00d4ff;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 3px;
-            color: #99ddff;
-            font-size: 0.9em;
-        }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8em;
-            }
-
-            .steps-container {
-                grid-template-columns: 1fr;
-            }
-
-            .input-group {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            input[type="text"] {
-                min-width: auto;
-            }
-
-            button {
-                width: 100%;
-            }
-        }
-
-        .no-domain {
-            text-align: center;
-            color: #ff6400;
-            padding: 40px;
-            font-size: 1.1em;
-        }
-
-        .success-message {
-            color: #00ff88;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .download-btn {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #ff6400 0%, #ff9500 100%);
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(255, 100, 0, 0.4);
-        }
-
-        .download-btn:active {
-            transform: translateY(0);
-        }
-
-        .main-wrapper {
-            display: flex;
-            gap: 30px;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: rgba(20, 25, 50, 0.9);
-            border: 2px solid #00d4ff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-            height: fit-content;
-            position: sticky;
-            top: 20px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .sidebar-title {
-            color: #00ff88;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #00d4ff;
-            padding-bottom: 10px;
-        }
-
-        .tool-item {
-            background: rgba(0, 20, 40, 0.6);
-            border: 1px solid #00d4ff;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .tool-item:hover {
-            border-color: #00ff88;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
-        }
-
-        .tool-name {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.1));
-            padding: 10px 12px;
-            color: #00ff88;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .tool-name:hover {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(0, 255, 136, 0.2));
-        }
-
-        .toggle-icon {
-            color: #00d4ff;
-            font-size: 1.2em;
-            transition: transform 0.3s ease;
-        }
-
-        .toggle-icon.open {
-            transform: rotate(180deg);
-        }
-
-        .tool-content {
-            display: none;
-            padding: 12px;
-            background: rgba(10, 14, 39, 0.8);
-            border-top: 1px solid #00d4ff;
-        }
-
-        .tool-content.open {
-            display: block;
-        }
-
-        .tool-description {
-            color: #99ddff;
-            font-size: 0.85em;
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .tool-command {
-            background: #0a0e27;
-            border: 1px solid #00d4ff;
-            border-radius: 3px;
-            padding: 8px;
-            margin: 8px 0;
-            position: relative;
-        }
-
-        .tool-command-text {
-            color: #00ff88;
-            font-size: 0.75em;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .tool-command-text:hover {
-            color: #00d4ff;
-        }
-
-        .tool-copy-btn {
-            font-size: 0.7em;
-            padding: 3px 6px;
-            position: absolute;
-            top: 3px;
-            right: 3px;
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
-            border-radius: 2px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tool-copy-btn:hover {
-            background: rgba(0, 212, 255, 0.4);
-        }
-
-        .content-area {
-            flex: 1;
-        }
-
-        @media (max-width: 1024px) {
-            .main-wrapper {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .sidebar {
-                width: 100%;
-                position: static;
-                max-height: none;
-            }
-
-            .sidebar-title {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                cursor: pointer;
-            }
-
-            .sidebar-toggle {
-                display: none;
-            }
-
-            .sidebar-toggle.show {
-                display: block;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-            }
-
-            .tool-item {
-                margin-bottom: 10px;
-            }
-
-            .tool-content {
-                padding: 10px;
-            }
-        }
-    </style>
+    <title>~/tools — Security Toolkit</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🔍 Security Reconnaissance Workflow</h1>
-            <p>Step-by-step guide for comprehensive domain reconnaissance and security testing</p>
-        </header>
 
-        <div class="input-section">
-            <div class="input-group">
-                <label for="domainInput">Enter Target Domain:</label>
-                <input 
-                    type="text" 
-                    id="domainInput" 
-                    placeholder="example.com" 
-                    onkeypress="if(event.key === 'Enter') generateWorkflow()"
-                >
-                <button onclick="generateWorkflow()">Generate Workflow</button>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <span class="navbar-logo">~/tools</span>
+            <div class="nav-links-desktop">
+                <a href="https://jasstej.github.io" class="nav-link" target="_blank" rel="noopener noreferrer">Portfolio</a>
             </div>
+            <button class="mobile-menu-toggle" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
-
-        <div class="main-wrapper">
-            <div class="sidebar">
-                <div class="sidebar-title">
-                    🛠️ Tools & Installation
-                    <span class="toggle-icon" id="sidebarToggle">▼</span>
-                </div>
-                <div id="toolsList"></div>
-            </div>
-
-            <div class="content-area">
-                <div id="workflowContent"></div>
-            </div>
+        <div class="nav-links-mobile" id="mobileMenu">
+            <a href="https://jasstej.github.io" class="nav-link" target="_blank" rel="noopener noreferrer">Portfolio</a>
         </div>
-    </div>
+    </nav>
 
-    <script>
-        const tools = [
-            {
-                name: "Subfinder",
-                description: "Fast subdomain enumeration tool",
-                install: [
-                    { cmd: "go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest", label: "Install via Go" },
-                    { cmd: "apt-get install subfinder", label: "Install via APT (Linux)" }
-                ]
-            },
-            {
-                name: "HTTPx-Toolkit",
-                description: "HTTP prober with status codes & tech detection",
-                install: [
-                    { cmd: "go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest", label: "Install via Go" }
-                ]
-            },
-            {
-                name: "Katana",
-                description: "Web crawler & endpoint finder",
-                install: [
-                    { cmd: "go install github.com/projectdiscovery/katana/cmd/katana@latest", label: "Install via Go" }
-                ]
-            },
-            {
-                name: "Nuclei",
-                description: "Vulnerability scanner with templates",
-                install: [
-                    { cmd: "go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest", label: "Install via Go" },
-                    { cmd: "nuclei -update-templates", label: "Update Templates" }
-                ]
-            },
-            {
-                name: "SecretFinder",
-                description: "Extract secrets from JavaScript files",
-                install: [
-                    { cmd: "git clone https://github.com/m4ll0k/SecretFinder.git && cd SecretFinder && pip install -r requirements.txt", label: "Clone & Install" }
-                ]
-            },
-            {
-                name: "XSS-Vibes",
-                description: "XSS vulnerability detection tool",
-                install: [
-                    { cmd: "git clone https://github.com/projectdiscovery/xss-vibes.git && cd xss-vibes && pip install -r requirements.txt", label: "Clone & Install" }
-                ]
-            },
-            {
-                name: "Arjun",
-                description: "HTTP parameter discovery & testing tool",
-                install: [
-                    { cmd: "git clone https://github.com/s0md3v/Arjun.git && cd Arjun && pip install -r requirements.txt", label: "Clone & Install" },
-                    { cmd: "pip install arjun", label: "Install via pip" }
-                ]
-            },
-            {
-                name: "GFX",
-                description: "Pattern-based filtering tool",
-                install: [
-                    { cmd: "go install -v github.com/tomnomnom/gf@latest", label: "Install via Go" },
-                    { cmd: "gf -list  # Check available patterns", label: "List Patterns" }
-                ]
-            },
-            {
-                name: "Go Lang",
-                description: "Required for most tools",
-                install: [
-                    { cmd: "wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz && tar -xzf go1.22.0.linux-amd64.tar.gz -C /usr/local", label: "Linux 64-bit" },
-                    { cmd: "brew install go", label: "macOS (Homebrew)" }
-                ]
-            },
-            {
-                name: "Python 3",
-                description: "Required for Python-based tools",
-                install: [
-                    { cmd: "apt-get install python3 python3-pip", label: "Linux Installation" },
-                    { cmd: "brew install python3", label: "macOS Installation" }
-                ]
-            },
-            {
-                name: "Git",
-                description: "Version control & cloning",
-                install: [
-                    { cmd: "apt-get install git", label: "Linux Installation" },
-                    { cmd: "brew install git", label: "macOS Installation" }
-                ]
-            }
-        ];
+    <!-- Tools Section -->
+    <section id="tools">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-label">$ ls -la ~/tools</div>
+                <h2 class="section-title">All Tools</h2>
+            </div>
 
-        function initializeTools() {
-            const toolsList = document.getElementById('toolsList');
-            let html = '';
+            <div class="tools-grid">
 
-            tools.forEach((tool, index) => {
-                html += `
-                    <div class="tool-item">
-                        <div class="tool-name" onclick="toggleTool(${index})">
-                            <span>${tool.name}</span>
-                            <span class="toggle-icon" id="toggle-${index}">▼</span>
+                <!-- VulnScout — Primary Tool -->
+                <div class="tool-card tool-card-featured">
+                    <div class="tool-card-header">
+                        <div class="tool-card-title-row">
+                            <div class="tool-icon-name">
+                                <div class="tool-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="tool-title">VulnScout</span>
+                                    <span class="tool-badge">v1.0</span>
+                                </div>
+                            </div>
+                            <a href="./vulnscout/index.html" class="project-link" title="Open VulnScout" target="_blank" rel="noopener noreferrer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
                         </div>
-                        <div class="tool-content" id="content-${index}">
-                            <div class="tool-description">${tool.description}</div>
-                `;
+                        <p class="tool-description">
+                            Advanced bug hunting toolkit and reconnaissance platform. A comprehensive suite for security researchers and bug bounty hunters — covering subdomain enumeration, dorking, CVE lookup, OWASP references, payload generation, and more.
+                        </p>
+                    </div>
 
-                if (tool.install && tool.install.length > 0) {
-                    html += `<div style="border-bottom: 1px solid #00d4ff; padding-bottom: 10px; margin-bottom: 10px;"><div style="color: #00ff88; font-size: 0.9em; font-weight: bold; margin-bottom: 8px;">Installation</div>`;
-                    
-                    tool.install.forEach(inst => {
-                        html += `
-                            <div style="margin-bottom: 8px;">
-                                <div style="color: #00d4ff; font-size: 0.8em; margin-bottom: 3px;">${inst.label}</div>
-                                <div class="tool-command" onclick="copyToClipboard(this)">
-                                    <button class="tool-copy-btn" onclick="event.stopPropagation(); copyToClipboard(this.parentElement)">Copy</button>
-                                    <div class="tool-command-text">${escapeHtml(inst.cmd)}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `</div>`;
-                }
-
-                if (tool.usage && tool.usage.length > 0) {
-                    html += `<div><div style="color: #00ff88; font-size: 0.9em; font-weight: bold; margin-bottom: 8px;">Usage Examples</div>`;
-                    
-                    tool.usage.forEach(use => {
-                        html += `
-                            <div style="margin-bottom: 8px;">
-                                <div style="color: #00d4ff; font-size: 0.8em; margin-bottom: 3px;">${use.label}</div>
-                                <div class="tool-command" onclick="copyToClipboard(this)">
-                                    <button class="tool-copy-btn" onclick="event.stopPropagation(); copyToClipboard(this.parentElement)">Copy</button>
-                                    <div class="tool-command-text">${escapeHtml(use.cmd)}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `</div>`;
-                }
-
-                html += `
+                    <div class="tool-features">
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>Subdomain enumeration &amp; URL collection</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>Google dorking &amp; advanced search operators</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>CVE / vulnerability database lookup</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>Tech stack detector &amp; HTTP reference</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>OWASP Top 10 interactive guide</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet">▸</span>
+                            <span>Payload generators &amp; wordlist collections</span>
                         </div>
                     </div>
-                `;
-            });
 
-            toolsList.innerHTML = html;
-        }
+                    <div class="tool-footer">
+                        <div class="project-tags">
+                            <span class="tag">recon</span>
+                            <span class="tag">bug-bounty</span>
+                            <span class="tag">osint</span>
+                            <span class="tag">web-security</span>
+                            <span class="tag">html</span>
+                        </div>
+                        <a href="./vulnscout/index.html" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Launch Tool →</a>
+                    </div>
+                </div>
 
-        function toggleTool(index) {
-            const content = document.getElementById(`content-${index}`);
-            const toggle = document.getElementById(`toggle-${index}`);
-            content.classList.toggle('open');
-            toggle.classList.toggle('open');
-        }
-
-        function generateWorkflow() {
-            const domain = document.getElementById('domainInput').value.trim();
-            const content = document.getElementById('workflowContent');
-
-            if (!domain) {
-                content.innerHTML = '<div class="no-domain">⚠️ Please enter a domain name to generate the workflow</div>';
-                return;
-            }
-
-            const steps = [
-                {
-                    number: 1,
-                    title: "Subdomain Enumeration",
-                    description: "Discover all subdomains for the target domain",
-                    commands: [
-                        { label: "Method A: Subfinder (Simple)", cmd: `subfinder -d ${domain} > subdomains.txt` },
-                        { label: "Method B: Subfinder (Advanced with list input)", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
-                    ],
-                    notes: "Save the output to subdomains.txt for use in next steps"
-                },
-                {
-                    number: 2,
-                    title: "Probe for Live Hosts (HTTP/HTTPS)",
-                    description: "Identify which subdomains are responding to HTTP requests",
-                    commands: [
-                        { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
-                        { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o alive.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
-                    ],
-                    notes: "This filters out non-responsive domains, significantly reducing scope"
-                },
-                {
-                    number: 3,
-                    title: "Web Crawling & Endpoint Discovery",
-                    description: "Crawl discovered live URLs to find all endpoints and parameters",
-                    commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 alive.txt > live.txt` },
-                        { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
-                        { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
-                    ],
-                    notes: "Depth (-d) can be increased for more thorough crawling, but takes longer"
-                },
-                {
-                    number: 4,
-                    title: "XSS Vulnerability Detection",
-                    description: "Filter for potential XSS vulnerable endpoints",
-                    commands: [
-                        { label: "Find XSS patterns", cmd: `cat katanacrawl_${domain}.txt | gfx xss* | tee xss_filter_${domain}.txt` },
-                        { label: "Then run XSS Vibes tool", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
-                    ],
-                    notes: "Review results in xss-vibes tool for manual validation and false positive filtering"
-                },
-                {
-                    number: 5,
-                    title: "JavaScript File Discovery",
-                    description: "Extract all JavaScript files for code analysis and secret scanning",
-                    commands: [
-                        { label: "Filter JavaScript files", cmd: `cat katanacrawl_${domain}.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
-                    ],
-                    notes: "JS files often contain API endpoints, secrets, and hardcoded credentials"
-                },
-                {
-                    number: 6,
-                    title: "API Parameter Discovery with Arjun",
-                    description: "Discover hidden HTTP parameters in API endpoints using parameter fuzzing",
-                    commands: [
-                        { label: "Scan single API endpoint", cmd: `arjun -u https://api.${domain}/endpoint` },
-                        { label: "Scan multiple endpoints from file", cmd: `arjun -i alive.txt -o arjun_params_${domain}.txt` },
-                        { label: "Scan with specific HTTP method (POST)", cmd: `arjun -u https://api.${domain}/endpoint -m POST -oJ arjun_post_${domain}.json` },
-                        { label: "Scan with custom wordlist", cmd: `arjun -i alive.txt -w /path/to/custom_wordlist.txt -oJ arjun_results_${domain}.json` },
-                        { label: "Stable mode (avoid rate limits)", cmd: `arjun -i alive.txt --stable -oJ arjun_stable_${domain}.json` },
-                        { label: "Multi-threaded scan (faster)", cmd: `arjun -i alive.txt -t 10 -oJ arjun_${domain}.json` },
-                        { label: "Scan with custom headers", cmd: `arjun -u https://api.${domain}/endpoint --headers "Authorization: Bearer TOKEN\\nX-API-Key: KEY" -oJ arjun_auth_${domain}.json` }
-                    ],
-                    notes: "Parameters discovered can reveal admin panels, bypass mechanisms, or hidden functionality. Always test for authentication/authorization issues."
-                },
-                {
-                    number: 7,
-                    title: "Secret & API Key Discovery",
-                    description: "Scan JavaScript files and source code for exposed secrets",
-                    commands: [
-                        { label: "Run SecretFinder on all JS files", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
-                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` },
-                        { label: "Filter for Google API secrets", cmd: `cat secrets_${domain}.txt | grep -i google` }
-                    ],
-                    notes: "Manually review discovered secrets - many are false positives"
-                },
-                {
-                    number: 8,
-                    title: "API Testing & Validation",
-                    description: "Test and validate discovered API keys and endpoints",
-                    commands: [
-                        { label: "Google Maps API Scanner", cmd: `python3 maps_api_scanner.py` },
-                        { label: "Manual API testing", cmd: `# Use discovered API keys and test endpoints for validity and permissions` }
-                    ],
-                    notes: "Only test APIs you have permission to test. Document findings securely."
-                },
-                {
-                    number: 9,
-                    title: "Vulnerability Scanning with Nuclei",
-                    description: "Run Nuclei templates against discovered endpoints",
-                    commands: [
-                        { label: "Full domain scan with templates", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg -silent | nuclei -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
-                    ],
-                    notes: "Ensure you have the latest Nuclei templates. Customize template path as needed."
-                },
-                {
-                    number: 10,
-                    title: "Results Review & Analysis",
-                    description: "Consolidate and analyze all findings",
-                    commands: [
-                        { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
-                        { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
-                        { label: "View Arjun parameters", cmd: `cat arjun_${domain}.json | less` },
-                        { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
-                    ],
-                    notes: "Perform manual verification of all automated findings to reduce false positives"
-                },
-                {
-                    number: 11,
-                    title: "Reporting & Documentation",
-                    description: "Compile findings into a professional report",
-                    commands: [
-                        { label: "Create summary directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
-                        { label: "Copy all results", cmd: `cp subdomains.txt alive.txt katanacrawl_${domain}.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
-                    ],
-                    notes: "Include risk assessment and remediation recommendations in your report"
-                }
-            ];
-
-            let html = '<div class="success-message"><span>✓ Workflow generated for: ' + domain + '</span><button class="download-btn" onclick="downloadWorkflow(\'' + domain + '\')">📥 Download Workflow</button></div>';
-            html += '<div class="steps-container">';
-
-            steps.forEach(step => {
-                html += `
-                    <div class="step">
-                        <div class="step-number">${step.number}</div>
-                        <div class="step-title">${step.title}</div>
-                        <div class="step-description">${step.description}</div>
-                `;
-
-                step.commands.forEach(cmd => {
-                    html += `
-                        <div style="margin-bottom: 12px;">
-                            <div style="color: #00d4ff; font-size: 0.9em; margin-bottom: 5px;">${cmd.label}</div>
-                            <div class="command-block">
-                                <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
-                                <div class="command-text">${escapeHtml(cmd.cmd)}</div>
+                <!-- Base64 Tool — Coming Soon -->
+                <div class="tool-card tool-card-soon">
+                    <div class="tool-card-header">
+                        <div class="tool-card-title-row">
+                            <div class="tool-icon-name">
+                                <div class="tool-icon tool-icon-muted">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                        <line x1="9" y1="20" x2="15" y2="20"></line>
+                                        <line x1="12" y1="4" x2="12" y2="20"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="tool-title tool-title-muted">Base64 Tool</span>
+                                    <span class="tool-badge tool-badge-soon">soon</span>
+                                </div>
                             </div>
                         </div>
-                    `;
-                });
+                        <p class="tool-description tool-description-muted">
+                            Encode and decode Base64, Hex, and URL-encoded strings. A clean, offline-ready utility for quick data transformations during testing and analysis.
+                        </p>
+                    </div>
+                    <div class="tool-footer">
+                        <div class="project-tags">
+                            <span class="tag">encoding</span>
+                            <span class="tag">utility</span>
+                            <span class="tag">decoder</span>
+                        </div>
+                        <span class="btn btn-soon">Coming Soon</span>
+                    </div>
+                </div>
 
-                if (step.notes) {
-                    html += `<div class="notes">📝 ${step.notes}</div>`;
+                <!-- JWT Tool — Coming Soon -->
+                <div class="tool-card tool-card-soon">
+                    <div class="tool-card-header">
+                        <div class="tool-card-title-row">
+                            <div class="tool-icon-name">
+                                <div class="tool-icon tool-icon-muted">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="tool-title tool-title-muted">JWT Analyzer</span>
+                                    <span class="tool-badge tool-badge-soon">soon</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="tool-description tool-description-muted">
+                            Decode, inspect, and analyze JSON Web Tokens. Identify algorithm misconfigurations, weak secrets, and common JWT vulnerabilities used in web authentication bypasses.
+                        </p>
+                    </div>
+                    <div class="tool-footer">
+                        <div class="project-tags">
+                            <span class="tag">jwt</span>
+                            <span class="tag">auth</span>
+                            <span class="tag">web-security</span>
+                        </div>
+                        <span class="btn btn-soon">Coming Soon</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <span>
+                <span style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">~/tools</span>
+                &nbsp;—&nbsp;built by
+                <a href="https://jasstej.github.io" target="_blank" rel="noopener noreferrer" style="color: var(--secondary); text-decoration: none;">jasstej</a>
+            </span>
+            <span class="footer-copy">open-source · security tools</span>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const btn = document.getElementById('mobileMenuBtn');
+        const menu = document.getElementById('mobileMenu');
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            menu.classList.toggle('active');
+        });
+
+        // Close mobile menu on nav link click
+        document.querySelectorAll('.nav-links-mobile .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                btn.classList.remove('active');
+                menu.classList.remove('active');
+            });
+        });
+
+        // Fade-in on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
                 }
-
-                html += '</div>';
             });
+        }, { threshold: 0.1 });
 
-            html += '</div>';
-            content.innerHTML = html;
-        }
-
-        function copyToClipboard(element) {
-            let text = element.textContent || element.innerText;
-            
-            if (element.classList && element.classList.contains('tool-command')) {
-                text = element.querySelector('.tool-command-text').textContent;
-            } else if (element.classList && element.classList.contains('command-block')) {
-                text = element.querySelector('.command-text').textContent;
-            } else if (element.nextElementSibling) {
-                text = element.nextElementSibling.textContent;
-            }
-
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = element.classList && element.classList.contains('copy-btn') ? element : element.querySelector('.copy-btn') || element;
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            }).catch(err => {
-                alert('Failed to copy: ' + err);
-            });
-        }
-
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-
-        function downloadWorkflow(domain) {
-            const steps = [
-                {
-                    number: 1,
-                    title: "Subdomain Enumeration",
-                    description: "Discover all subdomains for the target domain",
-                    commands: [
-                        { label: "Method A: Subfinder (Simple)", cmd: `subfinder -d ${domain} > subdomains.txt` },
-                        { label: "Method B: Subfinder (Advanced with list input)", cmd: `subfinder -dL url.txt -all -recursive -t 200 -timeout 60 -o all_subs.txt -silent` },
-                        { label: "Method C: Multiple tools with wayback machine", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -kf -jc -fx -ef woff,css,png,svg,woff2,jpeg,gif,json > subdomains_wayback.txt` }
-                    ]
-                },
-                {
-                    number: 2,
-                    title: "Probe for Live Hosts (HTTP/HTTPS)",
-                    description: "Identify which subdomains are responding to HTTP requests",
-                    commands: [
-                        { label: "Basic HTTP probing", cmd: `cat subdomains.txt | httpx > alive.txt` },
-                        { label: "With custom ports", cmd: `cat subdomains.txt | httpx-toolkit -ports 443,80,8080,8000,8888 -mc 200,403,500 -v -o alive.txt` },
-                        { label: "Advanced HTTPx-Toolkit with full details", cmd: `httpx-toolkit -l sub.txt -o alive.txt -v -status-code -title -tech-detect -mc 200,201,202,204,301,302,307,308,403` }
-                    ]
-                },
-                {
-                    number: 3,
-                    title: "Web Crawling & Endpoint Discovery",
-                    description: "Crawl discovered live URLs to find all endpoints and parameters",
-                    commands: [
-                        { label: "Extract clean URLs from httpx results", cmd: `cut -d " " -f1 alive.txt > live.txt` },
-                        { label: "Crawl with Katana (from alive list)", cmd: `katana -list alive.txt -d 5 -o katanacrawl_${domain}.txt` },
-                        { label: "Advanced with wayback archive", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif -silent | tee katanacrawl_${domain}.txt` }
-                    ]
-                },
-                {
-                    number: 4,
-                    title: "XSS Vulnerability Detection",
-                    description: "Filter for potential XSS vulnerable endpoints",
-                    commands: [
-                        { label: "Find XSS patterns", cmd: `cat katanacrawl_${domain}.txt | gfx xss* | tee xss_filter_${domain}.txt` },
-                        { label: "Then run XSS Vibes tool", cmd: `python3 main.py -f xss_filter_${domain}.txt` }
-                    ]
-                },
-                {
-                    number: 5,
-                    title: "JavaScript File Discovery",
-                    description: "Extract all JavaScript files for code analysis and secret scanning",
-                    commands: [
-                        { label: "Filter JavaScript files", cmd: `cat katanacrawl_${domain}.txt | grep '\\.js' | tee jsfiles_${domain}.txt` }
-                    ]
-                },
-                {
-                    number: 6,
-                    title: "API Parameter Discovery with Arjun",
-                    description: "Discover hidden HTTP parameters in API endpoints using parameter fuzzing",
-                    commands: [
-                        { label: "Scan single API endpoint", cmd: `arjun -u https://api.${domain}/endpoint` },
-                        { label: "Scan multiple endpoints from file", cmd: `arjun -i alive.txt -o arjun_params_${domain}.txt` },
-                        { label: "Scan with specific HTTP method (POST)", cmd: `arjun -u https://api.${domain}/endpoint -m POST -oJ arjun_post_${domain}.json` },
-                        { label: "Scan with custom wordlist", cmd: `arjun -i alive.txt -w /path/to/custom_wordlist.txt -oJ arjun_results_${domain}.json` },
-                        { label: "Stable mode (avoid rate limits)", cmd: `arjun -i alive.txt --stable -oJ arjun_stable_${domain}.json` },
-                        { label: "Multi-threaded scan (faster)", cmd: `arjun -i alive.txt -t 10 -oJ arjun_${domain}.json` },
-                        { label: "Scan with custom headers", cmd: `arjun -u https://api.${domain}/endpoint --headers "Authorization: Bearer TOKEN\\nX-API-Key: KEY" -oJ arjun_auth_${domain}.json` }
-                    ]
-                },
-                {
-                    number: 7,
-                    title: "Secret & API Key Discovery",
-                    description: "Scan JavaScript files and source code for exposed secrets",
-                    commands: [
-                        { label: "Run SecretFinder on all JS files", cmd: `cat jsfiles_${domain}.txt | while read url; do python3 /path/to/SecretFinder/SecretFinder.py -i "$url" -o cli; done | tee secrets_${domain}.txt` },
-                        { label: "Filter for Heroku secrets", cmd: `cat secrets_${domain}.txt | grep -i heroku` },
-                        { label: "Filter for Google API secrets", cmd: `cat secrets_${domain}.txt | grep -i google` }
-                    ]
-                },
-                {
-                    number: 8,
-                    title: "API Testing & Validation",
-                    description: "Test and validate discovered API keys and endpoints",
-                    commands: [
-                        { label: "Google Maps API Scanner", cmd: `python3 maps_api_scanner.py` },
-                        { label: "Manual API testing", cmd: `# Use discovered API keys and test endpoints for validity and permissions` }
-                    ]
-                },
-                {
-                    number: 9,
-                    title: "Vulnerability Scanning with Nuclei",
-                    description: "Run Nuclei templates against discovered endpoints",
-                    commands: [
-                        { label: "Full domain scan with templates", cmd: `katana -u ${domain} -d 5 -ps -pss waybackarchive,commoncrawl,alienvault -f qurl -jc -xhr -kf -fx -fs dn -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg -silent | nuclei -t ~/pvt-template/ -dast -silent -o nuclei_results_${domain}.txt` }
-                    ]
-                },
-                {
-                    number: 10,
-                    title: "Results Review & Analysis",
-                    description: "Consolidate and analyze all findings",
-                    commands: [
-                        { label: "View secrets file", cmd: `cat secrets_${domain}.txt | less` },
-                        { label: "View XSS findings", cmd: `cat xss_filter_${domain}.txt | less` },
-                        { label: "View Arjun parameters", cmd: `cat arjun_${domain}.json | less` },
-                        { label: "View Nuclei results", cmd: `cat nuclei_results_${domain}.txt | less` }
-                    ]
-                },
-                {
-                    number: 11,
-                    title: "Reporting & Documentation",
-                    description: "Compile findings into a professional report",
-                    commands: [
-                        { label: "Create summary directory", cmd: `mkdir -p reports/${domain}_$(date +%Y%m%d)` },
-                        { label: "Copy all results", cmd: `cp subdomains.txt alive.txt katanacrawl_${domain}.txt jsfiles_${domain}.txt secrets_${domain}.txt nuclei_results_${domain}.txt reports/${domain}_$(date +%Y%m%d)/` }
-                    ]
-                }
-            ];
-
-            let fileContent = `================================================================================
-SECURITY RECONNAISSANCE WORKFLOW - ${domain.toUpperCase()}
-================================================================================
-Generated: ${new Date().toLocaleString()}
-Target Domain: ${domain}
-
-This is a step-by-step security reconnaissance workflow. Execute each step in 
-the order presented. Ensure you have all required tools installed before running.
-
-For tool installation, refer to the "Tools & Installation" sidebar in the web interface.
-
-================================================================================\n\n`;
-
-            steps.forEach(step => {
-                fileContent += `STEP ${step.number}: ${step.title}\n`;
-                fileContent += `${'='.repeat(80)}\n`;
-                fileContent += `Description: ${step.description}\n\n`;
-
-                step.commands.forEach((cmd, index) => {
-                    fileContent += `Command ${index + 1}: ${cmd.label}\n`;
-                    fileContent += `${'-'.repeat(80)}\n`;
-                    fileContent += `${cmd.cmd}\n\n`;
-                });
-
-                fileContent += `\n`;
-            });
-
-            fileContent += `\n================================================================================
-NOTES & BEST PRACTICES
-================================================================================
-
-1. PREPARATION
-   - Ensure all tools are properly installed before starting
-   - Check that Go and Python 3 are installed on your system
-   - Create a dedicated working directory for your reconnaissance
-
-2. EXECUTION TIPS
-   - Run each step sequentially as shown
-   - Save output files for each step (they're already configured)
-   - Monitor for errors and adjust commands if necessary
-   - Be mindful of rate limiting when crawling large domains
-
-3. FILE MANAGEMENT
-   - Keep all generated files organized by domain
-   - Create reports/${domain}_$(date +%Y%m%d) directory for final output
-   - Backup important findings
-
-4. IMPORTANT REMINDERS
-   - Only test domains you have explicit permission to test
-   - Ensure compliance with all applicable laws and regulations
-   - Manually verify all automated findings before reporting
-   - Document any custom configurations or modifications
-
-5. TOOL-SPECIFIC NOTES
-   - Subfinder: Fast subdomain enumeration
-   - HTTPx-Toolkit: HTTP probing with tech detection
-   - Katana: Web crawling and endpoint discovery
-   - Nuclei: Vulnerability template scanning
-   - SecretFinder: JavaScript secret extraction
-   - XSS-Vibes: XSS vulnerability detection
-
-6. COMMAND MODIFICATIONS
-   Update these paths based on your system configuration:
-   - /path/to/SecretFinder/ → Your actual SecretFinder installation
-   - ~/pvt-template/ → Your Nuclei templates directory
-   - url.txt → Your input file with domains/URLs
-
-================================================================================
-TROUBLESHOOTING
-================================================================================
-
-If a command fails:
-1. Verify the tool is installed: which <tool-name>
-2. Check tool version: <tool-name> -version
-3. Ensure input files exist and are properly formatted
-4. Review tool documentation for correct syntax
-5. Check system resources (disk space, memory)
-
-Common Issues:
-- Command not found: Tool not in PATH, install it
-- Permission denied: Check file permissions, use sudo if needed
-- Rate limited: Adjust timeout values, add delays between requests
-- No results: Domain may not have subdomains, verify domain spelling
-
-================================================================================
-END OF WORKFLOW
-================================================================================
-`;
-
-            // Create blob and download
-            const blob = new Blob([fileContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reconnaissance_workflow_${domain}_${new Date().toISOString().split('T')[0]}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
-
-        // Initialize
-        window.addEventListener('DOMContentLoaded', () => {
-            initializeTools();
-            document.getElementById('workflowContent').innerHTML = 
-                '<div class="no-domain">Enter a domain above to generate your reconnaissance workflow</div>';
+        document.querySelectorAll('.tool-card').forEach(card => {
+            observer.observe(card);
         });
     </script>
 </body>
