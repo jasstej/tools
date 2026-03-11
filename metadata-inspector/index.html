@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Metadata Inspector — ghosttools</title>
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js" type="module" id="exifr-module"></script>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #141720;
+      --card: #1a1e2e;
+      --border: #252a3d;
+      --accent: #10b981;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #00d4ff;
+      --purple: #7c3aed;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .back { color: var(--muted); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; transition: color 0.15s; }
+    .back:hover { color: var(--accent); }
+    .title { font-weight: 700; font-size: 1.1rem; }
+    .title span { color: var(--accent); }
+    .badge { margin-left: auto; background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.3); font-size: 0.72rem; padding: 0.2rem 0.7rem; border-radius: 99px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 4rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(16,185,129,0.04);
+    }
+    .dropzone input {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .dropzone h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .dropzone p { color: var(--muted); font-size: 0.88rem; }
+    .supported {
+      display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;
+      margin-top: 1.2rem;
+    }
+    .fmt {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .results { display: none; margin-top: 2rem; }
+    .file-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex; gap: 1.5rem; align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .preview-box {
+      width: 140px; height: 140px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .preview-box img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .file-info { flex: 1; min-width: 200px; }
+    .file-name { font-size: 1.1rem; font-weight: 700; word-break: break-all; margin-bottom: 0.8rem; }
+    .file-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .fm-item { display: flex; flex-direction: column; gap: 0.1rem; }
+    .fm-val { font-family: monospace; font-size: 0.9rem; }
+    .fm-lab { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; }
+    .privacy-flags {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .flag {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: var(--red);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .flag.safe {
+      background: rgba(16,185,129,0.1);
+      border-color: rgba(16,185,129,0.3);
+      color: var(--accent);
+    }
+    .sub-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .sub-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .tag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.5rem;
+    }
+    .tag-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      display: flex; gap: 0.75rem; align-items: flex-start;
+    }
+    .tag-row.sensitive {
+      border-color: rgba(239,68,68,0.3);
+      background: rgba(239,68,68,0.04);
+    }
+    .tag-key {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--blue);
+      min-width: 130px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .tag-val {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .tag-row.sensitive .tag-key { color: var(--red); }
+    .no-meta {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    .map-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--accent);
+      font-size: 0.78rem;
+      text-decoration: none;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 0.2rem 0.7rem;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+    }
+    .map-link:hover { background: rgba(16,185,129,0.2); }
+    .btn-row-top {
+      display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.4rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); opacity: 1; }
+    .loading {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 2rem;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .gps-section {
+      background: var(--card);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .gps-coords {
+      font-family: monospace;
+      font-size: 1rem;
+      color: var(--red);
+    }
+    .gps-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="../index.html" class="back">← Back</a>
+  <div class="title">🖼️ Metadata <span>Inspector</span></div>
+  <span class="badge">client-side</span>
+</header>
+
+<main>
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept="image/*,.pdf,.docx,.doc,.tiff,.tif" onchange="handleFile(this.files[0])"/>
+    <span class="drop-icon">📂</span>
+    <h2>Drop file or click to browse</h2>
+    <p>Extracts EXIF, XMP, IPTC, ICC, GPS and file metadata</p>
+    <div class="supported">
+      <span class="fmt">JPEG</span>
+      <span class="fmt">PNG</span>
+      <span class="fmt">TIFF</span>
+      <span class="fmt">HEIC</span>
+      <span class="fmt">WebP</span>
+      <span class="fmt">AVIF</span>
+      <span class="fmt">RAW</span>
+      <span class="fmt">BMP</span>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Extracting metadata...</span>
+  </div>
+
+  <div class="results" id="results">
+    <div class="btn-row-top">
+      <button onclick="copyJSON()">Copy JSON</button>
+      <button class="btn-ghost" onclick="resetTool()">Analyze Another</button>
+    </div>
+    <div id="resultsContent"></div>
+  </div>
+</main>
+
+<script type="module">
+import * as exifr from 'https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js';
+window._exifr = exifr;
+</script>
+<script>
+const dropzone = document.getElementById('dropzone');
+let lastMetaJSON = null;
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('results').style.display = 'none';
+  dropzone.style.display = 'none';
+
+  try {
+    const isImage = file.type.startsWith('image/');
+    let meta = {};
+    let previewURL = null;
+
+    if (isImage) {
+      previewURL = URL.createObjectURL(file);
+      if (window._exifr) {
+        try {
+          meta = await window._exifr.parse(file, {
+            tiff: true, xmp: true, icc: true, iptc: true,
+            gps: true, makerNote: false, userComment: false,
+            multiSegment: true, mergeOutput: false
+          }) || {};
+        } catch(e) {
+          // Try flat parse
+          try { meta = await window._exifr.parse(file) || {}; } catch {}
+        }
+      }
+      // Also get image dimensions via Image element
+      await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          if (!meta.ExifIFD) meta.ExifIFD = {};
+          meta._width = img.naturalWidth;
+          meta._height = img.naturalHeight;
+          resolve();
+        };
+        img.onerror = resolve;
+        img.src = previewURL;
+      });
+    }
+
+    // File-level metadata
+    const fileMeta = {
+      Name: file.name,
+      Size: formatBytes(file.size),
+      Type: file.type || 'unknown',
+      'Last Modified': new Date(file.lastModified).toUTCString(),
+    };
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+    renderResults(file, fileMeta, meta, previewURL);
+    lastMetaJSON = { file: fileMeta, metadata: meta };
+  } catch(err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('resultsContent').innerHTML =
+      `<div class="no-meta"><p style="color:var(--red)">Error reading file: ${err.message}</p></div>`;
+  }
+}
+
+const SENSITIVE_KEYS = new Set([
+  'GPSLatitude','GPSLongitude','GPSAltitude','GPSLatitudeRef','GPSLongitudeRef',
+  'GPSTimeStamp','GPSDateStamp','GPSSpeed','GPSImgDirection','GPSDestLatitude','GPSDestLongitude',
+  'Artist','Copyright','Creator','Author','Owner','ByLine',
+  'MakerNote','SerialNumber','BodySerialNumber','LensSerialNumber','CameraSerialNumber',
+  'Software','ProcessingSoftware',
+  'DateTimeOriginal','CreateDate','ModifyDate','DateCreated',
+  'XPAuthor','XPComment','XPTitle','ImageDescription','UserComment',
+  'ProfileName','ICCProfileName',
+  'OwnerName','CameraOwnerName','by-line',
+]);
+
+const GPS_KEYS = new Set([
+  'GPSLatitude','GPSLongitude','GPSAltitude','GPSLatitudeRef','GPSLongitudeRef',
+  'GPSTimeStamp','GPSDateStamp','GPSSpeed','GPSImgDirection','latitude','longitude'
+]);
+
+function toDecimalDeg(arr, ref) {
+  if (!arr || !Array.isArray(arr)) return null;
+  let deg = arr[0] + arr[1]/60 + arr[2]/3600;
+  if (ref === 'S' || ref === 'W') deg = -deg;
+  return deg;
+}
+
+function renderResults(file, fileMeta, meta, previewURL) {
+  const container = document.getElementById('resultsContent');
+
+  // Flatten meta groups
+  const groups = {};
+  for (const [k, v] of Object.entries(meta)) {
+    if (k.startsWith('_')) continue;
+    if (typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Date)) {
+      groups[k] = v;
+    } else {
+      if (!groups['General']) groups['General'] = {};
+      groups['General'][k] = v;
+    }
+  }
+  if (Object.keys(groups).length === 0) groups['General'] = {};
+
+  // Detect privacy flags
+  const flags = [];
+  const allFlat = flattenMeta(meta);
+  const hasGPS = allFlat.GPSLatitude !== undefined || allFlat.latitude !== undefined;
+  const hasAuthor = allFlat.Artist || allFlat.Author || allFlat.Creator || allFlat.OwnerName || allFlat.CameraOwnerName;
+  const hasSerial = allFlat.SerialNumber || allFlat.BodySerialNumber;
+  const hasComment = allFlat.UserComment || allFlat.ImageDescription || allFlat.XPComment;
+  const hasSoftware = allFlat.Software || allFlat.ProcessingSoftware;
+  const hasDate = allFlat.DateTimeOriginal || allFlat.CreateDate;
+
+  if (hasGPS) flags.push({ text: '📍 GPS Location', risk: true });
+  if (hasAuthor) flags.push({ text: '👤 Author/Owner', risk: true });
+  if (hasSerial) flags.push({ text: '📷 Device Serial', risk: true });
+  if (hasComment) flags.push({ text: '💬 Embedded Comments', risk: true });
+  if (hasSoftware) flags.push({ text: '🖥️ Software Info', risk: false });
+  if (hasDate) flags.push({ text: '📅 Creation Dates', risk: false });
+
+  // GPS coords
+  let gpsHTML = '';
+  const lat = allFlat.GPSLatitude || allFlat.latitude;
+  const lon = allFlat.GPSLongitude || allFlat.longitude;
+  const latRef = allFlat.GPSLatitudeRef;
+  const lonRef = allFlat.GPSLongitudeRef;
+  if (lat && lon) {
+    const latD = Array.isArray(lat) ? toDecimalDeg(lat, latRef) : lat;
+    const lonD = Array.isArray(lon) ? toDecimalDeg(lon, lonRef) : lon;
+    if (latD && lonD) {
+      gpsHTML = `
+        <div class="gps-section">
+          <div>
+            <div class="gps-label">GPS LOCATION EMBEDDED</div>
+            <div class="gps-coords">📍 ${latD.toFixed(6)}, ${lonD.toFixed(6)}</div>
+          </div>
+          <a class="map-link" href="https://www.openstreetmap.org/?mlat=${latD}&mlon=${lonD}&zoom=15" target="_blank" rel="noopener">
+            View on map →
+          </a>
+          <div style="color:var(--red);font-size:0.8rem;max-width:300px">
+            ⚠️ This image contains precise GPS coordinates that could reveal the photographer's location when shared.
+          </div>
+        </div>`;
+    }
+  }
+
+  const totalKeys = Object.keys(allFlat).filter(k => !k.startsWith('_')).length;
+  const isImage = file.type.startsWith('image/');
+
+  let html = `
+    <div class="file-card">
+      <div class="preview-box">
+        ${previewURL ? `<img src="${previewURL}" alt="preview"/>` : '📄'}
+      </div>
+      <div class="file-info">
+        <div class="file-name">${file.name}</div>
+        <div class="file-meta">
+          ${Object.entries(fileMeta).map(([k,v]) => `
+            <div class="fm-item">
+              <div class="fm-val">${v}</div>
+              <div class="fm-lab">${k}</div>
+            </div>`).join('')}
+          ${meta._width ? `<div class="fm-item"><div class="fm-val">${meta._width} × ${meta._height}</div><div class="fm-lab">Dimensions</div></div>` : ''}
+          <div class="fm-item">
+            <div class="fm-val" style="color:${totalKeys > 0 ? 'var(--yellow)' : 'var(--accent)'}">${totalKeys}</div>
+            <div class="fm-lab">Metadata Fields</div>
+          </div>
+        </div>
+        ${flags.length > 0 ? `<div class="privacy-flags">
+          ${flags.map(f => `<span class="flag ${f.risk ? '' : 'safe'}">${f.text}</span>`).join('')}
+        </div>` : `<span class="flag safe">✓ No sensitive metadata detected</span>`}
+      </div>
+    </div>`;
+
+  html += gpsHTML;
+
+  if (totalKeys === 0 && !meta._width) {
+    html += `<div class="no-meta">
+      <p style="font-size:1.5rem;margin-bottom:0.5rem">🧹</p>
+      <p>No EXIF or metadata found in this file.</p>
+      <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--muted)">The file may already be stripped, or the format doesn't support embedded metadata.</p>
+    </div>`;
+  } else {
+    for (const [groupName, groupData] of Object.entries(groups)) {
+      const entries = Object.entries(groupData).filter(([k]) => !k.startsWith('_'));
+      if (entries.length === 0) continue;
+      html += `<div class="sub-title">${groupName} (${entries.length})</div>`;
+      html += `<div class="tag-grid">`;
+      for (const [k, v] of entries) {
+        const isSensitive = SENSITIVE_KEYS.has(k);
+        const isGps = GPS_KEYS.has(k);
+        let displayVal = formatValue(v);
+        html += `<div class="tag-row ${isSensitive || isGps ? 'sensitive' : ''}">
+          <div class="tag-key">${k}</div>
+          <div class="tag-val">${escapeHTML(displayVal)}</div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function flattenMeta(meta) {
+  const out = {};
+  for (const [k, v] of Object.entries(meta)) {
+    if (typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Date)) {
+      Object.assign(out, v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function formatValue(v) {
+  if (v === null || v === undefined) return 'null';
+  if (v instanceof Date) return v.toUTCString();
+  if (Array.isArray(v)) {
+    if (v.length <= 4 && v.every(x => typeof x === 'number')) return v.map(n => typeof n === 'number' ? n.toFixed(4) : n).join(', ');
+    if (v.length > 20) return `[Array(${v.length})]`;
+    return v.map(formatValue).join(', ');
+  }
+  if (typeof v === 'object') return JSON.stringify(v);
+  if (typeof v === 'number') return v.toString();
+  return String(v);
+}
+
+function escapeHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyJSON() {
+  if (!lastMetaJSON) return;
+  navigator.clipboard.writeText(JSON.stringify(lastMetaJSON, null, 2))
+    .then(() => alert('Copied to clipboard'));
+}
+
+function resetTool() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('resultsContent').innerHTML = '';
+  document.getElementById('dropzone').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  lastMetaJSON = null;
+}
+</script>
+</body>
+</html>
