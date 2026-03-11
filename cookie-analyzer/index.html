@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookie Analyzer — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #e3b341;
+      --orange: #ff7b72;
+      --accent: #ff7b72;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(255,123,114,.12);
+      border: 1px solid rgba(255,123,114,.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* ── INPUT SECTION ── */
+    .input-section {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+      resize: vertical;
+      min-height: 110px;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ── BUTTON ROW ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .8; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--bg2); border: 1px solid var(--border); color: var(--muted); }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+    }
+    .card-body { padding: 16px; }
+
+    /* ── TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      vertical-align: top;
+      word-break: break-all;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(33,38,45,.5); }
+    .td-name {
+      font-family: 'Courier New', monospace;
+      color: var(--accent);
+      white-space: nowrap;
+      min-width: 120px;
+    }
+    .td-value {
+      font-family: 'Courier New', monospace;
+      color: var(--text);
+      max-width: 300px;
+    }
+
+    /* ── STATUS BADGES ── */
+    .badge-pass {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.3);
+      color: var(--green); font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .badge-warn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(227,179,65,.12); border: 1px solid rgba(227,179,65,.3);
+      color: var(--yellow); font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .badge-fail {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.3);
+      color: var(--red); font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .badge-info {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(139,148,158,.1); border: 1px solid var(--border);
+      color: var(--muted); font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 4px;
+    }
+
+    /* ── SECURITY ANALYSIS PER COOKIE ── */
+    .cookie-block { }
+    .cookie-block + .cookie-block { border-top: 1px solid var(--border); }
+    .cookie-block-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      padding: 10px 16px;
+      background: rgba(255,123,114,.05);
+    }
+    .flag-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 9px 16px;
+      border-top: 1px solid rgba(48,54,61,.4);
+    }
+    .flag-key {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 86px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .flag-badge-col { flex-shrink: 0; padding-top: 1px; }
+    .flag-detail {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    /* ── RISK SUMMARY ── */
+    .risk-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .risk-counts { display: flex; gap: 20px; flex-wrap: wrap; }
+    .risk-count {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .risk-count-num {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'Courier New', monospace;
+      line-height: 1;
+    }
+    .risk-count-label { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .5px; }
+    .risk-divider { width: 1px; height: 40px; background: var(--border); }
+    .risk-overall { margin-left: auto; }
+    .risk-overall-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 700; letter-spacing: .5px; text-align: right; }
+    .risk-overall-rating {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-family: 'Courier New', monospace;
+    }
+    .risk-low { color: var(--green); }
+    .risk-medium { color: var(--yellow); }
+    .risk-high { color: var(--red); }
+
+    /* ── PLACEHOLDER ── */
+    .placeholder {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .placeholder .ph-icon { font-size: 36px; margin-bottom: 12px; opacity: .4; }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 32px 16px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    .footer span { opacity: .6; }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 12px 16px; }
+      .container { padding: 16px; }
+      .risk-overall { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="back">&#8592; ~/tools</a>
+  <div class="logo">Cookie<span>Analyzer</span></div>
+  <span class="badge">v1.0</span>
+  <span class="desc">Inspect cookie security flags</span>
+  <div class="tags">
+    <span class="tag">cookies</span>
+    <span class="tag">web-security</span>
+    <span class="tag">session</span>
+    <span class="tag">http</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="input-section">
+    <div class="input-label">Paste Set-Cookie header(s), Cookie header line, or raw cookie string</div>
+    <textarea id="cookieInput" spellcheck="false" placeholder="Set-Cookie: session=abc123; Path=/; HttpOnly; Secure; SameSite=Strict&#10;Set-Cookie: tracking=uid456; Path=/&#10;&#10;— or a Cookie: header —&#10;&#10;Cookie: session=abc123; pref=dark&#10;&#10;— or raw pairs —&#10;&#10;name=value; name2=value2"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runAnalysis()">Analyze</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div id="output">
+    <div class="placeholder">
+      <div class="ph-icon">&#127850;</div>
+      Paste cookie data above and click Analyze
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>ghosttools &middot; client-side &middot; open-source</span>
+</div>
+
+<script>
+'use strict';
+
+/* ─── EXAMPLE DATA ─────────────────────────────────────────────────── */
+const EXAMPLE = [
+  'Set-Cookie: session=abc123; Path=/; Domain=example.com; Expires=Wed, 21 Oct 2025 07:28:00 GMT',
+  'Set-Cookie: auth_token=xyz789; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400',
+  'Set-Cookie: tracking=uid456; Path=/; SameSite=None',
+  'Set-Cookie: pref=dark; Path=/'
+].join('\n');
+
+function loadExample() {
+  document.getElementById('cookieInput').value = EXAMPLE;
+  runAnalysis();
+}
+
+function clearAll() {
+  document.getElementById('cookieInput').value = '';
+  setOutput(`<div class="placeholder"><div class="ph-icon">&#127850;</div>Paste cookie data above and click Analyze</div>`);
+}
+
+function setOutput(html) {
+  document.getElementById('output').innerHTML = html;
+}
+
+/* ─── PARSING ──────────────────────────────────────────────────────── */
+
+/**
+ * Parse the raw textarea input into an array of cookie objects.
+ * Each object: { name, value, attrs, isSetCookie }
+ *   attrs: lowercase key -> string value or true (for bare flags)
+ *   isSetCookie: true when parsed from Set-Cookie format
+ */
+function parseInput(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const results = [];
+
+  for (const line of lines) {
+    if (/^set-cookie\s*:/i.test(line)) {
+      // Strip header name
+      const val = line.replace(/^set-cookie\s*:\s*/i, '');
+      results.push(parseSetCookie(val));
+    } else if (/^cookie\s*:/i.test(line)) {
+      // Flat Cookie: name=val; name=val
+      const val = line.replace(/^cookie\s*:\s*/i, '');
+      parseFlatCookieString(val, results);
+    } else if (/;\s*(httponly|secure|samesite\s*=|path\s*=|domain\s*=|expires\s*=|max-age\s*=)/i.test(line)) {
+      // Looks like a bare Set-Cookie value (has attribute keywords)
+      results.push(parseSetCookie(line));
+    } else {
+      // Raw name=value[; name=value ...]
+      parseFlatCookieString(line, results);
+    }
+  }
+  return results;
+}
+
+function parseSetCookie(str) {
+  const parts = str.split(';').map(p => p.trim());
+  const nameVal = parts[0] || '';
+  const eqIdx = nameVal.indexOf('=');
+  const name  = eqIdx >= 0 ? nameVal.slice(0, eqIdx).trim() : nameVal.trim();
+  const value = eqIdx >= 0 ? nameVal.slice(eqIdx + 1).trim() : '';
+
+  const attrs = {};
+  for (let i = 1; i < parts.length; i++) {
+    const p = parts[i];
+    if (!p) continue;
+    const ei = p.indexOf('=');
+    if (ei >= 0) {
+      attrs[p.slice(0, ei).trim().toLowerCase()] = p.slice(ei + 1).trim();
+    } else {
+      attrs[p.toLowerCase()] = true;
+    }
+  }
+  return { name, value, attrs, isSetCookie: true };
+}
+
+function parseFlatCookieString(str, results) {
+  str.split(';').forEach(pair => {
+    const p = pair.trim();
+    if (!p) return;
+    const ei = p.indexOf('=');
+    const name  = (ei >= 0 ? p.slice(0, ei) : p).trim();
+    const value = ei >= 0 ? p.slice(ei + 1).trim() : '';
+    results.push({ name, value, attrs: {}, isSetCookie: false });
+  });
+}
+
+/* ─── FLAG ANALYSIS ────────────────────────────────────────────────── */
+
+function analyzeFlags(cookie) {
+  const { attrs } = cookie;
+  const flags = [];
+
+  // HttpOnly
+  if (attrs['httponly']) {
+    flags.push({ key: 'HttpOnly', status: 'pass', label: 'PASS',
+      detail: 'Present — inaccessible to JavaScript (document.cookie)' });
+  } else {
+    flags.push({ key: 'HttpOnly', status: 'fail', label: 'FAIL',
+      detail: 'Missing — readable via document.cookie; vulnerable to XSS-based session theft' });
+  }
+
+  // Secure
+  if (attrs['secure']) {
+    flags.push({ key: 'Secure', status: 'pass', label: 'PASS',
+      detail: 'Present — only transmitted over HTTPS connections' });
+  } else {
+    flags.push({ key: 'Secure', status: 'fail', label: 'FAIL',
+      detail: 'Missing — cookie is sent over unencrypted HTTP; interceptable by MITM' });
+  }
+
+  // SameSite
+  const ss = attrs['samesite'];
+  if (ss === true || ss === '') {
+    // bare "SameSite" without value (non-standard)
+    flags.push({ key: 'SameSite', status: 'warn', label: 'WARN',
+      detail: 'Present but no value specified — behaviour is undefined; set Strict or Lax explicitly' });
+  } else if (typeof ss === 'string') {
+    const ssLow = ss.toLowerCase();
+    if (ssLow === 'strict') {
+      flags.push({ key: 'SameSite', status: 'pass', label: 'PASS',
+        detail: 'Strict — strongest CSRF protection; cookie only sent on same-site requests' });
+    } else if (ssLow === 'lax') {
+      flags.push({ key: 'SameSite', status: 'pass', label: 'PASS',
+        detail: 'Lax — good CSRF protection; permits top-level navigations from external sites' });
+    } else if (ssLow === 'none') {
+      flags.push({ key: 'SameSite', status: 'warn', label: 'WARN',
+        detail: 'None — cookie sent on all cross-site requests; Secure flag required; CSRF risk exists' });
+    } else {
+      flags.push({ key: 'SameSite', status: 'warn', label: 'WARN',
+        detail: 'Unrecognised value: "' + ss + '" — should be Strict, Lax, or None' });
+    }
+  } else {
+    flags.push({ key: 'SameSite', status: 'fail', label: 'FAIL',
+      detail: 'Missing — defaults differ across browsers; cross-site request forgery (CSRF) risk' });
+  }
+
+  // Path
+  const path = attrs['path'];
+  flags.push({ key: 'Path', status: 'info', label: 'INFO',
+    detail: path ? String(path) : 'Not set — defaults to the path of the request' });
+
+  // Domain
+  const domain = attrs['domain'];
+  flags.push({ key: 'Domain', status: 'info', label: 'INFO',
+    detail: domain ? String(domain) : 'Not set — host-only (sent only to the exact host)' });
+
+  // Expires / Max-Age
+  const maxAge  = attrs['max-age'];
+  const expires = attrs['expires'];
+  if (maxAge !== undefined && maxAge !== true) {
+    const secs = parseInt(maxAge, 10);
+    flags.push({ key: 'Max-Age', status: 'info', label: 'INFO',
+      detail: maxAge + 's — expires in ' + humanDuration(secs) });
+  } else if (typeof expires === 'string') {
+    const d = new Date(expires);
+    if (!isNaN(d.getTime())) {
+      const diffSecs = Math.round((d - Date.now()) / 1000);
+      const suffix = diffSecs < 0 ? ' (expired)' : ' (in ' + humanDuration(diffSecs) + ')';
+      flags.push({ key: 'Expires', status: 'info', label: 'INFO',
+        detail: expires + suffix });
+    } else {
+      flags.push({ key: 'Expires', status: 'info', label: 'INFO', detail: expires });
+    }
+  } else {
+    flags.push({ key: 'Expires', status: 'info', label: 'INFO',
+      detail: 'None — session cookie; deleted when the browser session ends' });
+  }
+
+  return flags;
+}
+
+function humanDuration(secs) {
+  if (secs <= 0) return 'expired';
+  if (secs < 60) return secs + 's';
+  if (secs < 3600) return Math.round(secs / 60) + 'm';
+  if (secs < 86400) return Math.round(secs / 3600) + 'h';
+  if (secs < 2592000) return Math.round(secs / 86400) + 'd';
+  if (secs < 31536000) return Math.round(secs / 2592000) + ' months';
+  return (secs / 31536000).toFixed(1) + ' years';
+}
+
+/* ─── RISK SUMMARY ─────────────────────────────────────────────────── */
+
+function computeRisk(allFlags) {
+  let pass = 0, warn = 0, fail = 0;
+  for (const f of allFlags) {
+    if (f.status === 'pass') pass++;
+    else if (f.status === 'warn') warn++;
+    else if (f.status === 'fail') fail++;
+  }
+  let rating, cls;
+  if (fail === 0 && warn === 0)   { rating = 'LOW';    cls = 'risk-low'; }
+  else if (fail === 0)            { rating = 'MEDIUM'; cls = 'risk-medium'; }
+  else if (fail <= 2 && fail > 0) { rating = 'MEDIUM'; cls = 'risk-medium'; }
+  else                            { rating = 'HIGH';   cls = 'risk-high'; }
+  return { pass, warn, fail, rating, cls };
+}
+
+/* ─── HTML HELPERS ─────────────────────────────────────────────────── */
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function statusBadge(status, label) {
+  const cls = { pass: 'badge-pass', warn: 'badge-warn', fail: 'badge-fail', info: 'badge-info' }[status];
+  const sym = { pass: '&#10003;', warn: '!', fail: '&#10007;', info: '&middot;' }[status];
+  return `<span class="${cls}">${sym} ${label}</span>`;
+}
+
+/* ─── MAIN ANALYSIS ────────────────────────────────────────────────── */
+
+function runAnalysis() {
+  const raw = document.getElementById('cookieInput').value.trim();
+  if (!raw) {
+    setOutput(`<div class="placeholder"><div class="ph-icon">&#127850;</div>Nothing to analyze — paste some cookie data first.</div>`);
+    return;
+  }
+
+  const cookies = parseInput(raw);
+  if (cookies.length === 0) {
+    setOutput(`<div class="placeholder">Could not parse any cookies from the input.</div>`);
+    return;
+  }
+
+  /* ── 1. Parsed Cookies Table ── */
+  const tableRows = cookies.map(c => `
+    <tr>
+      <td class="td-name">${esc(c.name || '(unnamed)')}</td>
+      <td class="td-value">${c.value ? esc(c.value) : '<span style="color:var(--muted);font-style:italic">empty</span>'}</td>
+      <td>${c.isSetCookie
+        ? '<span class="badge-info">&middot; Set-Cookie</span>'
+        : '<span class="badge-info">&middot; Cookie</span>'}</td>
+    </tr>`).join('');
+
+  const parsedHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Parsed Cookies</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto">${cookies.length} cookie${cookies.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Name</th><th>Value</th><th>Source</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  /* ── 2. Security Flags Analysis ── */
+  const setCookies = cookies.filter(c => c.isSetCookie);
+  let secHTML = '';
+  let allSecFlags = [];
+
+  if (setCookies.length > 0) {
+    const blocks = setCookies.map(c => {
+      const flags = analyzeFlags(c);
+      allSecFlags.push(...flags);
+
+      const rows = flags.map(f => `
+        <div class="flag-row">
+          <span class="flag-key">${esc(f.key)}</span>
+          <span class="flag-badge-col">${statusBadge(f.status, f.label)}</span>
+          <span class="flag-detail">${esc(f.detail)}</span>
+        </div>`).join('');
+
+      return `<div class="cookie-block">
+        <div class="cookie-block-header">${esc(c.name || '(unnamed)')}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    secHTML = `
+      <div class="card">
+        <div class="card-header"><span class="card-title">Security Flags Analysis</span></div>
+        <div class="card-body" style="padding:0">${blocks}</div>
+      </div>`;
+
+    /* ── 3. Risk Summary ── */
+    const { pass, warn, fail, rating, cls } = computeRisk(allSecFlags);
+    const riskHTML = `
+      <div class="card">
+        <div class="card-header"><span class="card-title">Risk Summary</span></div>
+        <div class="card-body">
+          <div class="risk-row">
+            <div class="risk-counts">
+              <div class="risk-count">
+                <span class="risk-count-num" style="color:var(--green)">${pass}</span>
+                <span class="risk-count-label">PASS</span>
+              </div>
+              <div class="risk-divider"></div>
+              <div class="risk-count">
+                <span class="risk-count-num" style="color:var(--yellow)">${warn}</span>
+                <span class="risk-count-label">WARN</span>
+              </div>
+              <div class="risk-divider"></div>
+              <div class="risk-count">
+                <span class="risk-count-num" style="color:var(--red)">${fail}</span>
+                <span class="risk-count-label">FAIL</span>
+              </div>
+            </div>
+            <div class="risk-overall">
+              <div class="risk-overall-label">OVERALL RISK</div>
+              <div class="risk-overall-rating ${cls}">${rating}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    setOutput(parsedHTML + secHTML + riskHTML);
+
+  } else {
+    // No Set-Cookie headers — show table only with a note
+    setOutput(parsedHTML + `
+      <div class="card">
+        <div class="card-body" style="color:var(--muted);font-size:13px;text-align:center;padding:20px 16px">
+          No <code style="font-family:'Courier New',monospace;color:var(--accent)">Set-Cookie</code> headers found.
+          Security flag analysis requires Set-Cookie format input.
+        </div>
+      </div>`);
+  }
+}
+
+/* ─── KEYBOARD SHORTCUT ────────────────────────────────────────────── */
+document.getElementById('cookieInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runAnalysis();
+});
+</script>
+</body>
+</html>

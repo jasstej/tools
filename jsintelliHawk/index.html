@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JSIntelliHawk — ghosttools</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #141720;
+      --card: #1a1e2e;
+      --border: #252a3d;
+      --accent: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --red: #ef4444;
+      --green: #10b981;
+      --blue: #00d4ff;
+      --purple: #7c3aed;
+      --orange: #f97316;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+    .back { color: var(--muted); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; transition: color 0.15s; }
+    .back:hover { color: var(--accent); }
+    .title { font-weight: 700; font-size: 1.1rem; }
+    .title span { color: var(--accent); }
+    .badge { margin-left: auto; background: rgba(245,158,11,0.1); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); font-size: 0.72rem; padding: 0.2rem 0.7rem; border-radius: 99px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .input-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+    .tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .tab { padding: 0.75rem 1.2rem; font-size: 0.85rem; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover { color: var(--text); }
+    .tab-content { display: none; padding: 1.2rem; }
+    .tab-content.active { display: block; }
+    textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-family: 'Courier New', monospace; font-size: 0.82rem; padding: 1rem; resize: vertical;
+      min-height: 250px; outline: none; transition: border-color 0.15s; tab-size: 2;
+    }
+    textarea:focus { border-color: var(--accent); }
+    .file-drop {
+      border: 2px dashed var(--border); border-radius: 10px; padding: 3rem 2rem; text-align: center;
+      cursor: pointer; transition: all 0.2s; position: relative;
+    }
+    .file-drop:hover, .file-drop.drag-over { border-color: var(--accent); background: rgba(245,158,11,0.04); }
+    .file-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .file-drop p { color: var(--muted); font-size: 0.88rem; margin-top: 0.5rem; }
+    .btn-row { display: flex; gap: 0.75rem; padding: 1rem 1.2rem; border-top: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+    button { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 0.6rem 1.4rem; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s; }
+    button:hover { opacity: 0.85; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); opacity: 1; }
+    .scan-info { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+    .results { display: none; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+    .stat-card .sv { font-size: 2rem; font-weight: 800; font-family: monospace; }
+    .stat-card .sl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.2rem; }
+    .findings-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+    .panel-head {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem; font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .filter-bar {
+      display: flex; gap: 0.4rem; padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.25rem 0.7rem; font-size: 0.75rem; cursor: pointer;
+      font-family: monospace; transition: all 0.15s;
+    }
+    .filter-btn.active, .filter-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .finding {
+      border-bottom: 1px solid var(--border); padding: 1rem 1.2rem;
+      display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: start;
+    }
+    .finding:last-child { border-bottom: none; }
+    .finding.hidden { display: none; }
+    .sev { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; font-family: monospace; }
+    .sev-critical { background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid rgba(239,68,68,0.4); }
+    .sev-high { background: rgba(249,115,22,0.2); color: var(--orange); border: 1px solid rgba(249,115,22,0.4); }
+    .sev-medium { background: rgba(245,158,11,0.2); color: var(--accent); border: 1px solid rgba(245,158,11,0.4); }
+    .sev-low { background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid rgba(16,185,129,0.4); }
+    .sev-info { background: rgba(0,212,255,0.1); color: var(--blue); border: 1px solid rgba(0,212,255,0.3); }
+    .finding-body h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .finding-body .category { font-size: 0.7rem; color: var(--muted); font-family: monospace; margin-bottom: 0.4rem; }
+    .finding-body p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+    .match-block {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.5rem 0.8rem; margin-top: 0.5rem; font-family: monospace; font-size: 0.76rem;
+      overflow: auto; max-height: 120px; white-space: pre-wrap; word-break: break-all;
+    }
+    .line-ref { color: var(--muted); font-size: 0.7rem; margin-top: 0.3rem; font-family: monospace; }
+    .match-hl { background: rgba(245,158,11,0.25); color: var(--accent); border-radius: 2px; padding: 0 1px; }
+    .no-findings {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 1.5rem; color: var(--green); font-size: 0.9rem;
+    }
+    .redacted { filter: blur(4px); font-family: monospace; user-select: none; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="../index.html" class="back">← Back</a>
+  <div class="title">🦅 JSIntelliHawk</div>
+  <span class="badge">static analysis</span>
+</header>
+
+<main>
+  <div class="input-section">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('paste')">Paste Code</div>
+      <div class="tab" onclick="switchTab('upload')">Upload File</div>
+    </div>
+    <div class="tab-content active" id="tab-paste">
+      <textarea id="codeInput" placeholder="// Paste JavaScript code here...&#10;&#10;const API_KEY = 'sk-abc123...';&#10;eval(userInput);&#10;document.innerHTML = data;"></textarea>
+    </div>
+    <div class="tab-content" id="tab-upload">
+      <div class="file-drop" id="fileDrop">
+        <input type="file" id="jsFile" accept=".js,.mjs,.ts,.jsx,.tsx,.vue,.html,.htm" onchange="loadJSFile(this.files[0])"/>
+        <div style="font-size:1.8rem;margin-bottom:0.5rem">📁</div>
+        <div style="font-weight:600">Drop .js / .ts / .html file</div>
+        <p>Or click to browse</p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button onclick="scanCode()">🔍 Scan for Issues</button>
+      <button class="btn-ghost" onclick="clearScan()">Clear</button>
+      <button class="btn-ghost" onclick="loadDemo()">Load Demo</button>
+      <span class="scan-info" id="scanInfo"></span>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="findings-panel" id="findingsPanel">
+      <div class="panel-head">
+        <span>Findings</span>
+        <span id="findCount" style="color:var(--muted)">0</span>
+      </div>
+      <div class="filter-bar" id="filterBar"></div>
+      <div id="findingsList"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const DEMO_CODE = `// Demo vulnerable JavaScript
+const AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE";
+const SECRET = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+const DB_PASS = "P@ssw0rd123!";
+const stripe_key = "sk_live_XXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+const token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+// Dangerous DOM sinks
+document.getElementById("app").innerHTML = userInput;
+element.outerHTML = req.body.data;
+document.write(location.hash);
+
+// DOM-based XSS
+var hash = location.hash.slice(1);
+eval("processData(" + hash + ")");
+
+// Dangerous eval usage
+eval(req.query.callback);
+setTimeout("alert(" + unsafeVar + ")", 1000);
+new Function("return " + untrusted)();
+
+// Insecure postMessage
+window.addEventListener("message", function(e) {
+  eval(e.data.code);
+});
+
+// HTTP not HTTPS
+fetch("http://api.internal.corp/users");
+new XMLHttpRequest().open("GET", "http://legacyapi.com/tokens");
+
+// Hardcoded credentials & endpoints
+const config = {
+  apiBase: "http://192.168.1.100:8080/api/v1",
+  adminEndpoint: "/api/admin/users/delete",
+  password: "admin1234",
+  jwt_secret: "supersecretjwtkey",
+  db_url: "mongodb://admin:password@localhost:27017/prod"
+};
+
+// Prototype pollution
+obj[req.body.key] = req.body.value;
+obj.__proto__[key] = value;
+
+// Path traversal via user input
+const file = fs.readFileSync("./uploads/" + req.query.file);
+
+// Debug / sensitive logging
+console.log("AUTH TOKEN:", authToken);
+console.log("User password:", user.password);
+debugger;
+
+// Insecure randomness
+const sessionId = Math.random().toString(36);
+
+// jQuery vulnerability pattern
+$('#output').html(userData);
+
+// Disabled security
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+`;
+
+const RULES = [
+  // ===== SECRETS =====
+  { id: 'aws-key', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'AWS Access Key ID Detected',
+    desc: 'Hardcoded AWS Access Key ID found. This gives direct access to AWS services if published.',
+    re: /AKIA[0-9A-Z]{16}/g },
+
+  { id: 'aws-secret', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'AWS Secret Access Key Pattern',
+    desc: 'Possible AWS Secret Access Key detected. Treat as compromised if exposed in client code.',
+    re: /(?:aws[_\-\s]?secret|secret[_\-\s]?access[_\-\s]?key)\s*[=:]\s*["'][^"']{20,}["']/gi },
+
+  { id: 'stripe-live', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'Stripe Live Secret Key',
+    desc: 'Live Stripe secret key detected (sk_live_...). This allows full access to payment processing.',
+    re: /sk_live_[a-zA-Z0-9]{24,}/g },
+
+  { id: 'stripe-pub', cat: 'Hardcoded Secret', sev: 'medium',
+    title: 'Stripe Publishable Key',
+    desc: 'Stripe publishable key detected (pk_live_). While less sensitive, verify it\'s intended to be public.',
+    re: /pk_live_[a-zA-Z0-9]{24,}/g },
+
+  { id: 'github-token', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'GitHub Personal Access Token',
+    desc: 'GitHub token (ghp_/gho_/ghs_) detected. Grants repository and org access.',
+    re: /gh[pousr]_[A-Za-z0-9_]{36,}/g },
+
+  { id: 'generic-secret', cat: 'Hardcoded Secret', sev: 'high',
+    title: 'Generic Secret/Password Assignment',
+    desc: 'Hardcoded secret or password literal detected in source code.',
+    re: /(?:secret|password|passwd|api_key|apikey|auth_token|jwt_secret|private_key|db_pass|db_password)\s*[=:]\s*["'][^"']{6,}["']/gi },
+
+  { id: 'private-key', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'Private Key Material',
+    desc: 'PEM-encoded private key detected in source code.',
+    re: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g },
+
+  { id: 'mongo-url', cat: 'Hardcoded Secret', sev: 'critical',
+    title: 'MongoDB Connection String with Credentials',
+    desc: 'MongoDB connection URI with embedded credentials detected.',
+    re: /mongodb(?:\+srv)?:\/\/[^:]+:[^@]+@[^\s"'`,]+/gi },
+
+  { id: 'db-conn', cat: 'Hardcoded Secret', sev: 'high',
+    title: 'Database Connection String',
+    desc: 'Database connection string with credentials embedded in source.',
+    re: /(?:mysql|postgres|postgresql|redis):\/\/[^:]+:[^@\s]{3,}@[^\s"'`,]+/gi },
+
+  // ===== DANGEROUS FUNCTIONS =====
+  { id: 'eval', cat: 'Code Injection', sev: 'critical',
+    title: 'Direct eval() Usage',
+    desc: 'eval() executes arbitrary JavaScript. If user-controlled data reaches eval(), it is a code injection vulnerability.',
+    re: /\beval\s*\([^)]{0,200}\)/g },
+
+  { id: 'new-function', cat: 'Code Injection', sev: 'critical',
+    title: 'new Function() Constructor',
+    desc: 'new Function() is equivalent to eval(). Executes arbitrary code if user input is passed.',
+    re: /new\s+Function\s*\(/g },
+
+  { id: 'settimeout-str', cat: 'Code Injection', sev: 'high',
+    title: 'setTimeout/setInterval with String Argument',
+    desc: 'Passing a string to setTimeout/setInterval executes it as code — equivalent to eval().',
+    re: /(?:setTimeout|setInterval)\s*\(\s*["'`][^"'`]+["'`]/g },
+
+  // ===== DOM SINKS =====
+  { id: 'innerhtml', cat: 'XSS Sink', sev: 'high',
+    title: 'innerHTML / outerHTML Assignment',
+    desc: 'Assigning to innerHTML/outerHTML without sanitization can lead to DOM-based XSS if input contains HTML.',
+    re: /\.(?:inner|outer)HTML\s*=/g },
+
+  { id: 'document-write', cat: 'XSS Sink', sev: 'high',
+    title: 'document.write() Usage',
+    desc: 'document.write() can inject arbitrary HTML and is a classic XSS sink.',
+    re: /document\.write(?:ln)?\s*\(/g },
+
+  { id: 'insertadjacenthtml', cat: 'XSS Sink', sev: 'high',
+    title: 'insertAdjacentHTML()',
+    desc: 'insertAdjacentHTML injects raw HTML. Vulnerable if user-controlled content is passed.',
+    re: /\.insertAdjacentHTML\s*\(/g },
+
+  { id: 'jquery-html', cat: 'XSS Sink', sev: 'high',
+    title: 'jQuery .html() Sink',
+    desc: '.html() sets raw HTML content. Can result in XSS if unsanitized user data is used.',
+    re: /\$\([^)]*\)\.html\s*\(/g },
+
+  // ===== POSTMESSAGE =====
+  { id: 'postmessage-any', cat: 'PostMessage', sev: 'medium',
+    title: 'postMessage with Wildcard Origin (*)',
+    desc: 'Using "*" as targetOrigin in postMessage sends data to any window — may leak sensitive data cross-origin.',
+    re: /\.postMessage\s*\([^,]+,\s*["']\*["']/g },
+
+  { id: 'postmessage-no-origin', cat: 'PostMessage', sev: 'medium',
+    title: 'message Event Listener Without Origin Check',
+    desc: 'Receiving postMessage events without validating event.origin can allow cross-origin message injection.',
+    re: /addEventListener\s*\(\s*["']message["']/g },
+
+  // ===== PROTOTYPE POLLUTION =====
+  { id: 'proto-assign', cat: 'Prototype Pollution', sev: 'high',
+    title: '__proto__ Assignment',
+    desc: 'Direct assignment to __proto__ can pollute the Object prototype, potentially affecting all objects.',
+    re: /\.__proto__\s*\[/g },
+
+  { id: 'bracket-assign', cat: 'Prototype Pollution', sev: 'medium',
+    title: 'Dynamic Property Assignment (Possible Prototype Pollution)',
+    desc: 'Assigning to obj[userInput] without sanitization could allow __proto__ or constructor pollution.',
+    re: /\w+\[(?:req\.|request\.|params\.|body\.|query\.)\w+\]\s*=/g },
+
+  // ===== INSECURE URLS =====
+  { id: 'http-url', cat: 'Insecure Transport', sev: 'medium',
+    title: 'Hardcoded HTTP (non-HTTPS) URL',
+    desc: 'HTTP URLs transmit data in plaintext. Sensitive data may be intercepted. Use HTTPS.',
+    re: /["']http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)[^\s"']{10,}["']/gi },
+
+  // ===== INTERNAL/ADMIN ENDPOINTS =====
+  { id: 'admin-endpoint', cat: 'Exposed Endpoint', sev: 'medium',
+    title: 'Admin / Internal Endpoint Exposed',
+    desc: 'Admin or internal API route exposed in client-side JavaScript.',
+    re: /["'][^"']*\/(?:admin|internal|debug|dev|management|backdoor|root|superuser)[^"']*["']/gi },
+
+  { id: 'private-ip', cat: 'Exposed Endpoint', sev: 'medium',
+    title: 'Private IP Address in Source',
+    desc: 'Internal/private IP address hardcoded in JavaScript. May expose internal network topology.',
+    re: /["']https?:\/\/(?:10\.|172\.(?:1[6-9]|2\d|3[01])\.|192\.168\.)\d{1,3}\.\d{1,3}/g },
+
+  // ===== TLS BYPASS =====
+  { id: 'tls-bypass', cat: 'TLS/Certificate', sev: 'critical',
+    title: 'TLS Certificate Validation Disabled',
+    desc: 'NODE_TLS_REJECT_UNAUTHORIZED="0" disables all TLS certificate validation, enabling MITM attacks.',
+    re: /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']0["']/g },
+
+  // ===== INSECURE RANDOMNESS =====
+  { id: 'math-random', cat: 'Weak Cryptography', sev: 'medium',
+    title: 'Math.random() for Security-Sensitive Purpose',
+    desc: 'Math.random() is not cryptographically secure. Do not use for session IDs, tokens, or keys.',
+    re: /Math\.random\s*\(\s*\).*(?:token|session|id|key|secret|nonce|salt)/gi },
+
+  // ===== DEBUG =====
+  { id: 'debugger', cat: 'Debug Code', sev: 'low',
+    title: 'Debugger Statement',
+    desc: 'Debugger statements left in production code will pause execution in developer tools.',
+    re: /\bdebugger\b/g },
+
+  { id: 'console-secret', cat: 'Sensitive Logging', sev: 'high',
+    title: 'Console Logging Potentially Sensitive Data',
+    desc: 'console.log/error/warn with what appears to be sensitive variables. Credentials or tokens may be exposed in browser console.',
+    re: /console\.(?:log|warn|error|info|debug)\s*\([^)]*(?:password|token|secret|key|auth|credential|passwd)[^)]*\)/gi },
+
+  // ===== PATH TRAVERSAL =====
+  { id: 'path-traversal', cat: 'Path Traversal', sev: 'high',
+    title: 'Possible Path Traversal via User Input',
+    desc: 'File path constructed using user-controlled data. Could allow directory traversal attacks.',
+    re: /(?:readFile|readFileSync|createReadStream|require)\s*\([^)]*(?:req\.|request\.|params\.|body\.|query\.)[^)]{0,60}\)/g },
+
+  // ===== LIBRARY DETECTION =====
+  { id: 'jquery-old', cat: 'Vulnerable Library', sev: 'medium',
+    title: 'jQuery Version Reference (Check for <3.5)',
+    desc: 'jQuery versions before 3.5.0 have XSS vulnerabilities in $.htmlPrefilter. Verify the version in use.',
+    re: /jquery[.-](\d+\.\d+(?:\.\d+)?)/gi },
+
+  { id: 'lodash-old', cat: 'Vulnerable Library', sev: 'medium',
+    title: 'Lodash Version Reference (Check for <4.17.21)',
+    desc: 'Older lodash versions have prototype pollution vulnerabilities. Ensure lodash >=4.17.21.',
+    re: /lodash[.-](\d+\.\d+(?:\.\d+)?)/gi },
+];
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === (name==='paste'?0:1)));
+  document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === (name==='paste'?0:1)));
+}
+
+const fileDrop = document.getElementById('fileDrop');
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+fileDrop.addEventListener('drop', e => { e.preventDefault(); fileDrop.classList.remove('drag-over'); if (e.dataTransfer.files[0]) loadJSFile(e.dataTransfer.files[0]); });
+
+function loadJSFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('codeInput').value = e.target.result;
+    switchTab('paste');
+    document.getElementById('scanInfo').textContent = `Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    scanCode();
+  };
+  reader.readAsText(file);
+}
+
+function loadDemo() {
+  document.getElementById('codeInput').value = DEMO_CODE;
+  switchTab('paste');
+  scanCode();
+}
+
+function clearScan() {
+  document.getElementById('codeInput').value = '';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('scanInfo').textContent = '';
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function highlightMatch(line, match) {
+  const esc = escapeHTML(line);
+  const mEsc = escapeHTML(match);
+  return esc.replace(mEsc, `<span class="match-hl">${mEsc}</span>`);
+}
+
+function getLines(code) {
+  return code.split('\n');
+}
+
+function scanCode() {
+  const code = document.getElementById('codeInput').value;
+  if (!code.trim()) return;
+
+  const lines = getLines(code);
+  const allFindings = [];
+
+  for (const rule of RULES) {
+    const re = new RegExp(rule.re.source, rule.re.flags.includes('g') ? rule.re.flags : rule.re.flags + 'g');
+    let match;
+    while ((match = re.exec(code)) !== null) {
+      // Find line number
+      const before = code.substring(0, match.index);
+      const lineNum = before.split('\n').length;
+      const lineContent = lines[lineNum - 1] || '';
+      allFindings.push({
+        ...rule,
+        match: match[0],
+        line: lineNum,
+        lineContent: lineContent.trim()
+      });
+      if (match[0].length === 0) break; // prevent infinite loop
+    }
+  }
+
+  renderResults(code, lines, allFindings);
+}
+
+function renderResults(code, lines, findings) {
+  const el = document.getElementById('results');
+  el.style.display = 'block';
+
+  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  findings.forEach(f => sevCounts[f.sev] = (sevCounts[f.sev] || 0) + 1);
+
+  const catSet = new Set(findings.map(f => f.cat));
+  const totalIssues = findings.length;
+  const score = Math.max(0, 100 - (sevCounts.critical * 25 + sevCounts.high * 10 + sevCounts.medium * 5 + sevCounts.low * 2));
+
+  document.getElementById('scanInfo').textContent =
+    `Scanned ${lines.length} lines · ${code.length} chars`;
+
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="stat-card" style="border-top:3px solid ${score < 50 ? 'var(--red)' : score < 75 ? 'var(--accent)' : 'var(--green)'}">
+      <div class="sv" style="color:${score < 50 ? 'var(--red)' : score < 75 ? 'var(--accent)' : 'var(--green)'}">${score}</div>
+      <div class="sl">Risk Score</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--red)">
+      <div class="sv" style="color:var(--red)">${sevCounts.critical}</div>
+      <div class="sl">Critical</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--orange)">
+      <div class="sv" style="color:var(--orange)">${sevCounts.high}</div>
+      <div class="sl">High</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--accent)">
+      <div class="sv" style="color:var(--accent)">${sevCounts.medium}</div>
+      <div class="sl">Medium</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--green)">
+      <div class="sv" style="color:var(--green)">${(sevCounts.low || 0) + (sevCounts.info || 0)}</div>
+      <div class="sl">Low / Info</div>
+    </div>
+    <div class="stat-card">
+      <div class="sv" style="color:var(--muted)">${lines.length}</div>
+      <div class="sl">Lines</div>
+    </div>`;
+
+  // Filters
+  const filterBar = document.getElementById('filterBar');
+  filterBar.innerHTML = `<button class="filter-btn active" onclick="filterFindings('all', this)">All (${totalIssues})</button>` +
+    [...catSet].map(c => {
+      const cnt = findings.filter(f => f.cat === c).length;
+      return `<button class="filter-btn" onclick="filterFindings('${escapeHTML(c)}', this)">${escapeHTML(c)} (${cnt})</button>`;
+    }).join('') +
+    `<button class="filter-btn" onclick="filterFindings('critical', this)">🔴 Critical</button>
+     <button class="filter-btn" onclick="filterFindings('high', this)">🟠 High</button>`;
+
+  document.getElementById('findCount').textContent = totalIssues;
+
+  const list = document.getElementById('findingsList');
+  if (findings.length === 0) {
+    list.innerHTML = `<div class="no-findings">✅ No issues detected. Always complement with manual review and dynamic testing.</div>`;
+    return;
+  }
+
+  // Sort by severity
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  const sorted = [...findings].sort((a, b) => (sevOrder[a.sev] || 99) - (sevOrder[b.sev] || 99));
+
+  list.innerHTML = sorted.map((f, i) => {
+    const isSecret = f.cat === 'Hardcoded Secret';
+    const matchDisplay = isSecret
+      ? `<span class="redacted">${escapeHTML(f.match)}</span>`
+      : escapeHTML(f.match.slice(0, 120)) + (f.match.length > 120 ? '...' : '');
+
+    const lineDisplay = f.lineContent.slice(0, 200);
+
+    return `<div class="finding" data-cat="${escapeHTML(f.cat)}" data-sev="${f.sev}" id="finding-${i}">
+      <span class="sev sev-${f.sev}">${f.sev.toUpperCase()}</span>
+      <div class="finding-body">
+        <div class="category">${escapeHTML(f.cat)}</div>
+        <h4>${escapeHTML(f.title)}</h4>
+        <p>${escapeHTML(f.desc)}</p>
+        <div class="match-block">${matchDisplay}</div>
+        <div class="line-ref">Line ${f.line}: ${escapeHTML(lineDisplay)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterFindings(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('.finding').forEach(el => {
+    if (filter === 'all') {
+      el.classList.remove('hidden');
+    } else if (filter === 'critical' || filter === 'high' || filter === 'medium' || filter === 'low') {
+      el.classList.toggle('hidden', el.dataset.sev !== filter);
+    } else {
+      el.classList.toggle('hidden', el.dataset.cat !== filter);
+    }
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cipher Tools — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f78166;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg0); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    ::selection { background: rgba(247, 129, 102, 0.25); }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(247, 129, 102, .12);
+      border: 1px solid rgba(247, 129, 102, .3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── TAB BAR ── */
+    .tab-bar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .tab-bar::-webkit-scrollbar { height: 3px; }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 18px;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    /* ── TAB PANELS ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── PANEL HEADER ── */
+    .panel-header {
+      margin-bottom: 22px;
+    }
+    .panel-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .panel-title span { color: var(--accent); }
+    .panel-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    /* ── FIELD LABEL ── */
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .field-label .hint {
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--muted);
+      opacity: .7;
+    }
+
+    /* ── TEXTAREA ── */
+    textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Courier New', 'Consolas', 'Lucida Console', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 10px 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 100px;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea[readonly] {
+      color: var(--muted);
+      cursor: default;
+    }
+    textarea[readonly]:focus { border-color: var(--border); }
+
+    /* ── TEXT INPUT ── */
+    .text-input {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Courier New', 'Consolas', monospace;
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .text-input:focus { border-color: var(--accent); }
+    .text-input.error { border-color: #f85149; }
+
+    /* ── RANGE SLIDER ── */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .shift-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 6px 14px;
+      min-width: 80px;
+      text-align: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    input[type=range]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 18px;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+    .btn:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn.primary {
+      background: rgba(247, 129, 102, .12);
+      border-color: rgba(247, 129, 102, .35);
+      color: var(--accent);
+    }
+    .btn.primary:hover {
+      background: rgba(247, 129, 102, .22);
+      border-color: var(--accent);
+    }
+    .btn.copy-btn {
+      margin-left: auto;
+      font-size: 12px;
+      padding: 6px 14px;
+    }
+    .btn.copy-btn.copied {
+      color: #3fb950;
+      border-color: rgba(63,185,80,.4);
+    }
+
+    /* ── OUTPUT ROW (label + copy) ── */
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .output-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    /* ── INFO BOX ── */
+    .info-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .info-box strong { color: var(--accent); font-weight: 600; }
+
+    /* ── VALIDATION MSG ── */
+    .val-msg {
+      font-size: 11px;
+      color: #f85149;
+      margin-top: 5px;
+      min-height: 14px;
+    }
+
+    /* ── MORSE REFERENCE ── */
+    .morse-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 4px 8px;
+      margin-top: 10px;
+    }
+    .morse-entry {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .morse-char { color: var(--accent); font-weight: 700; }
+    .morse-code { color: var(--muted); letter-spacing: 1px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'Courier New', monospace;
+    }
+    footer span { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .topbar { padding: 12px 16px; }
+      .tab-bar { padding: 0 16px; }
+      .container { padding: 20px 16px 40px; }
+      .tab-btn { padding: 11px 14px; font-size: 12px; }
+      .btn-row { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP BAR ── -->
+  <div class="topbar">
+    <a href="../index.html" class="back">&#8592; ~/tools</a>
+    <div class="logo">Cipher<span>Tools</span></div>
+    <span class="badge">v1.0</span>
+    <span class="desc">Classic cipher encode/decode</span>
+    <div class="tags">
+      <span class="tag">ciphers</span>
+      <span class="tag">cryptography</span>
+      <span class="tag">encoding</span>
+    </div>
+  </div>
+
+  <!-- ── TAB BAR ── -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="rot13">ROT13</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" data-tab="caesar">Caesar</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" data-tab="vigenere">Vigen&#232;re</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" data-tab="atbash">Atbash</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" data-tab="morse">Morse</button>
+  </div>
+
+  <!-- ── MAIN CONTAINER ── -->
+  <div class="container">
+
+    <!-- ════════════════════════════════════
+         TAB 1 — ROT13
+    ════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-rot13" role="tabpanel">
+      <div class="panel-header">
+        <div class="panel-title">ROT<span>13</span></div>
+        <div class="panel-desc">Rotate each letter by 13 positions. Since the alphabet has 26 letters, applying ROT13 twice returns the original text.</div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Input <span class="hint">letters only shifted — numbers &amp; symbols preserved</span></div>
+        <textarea id="rot13-input" placeholder="Enter text to transform..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="rot13-btn">ROT13 Transform</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="output-header">
+          <div class="output-label">Output</div>
+          <button class="btn copy-btn" id="rot13-copy">Copy</button>
+        </div>
+        <textarea id="rot13-output" readonly placeholder="Result will appear here..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <strong>ROT13</strong> shifts each letter by 13 positions (A&#8594;N, B&#8594;O, &#8230;, Z&#8594;M). Because 13 + 13 = 26 (the length of the alphabet), encoding and decoding are the same operation. Non-alphabetic characters pass through unchanged.
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         TAB 2 — CAESAR CIPHER
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-caesar" role="tabpanel">
+      <div class="panel-header">
+        <div class="panel-title">Caesar <span>Cipher</span></div>
+        <div class="panel-desc">Substitution cipher that shifts every letter by a fixed number of positions in the alphabet.</div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Shift Amount</div>
+        <div class="slider-row">
+          <input type="range" id="caesar-slider" min="1" max="25" value="13" />
+          <div class="shift-display" id="caesar-shift-display">Shift: 13</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Input <span class="hint">case preserved — non-letters unchanged</span></div>
+        <textarea id="caesar-input" placeholder="Enter text..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="caesar-encrypt-btn">Encrypt</button>
+          <button class="btn"         id="caesar-decrypt-btn">Decrypt</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="output-header">
+          <div class="output-label">Output</div>
+          <button class="btn copy-btn" id="caesar-copy">Copy</button>
+        </div>
+        <textarea id="caesar-output" readonly placeholder="Result will appear here..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <strong>Caesar cipher</strong> &#8212; classic substitution cipher used by Julius Caesar. Encrypting shifts each letter forward by the key; decrypting shifts it back. Shift 13 is equivalent to ROT13. There are only 25 meaningful keys, making brute-force trivial.
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         TAB 3 — VIGENÈRE CIPHER
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-vigenere" role="tabpanel">
+      <div class="panel-header">
+        <div class="panel-title">Vigen&#232;re <span>Cipher</span></div>
+        <div class="panel-desc">Polyalphabetic substitution cipher that uses a repeating keyword to vary the shift for each character.</div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Keyword <span class="hint">letters only, A-Z</span></div>
+        <input type="text" class="text-input" id="vig-key" placeholder="e.g. SECRET" spellcheck="false" autocomplete="off" />
+        <div class="val-msg" id="vig-key-msg"></div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Input <span class="hint">case preserved — non-letters pass through</span></div>
+        <textarea id="vig-input" placeholder="Enter text..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="vig-encrypt-btn">Encrypt</button>
+          <button class="btn"         id="vig-decrypt-btn">Decrypt</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="output-header">
+          <div class="output-label">Output</div>
+          <button class="btn copy-btn" id="vig-copy">Copy</button>
+        </div>
+        <textarea id="vig-output" readonly placeholder="Result will appear here..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <strong>Vigen&#232;re cipher</strong> &#8212; each letter of the plaintext is shifted by the corresponding letter of the keyword (A=0, B=1, &#8230;, Z=25). The keyword repeats cyclically. Much stronger than Caesar, but still vulnerable to frequency analysis when the key is short.
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         TAB 4 — ATBASH CIPHER
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-atbash" role="tabpanel">
+      <div class="panel-header">
+        <div class="panel-title">Atbash <span>Cipher</span></div>
+        <div class="panel-desc">Ancient Hebrew cipher that maps the alphabet to its reverse mirror: A&#8596;Z, B&#8596;Y, C&#8596;X, and so on.</div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Input <span class="hint">symmetric operation — encode = decode</span></div>
+        <textarea id="atbash-input" placeholder="Enter text to transform..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="atbash-btn">Transform</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="output-header">
+          <div class="output-label">Output</div>
+          <button class="btn copy-btn" id="atbash-copy">Copy</button>
+        </div>
+        <textarea id="atbash-output" readonly placeholder="Result will appear here..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <strong>Atbash cipher</strong> &#8212; maps each letter to its mirror across the alphabet (A&#8596;Z, B&#8596;Y, &#8230;). Originally used for the Hebrew alphabet; here applied to the Latin alphabet. Completely symmetric: applying it twice returns the original text.
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         TAB 5 — MORSE CODE
+    ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-morse" role="tabpanel">
+      <div class="panel-header">
+        <div class="panel-title">Morse <span>Code</span></div>
+        <div class="panel-desc">International Morse Code encoder and decoder using Unicode dot (&#xB7;) and dash (&#x2212;) characters.</div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Input <span class="hint">text for encode &nbsp;|&nbsp; morse for decode (&#xB7; or . for dot, &#x2212; or - for dash, / for word break)</span></div>
+        <textarea id="morse-input" placeholder="Enter text or morse code..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="morse-encode-btn">Text &#8594; Morse</button>
+          <button class="btn"         id="morse-decode-btn">Morse &#8594; Text</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="output-header">
+          <div class="output-label">Output</div>
+          <button class="btn copy-btn" id="morse-copy">Copy</button>
+        </div>
+        <textarea id="morse-output" readonly placeholder="Result will appear here..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <strong>Morse code</strong> &#8212; uses &#xB7; (dot) and &#x2212; (dash). Characters are separated by a single space; words by &nbsp;<code style="font-size:11px;color:var(--accent)">/</code>. When decoding, both ASCII <code style="font-size:11px;color:var(--accent)">.</code>&nbsp;/ <code style="font-size:11px;color:var(--accent)">-</code> and Unicode &#xB7;&nbsp;/ &#x2212; are accepted.
+      </div>
+
+      <!-- Morse reference table -->
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted);user-select:none;padding:4px 0;">
+          Show Morse reference table
+        </summary>
+        <div class="morse-grid" id="morse-ref-grid"></div>
+      </details>
+    </div>
+
+  </div><!-- /.container -->
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    ghost<span>tools</span> &nbsp;&#183;&nbsp; client-side &nbsp;&#183;&nbsp; open-source
+  </footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════
+
+function copyToClipboard(text, btn) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1800);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+
+const tabBtns   = document.querySelectorAll('.tab-btn');
+const tabPanels = document.querySelectorAll('.tab-panel');
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    tabBtns.forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === target);
+      b.setAttribute('aria-selected', b.dataset.tab === target ? 'true' : 'false');
+    });
+    tabPanels.forEach(p => {
+      p.classList.toggle('active', p.id === 'tab-' + target);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  1. ROT13
+// ═══════════════════════════════════════════════════════
+
+function rot13(str) {
+  return str.replace(/[a-zA-Z]/g, ch => {
+    const base = ch <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((ch.charCodeAt(0) - base + 13) % 26) + base);
+  });
+}
+
+document.getElementById('rot13-btn').addEventListener('click', () => {
+  const input  = document.getElementById('rot13-input').value;
+  document.getElementById('rot13-output').value = rot13(input);
+});
+
+document.getElementById('rot13-copy').addEventListener('click', function() {
+  copyToClipboard(document.getElementById('rot13-output').value, this);
+});
+
+// ═══════════════════════════════════════════════════════
+//  2. CAESAR CIPHER
+// ═══════════════════════════════════════════════════════
+
+const caesarSlider  = document.getElementById('caesar-slider');
+const caesarDisplay = document.getElementById('caesar-shift-display');
+
+caesarSlider.addEventListener('input', () => {
+  caesarDisplay.textContent = 'Shift: ' + caesarSlider.value;
+});
+
+function caesarShift(str, shift) {
+  // Normalise shift to 0–25
+  shift = ((shift % 26) + 26) % 26;
+  return str.replace(/[a-zA-Z]/g, ch => {
+    const base = ch <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((ch.charCodeAt(0) - base + shift) % 26) + base);
+  });
+}
+
+document.getElementById('caesar-encrypt-btn').addEventListener('click', () => {
+  const input = document.getElementById('caesar-input').value;
+  const shift = parseInt(caesarSlider.value, 10);
+  document.getElementById('caesar-output').value = caesarShift(input, shift);
+});
+
+document.getElementById('caesar-decrypt-btn').addEventListener('click', () => {
+  const input = document.getElementById('caesar-input').value;
+  const shift = parseInt(caesarSlider.value, 10);
+  document.getElementById('caesar-output').value = caesarShift(input, -shift);
+});
+
+document.getElementById('caesar-copy').addEventListener('click', function() {
+  copyToClipboard(document.getElementById('caesar-output').value, this);
+});
+
+// ═══════════════════════════════════════════════════════
+//  3. VIGENÈRE CIPHER
+// ═══════════════════════════════════════════════════════
+
+const vigKeyInput = document.getElementById('vig-key');
+const vigKeyMsg   = document.getElementById('vig-key-msg');
+
+vigKeyInput.addEventListener('input', () => {
+  const v = vigKeyInput.value;
+  if (v && !/^[a-zA-Z]+$/.test(v)) {
+    vigKeyInput.classList.add('error');
+    vigKeyMsg.textContent = 'Key must contain letters only (A–Z).';
+  } else {
+    vigKeyInput.classList.remove('error');
+    vigKeyMsg.textContent = '';
+  }
+});
+
+function vigenere(str, key, encrypt) {
+  if (!key) return '';
+  key = key.toUpperCase();
+  let ki = 0; // key index (only advances on alpha chars)
+  return str.split('').map(ch => {
+    if (!/[a-zA-Z]/.test(ch)) return ch;
+    const base   = ch <= 'Z' ? 65 : 97;
+    const code   = ch.charCodeAt(0) - base;
+    const kShift = key.charCodeAt(ki % key.length) - 65;
+    ki++;
+    if (encrypt) {
+      return String.fromCharCode(((code + kShift) % 26) + base);
+    } else {
+      return String.fromCharCode(((code - kShift + 26) % 26) + base);
+    }
+  }).join('');
+}
+
+function runVigenere(encrypt) {
+  const key = vigKeyInput.value.trim();
+  if (!key) { vigKeyMsg.textContent = 'Please enter a keyword.'; return; }
+  if (!/^[a-zA-Z]+$/.test(key)) { vigKeyMsg.textContent = 'Key must contain letters only.'; return; }
+  vigKeyMsg.textContent = '';
+  const input = document.getElementById('vig-input').value;
+  document.getElementById('vig-output').value = vigenere(input, key, encrypt);
+}
+
+document.getElementById('vig-encrypt-btn').addEventListener('click', () => runVigenere(true));
+document.getElementById('vig-decrypt-btn').addEventListener('click', () => runVigenere(false));
+
+document.getElementById('vig-copy').addEventListener('click', function() {
+  copyToClipboard(document.getElementById('vig-output').value, this);
+});
+
+// ═══════════════════════════════════════════════════════
+//  4. ATBASH CIPHER
+// ═══════════════════════════════════════════════════════
+
+function atbash(str) {
+  return str.replace(/[a-zA-Z]/g, ch => {
+    const base = ch <= 'Z' ? 65 : 97;
+    return String.fromCharCode(base + 25 - (ch.charCodeAt(0) - base));
+  });
+}
+
+document.getElementById('atbash-btn').addEventListener('click', () => {
+  const input = document.getElementById('atbash-input').value;
+  document.getElementById('atbash-output').value = atbash(input);
+});
+
+document.getElementById('atbash-copy').addEventListener('click', function() {
+  copyToClipboard(document.getElementById('atbash-output').value, this);
+});
+
+// ═══════════════════════════════════════════════════════
+//  5. MORSE CODE
+// ═══════════════════════════════════════════════════════
+
+// Using Unicode: · (U+00B7 MIDDLE DOT) and − (U+2212 MINUS SIGN)
+const DOT  = '\u00B7'; // ·
+const DASH = '\u2212'; // −
+
+const MORSE_TABLE = {
+  'A': `${DOT}${DASH}`,
+  'B': `${DASH}${DOT}${DOT}${DOT}`,
+  'C': `${DASH}${DOT}${DASH}${DOT}`,
+  'D': `${DASH}${DOT}${DOT}`,
+  'E': `${DOT}`,
+  'F': `${DOT}${DOT}${DASH}${DOT}`,
+  'G': `${DASH}${DASH}${DOT}`,
+  'H': `${DOT}${DOT}${DOT}${DOT}`,
+  'I': `${DOT}${DOT}`,
+  'J': `${DOT}${DASH}${DASH}${DASH}`,
+  'K': `${DASH}${DOT}${DASH}`,
+  'L': `${DOT}${DASH}${DOT}${DOT}`,
+  'M': `${DASH}${DASH}`,
+  'N': `${DASH}${DOT}`,
+  'O': `${DASH}${DASH}${DASH}`,
+  'P': `${DOT}${DASH}${DASH}${DOT}`,
+  'Q': `${DASH}${DASH}${DOT}${DASH}`,
+  'R': `${DOT}${DASH}${DOT}`,
+  'S': `${DOT}${DOT}${DOT}`,
+  'T': `${DASH}`,
+  'U': `${DOT}${DOT}${DASH}`,
+  'V': `${DOT}${DOT}${DOT}${DASH}`,
+  'W': `${DOT}${DASH}${DASH}`,
+  'X': `${DASH}${DOT}${DOT}${DASH}`,
+  'Y': `${DASH}${DOT}${DASH}${DASH}`,
+  'Z': `${DASH}${DASH}${DOT}${DOT}`,
+  '0': `${DASH}${DASH}${DASH}${DASH}${DASH}`,
+  '1': `${DOT}${DASH}${DASH}${DASH}${DASH}`,
+  '2': `${DOT}${DOT}${DASH}${DASH}${DASH}`,
+  '3': `${DOT}${DOT}${DOT}${DASH}${DASH}`,
+  '4': `${DOT}${DOT}${DOT}${DOT}${DASH}`,
+  '5': `${DOT}${DOT}${DOT}${DOT}${DOT}`,
+  '6': `${DASH}${DOT}${DOT}${DOT}${DOT}`,
+  '7': `${DASH}${DASH}${DOT}${DOT}${DOT}`,
+  '8': `${DASH}${DASH}${DASH}${DOT}${DOT}`,
+  '9': `${DASH}${DASH}${DASH}${DASH}${DOT}`,
+  '.': `${DOT}${DASH}${DOT}${DASH}${DOT}${DASH}`,
+  ',': `${DASH}${DASH}${DOT}${DOT}${DASH}${DASH}`,
+  '?': `${DOT}${DOT}${DASH}${DASH}${DOT}${DOT}`,
+  "'": `${DOT}${DASH}${DASH}${DASH}${DASH}${DOT}`,
+  '!': `${DASH}${DOT}${DASH}${DOT}${DASH}${DASH}`,
+  '/': `${DASH}${DOT}${DOT}${DASH}${DOT}`,
+  '(': `${DASH}${DOT}${DASH}${DASH}${DOT}`,
+  ')': `${DASH}${DOT}${DASH}${DASH}${DOT}${DASH}`,
+  '-': `${DASH}${DOT}${DOT}${DOT}${DOT}${DASH}`,
+  ':': `${DASH}${DASH}${DASH}${DOT}${DOT}${DOT}`,
+  ';': `${DASH}${DOT}${DASH}${DOT}${DASH}${DOT}`,
+  '=': `${DASH}${DOT}${DOT}${DOT}${DASH}`,
+  '+': `${DOT}${DASH}${DOT}${DASH}${DOT}`,
+  '_': `${DOT}${DOT}${DASH}${DASH}${DOT}${DASH}`,
+  '"': `${DOT}${DASH}${DOT}${DOT}${DASH}${DOT}`,
+  '@': `${DOT}${DASH}${DASH}${DOT}${DASH}${DOT}`,
+};
+
+// Build reverse lookup: morse pattern -> character
+const MORSE_REVERSE = {};
+for (const [char, code] of Object.entries(MORSE_TABLE)) {
+  MORSE_REVERSE[code] = char;
+}
+
+// Normalise input: replace ASCII . and - with Unicode equivalents
+function normaliseMorse(str) {
+  return str
+    .replace(/\./g, DOT)
+    .replace(/-/g, DASH);
+}
+
+function encodeToMorse(text) {
+  const words = text.toUpperCase().split(/\s+/).filter(w => w.length > 0);
+  return words.map(word => {
+    return word.split('').map(ch => {
+      if (MORSE_TABLE[ch] !== undefined) return MORSE_TABLE[ch];
+      return ''; // skip unknown characters
+    }).filter(c => c !== '').join(' ');
+  }).join(' / ');
+}
+
+function decodeFromMorse(morse) {
+  // Normalise ASCII . and - to Unicode
+  morse = normaliseMorse(morse.trim());
+  // Split into word groups by ' / ' or '/'
+  const wordGroups = morse.split(/\s*\/\s*/);
+  return wordGroups.map(wordGroup => {
+    const tokens = wordGroup.trim().split(/\s+/).filter(t => t.length > 0);
+    return tokens.map(token => {
+      const ch = MORSE_REVERSE[token];
+      return ch !== undefined ? ch : '?';
+    }).join('');
+  }).join(' ');
+}
+
+document.getElementById('morse-encode-btn').addEventListener('click', () => {
+  const input = document.getElementById('morse-input').value;
+  document.getElementById('morse-output').value = encodeToMorse(input);
+});
+
+document.getElementById('morse-decode-btn').addEventListener('click', () => {
+  const input = document.getElementById('morse-input').value;
+  document.getElementById('morse-output').value = decodeFromMorse(input);
+});
+
+document.getElementById('morse-copy').addEventListener('click', function() {
+  copyToClipboard(document.getElementById('morse-output').value, this);
+});
+
+// Build Morse reference grid
+(function buildMorseRef() {
+  const grid = document.getElementById('morse-ref-grid');
+  const entries = [
+    ...Object.entries(MORSE_TABLE).filter(([k]) => /[A-Z]/.test(k)).sort(),
+    ...Object.entries(MORSE_TABLE).filter(([k]) => /[0-9]/.test(k)).sort(),
+    ...Object.entries(MORSE_TABLE).filter(([k]) => !/[A-Z0-9]/.test(k)),
+  ];
+  entries.forEach(([ch, code]) => {
+    const div = document.createElement('div');
+    div.className = 'morse-entry';
+    div.innerHTML = `<span class="morse-char">${ch}</span><span class="morse-code">${code}</span>`;
+    grid.appendChild(div);
+  });
+})();
+
+</script>
+</body>
+</html>

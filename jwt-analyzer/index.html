@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JWT Analyzer — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #ff7b72;
+      --yellow: #e3b341;
+      --purple: #d2a8ff;
+      --hdr-col: #79c0ff;
+      --pld-col: #56d364;
+      --sig-col: #ff7b72;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--blue); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--blue); }
+    .topbar .badge {
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+    /* ── INPUT SECTION ── */
+    .input-section {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 10px;
+    }
+    textarea, input[type=text], input[type=password] {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus, input:focus { border-color: var(--blue); }
+    textarea { resize: vertical; min-height: 76px; }
+    select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .jwt-colored {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      line-height: 1.6;
+      margin-top: 10px;
+      padding: 11px 12px;
+      background: var(--bg2);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+    .jh { color: var(--hdr-col); }
+    .jp { color: var(--pld-col); }
+    .js { color: var(--sig-col); }
+    .jd { color: var(--muted); }
+
+    .btn-row { display: flex; gap: 9px; margin-top: 12px; flex-wrap: wrap; }
+    .samples-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .samples-row .lbl { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn:hover { opacity: .85; }
+    .btn-primary   { background: var(--blue);   color: #0d1117; }
+    .btn-secondary { background: var(--bg2);    color: var(--text); border: 1px solid var(--border); }
+    .btn-danger    { background: var(--red);    color: #fff; }
+    .btn-success   { background: var(--green);  color: #0d1117; }
+    .btn-sample {
+      background: var(--bg2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 4px 11px;
+      font-size: 11px;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-sample:hover { color: var(--blue); border-color: var(--blue); }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .card-inner { padding: 16px; }
+    .card-hdr {
+      padding: 11px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-hdr.blue  { color: var(--hdr-col); background: rgba(121,192,255,.04); }
+    .card-hdr.green { color: var(--pld-col); background: rgba(86,211,100,.04); }
+    .card-hdr.red   { color: var(--sig-col); background: rgba(255,123,114,.04); }
+
+    /* ── GRIDS ── */
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .g3, .g2 { grid-template-columns: 1fr; } }
+
+    /* ── JSON DISPLAY ── */
+    .json-out {
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .jk { color: var(--blue); }
+    .jv { color: var(--green); }
+    .jn { color: var(--orange); }
+    .jb { color: var(--purple); }
+    .jx { color: var(--muted); }
+
+    /* ── CLAIM TABLE ── */
+    .claim {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .claim:last-child { border: none; }
+    .claim-k { font-family: monospace; color: var(--blue); font-weight: 600; min-width: 70px; flex-shrink: 0; }
+    .claim-v { font-family: monospace; color: var(--text); word-break: break-all; }
+    .claim-ts { font-size: 11px; color: var(--muted); font-family: monospace; }
+    .tag-exp  { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-left: auto; flex-shrink: 0; }
+    .tag-ok   { background: rgba(63,185,80,.15); color: var(--green); }
+    .tag-bad  { background: rgba(248,81,73,.15);  color: var(--red); }
+
+    /* ── SIG STATS ── */
+    .sig-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+    .stat-v { font-size: 16px; font-weight: 700; font-family: monospace; color: var(--sig-col); }
+    .stat-l { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── ALG BADGE ── */
+    .alg-badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-family: monospace; }
+    .alg-none { background: rgba(248,81,73,.15); color: var(--red); }
+    .alg-hmac { background: rgba(227,179,65,.15); color: var(--yellow); }
+    .alg-rsa  { background: rgba(63,185,80,.15);  color: var(--green); }
+    .alg-ec   { background: rgba(88,166,255,.15);  color: var(--blue); }
+
+    /* ── FINDINGS ── */
+    .vuln-bar {
+      display: flex;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .vc { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .vdot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .finding {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      border-left: 3px solid transparent;
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+    .finding:last-child { border-bottom: none; }
+    .finding:hover { background: rgba(255,255,255,.02); }
+    .finding.critical { border-left-color: var(--red); }
+    .finding.high     { border-left-color: var(--orange); }
+    .finding.medium   { border-left-color: var(--yellow); }
+    .finding.low      { border-left-color: var(--blue); }
+    .finding.info     { border-left-color: var(--muted); }
+
+    .sev {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+      text-transform: uppercase; flex-shrink: 0; height: fit-content; margin-top: 2px;
+    }
+    .sev.critical { background: rgba(248,81,73,.15); color: var(--red); }
+    .sev.high     { background: rgba(255,123,114,.15); color: var(--orange); }
+    .sev.medium   { background: rgba(227,179,65,.15);  color: var(--yellow); }
+    .sev.low      { background: rgba(88,166,255,.15);  color: var(--blue); }
+    .sev.info     { background: rgba(139,148,158,.15); color: var(--muted); }
+
+    .f-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .f-desc  { font-size: 12px; color: var(--muted); line-height: 1.55; }
+    .f-ex {
+      font-size: 11px; color: var(--purple); margin-top: 7px;
+      font-family: monospace; padding: 4px 9px;
+      background: rgba(210,168,255,.05);
+      border: 1px solid rgba(210,168,255,.12);
+      border-radius: 4px;
+    }
+
+    /* ── FORM HELPERS ── */
+    .ig { margin-bottom: 14px; }
+    .ig label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
+    }
+
+    .result-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 11px 12px;
+      font-family: monospace; font-size: 12px;
+      word-break: break-all; min-height: 44px;
+      color: var(--text); margin-top: 10px;
+    }
+    .result-box.ok  { border-color: var(--green); color: var(--green); }
+    .result-box.err { border-color: var(--red);   color: var(--red); }
+
+    .notice {
+      background: rgba(88,166,255,.07);
+      border: 1px solid rgba(88,166,255,.2);
+      border-radius: 6px; padding: 10px 14px;
+      font-size: 12px; color: var(--blue); margin-bottom: 14px;
+    }
+    .notice.warn {
+      background: rgba(248,81,73,.07);
+      border-color: rgba(248,81,73,.2);
+      color: var(--red);
+    }
+
+    .section-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .section-desc  { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center; padding: 56px 20px; color: var(--muted);
+    }
+    .empty .ico { font-size: 38px; margin-bottom: 12px; }
+    .empty h3 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+    .empty p { font-size: 12px; }
+
+    /* ── BRUTE FORCE ── */
+    .progress-wrap { background: var(--bg2); border-radius: 4px; height: 5px; overflow: hidden; margin-top: 10px; }
+    .progress-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .1s; width: 0; }
+    .progress-lbl { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .found-box {
+      background: rgba(63,185,80,.1); border: 1px solid var(--green);
+      border-radius: 6px; padding: 12px 16px; color: var(--green);
+      font-weight: 700; font-family: monospace; margin-top: 10px;
+    }
+    .found-box small { display: block; font-weight: 400; color: var(--muted); margin-top: 4px; font-size: 11px; }
+    .wordlist-info { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+    /* ── COPY BTN ── */
+    .copy-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      font-size: 11px; padding: 3px 9px; border-radius: 4px; cursor: pointer;
+      transition: all .15s; margin-top: 6px;
+    }
+    .copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    code { color: var(--blue); font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="../index.html" class="back">&#8592; Back</a>
+  <div class="logo">JWT <span>Analyzer</span></div>
+  <div class="badge">Security Tool</div>
+  <span class="desc">Decode, inspect, and analyze JSON Web Tokens</span>
+  <div class="tags">
+    <span class="tag">jwt</span>
+    <span class="tag">auth</span>
+    <span class="tag">web-security</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="input-label">JWT Token</div>
+    <textarea id="jwtInput" rows="3"
+      placeholder="Paste your JWT here... eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.signature"
+      oninput="onInput()"></textarea>
+    <div class="jwt-colored" id="jwtColored"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="analyze()">Analyze Token</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="samples-row">
+      <span class="lbl">Samples:</span>
+      <button class="btn-sample" onclick="loadSample('normal')">Normal HS256</button>
+      <button class="btn-sample" onclick="loadSample('none')">alg:none exploit</button>
+      <button class="btn-sample" onclick="loadSample('expired')">Expired token</button>
+      <button class="btn-sample" onclick="loadSample('admin')">Admin escalation</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-tab="decode"   onclick="tab(this)">Decode</div>
+    <div class="tab"        data-tab="vulns"    onclick="tab(this)">Vulnerabilities <span id="vBadge"></span></div>
+    <div class="tab"        data-tab="forge"    onclick="tab(this)">Verify &amp; Forge</div>
+    <div class="tab"        data-tab="brute"    onclick="tab(this)">Brute Force</div>
+  </div>
+
+  <!-- ═══ DECODE ═══ -->
+  <div id="pane-decode" class="tab-pane active">
+    <div id="decodeEmpty" class="empty">
+      <div class="ico">🔐</div>
+      <h3>No Token Loaded</h3>
+      <p>Paste a JWT and click Analyze to decode it.</p>
+    </div>
+    <div id="decodeContent" style="display:none;">
+      <div class="g3">
+
+        <!-- HEADER -->
+        <div class="card">
+          <div class="card-hdr blue">
+            ▶ Header &nbsp;<span id="algBadge"></span>
+          </div>
+          <div class="card-inner">
+            <div id="headerOut" class="json-out"></div>
+          </div>
+        </div>
+
+        <!-- PAYLOAD -->
+        <div class="card">
+          <div class="card-hdr green">▶ Payload</div>
+          <div class="card-inner" id="payloadOut"></div>
+        </div>
+
+        <!-- SIGNATURE -->
+        <div class="card">
+          <div class="card-hdr red">▶ Signature</div>
+          <div class="card-inner" id="sigOut"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VULNS ═══ -->
+  <div id="pane-vulns" class="tab-pane">
+    <div id="vulnsEmpty" class="empty">
+      <div class="ico">🛡️</div>
+      <h3>No Token Analyzed</h3>
+      <p>Paste a JWT and click Analyze to scan for vulnerabilities.</p>
+    </div>
+    <div id="vulnsContent" class="card" style="display:none;">
+      <div id="vulnBar" class="vuln-bar"></div>
+      <div id="vulnList"></div>
+    </div>
+  </div>
+
+  <!-- ═══ VERIFY & FORGE ═══ -->
+  <div id="pane-forge" class="tab-pane">
+    <div class="g2">
+
+      <!-- LEFT -->
+      <div>
+        <div class="section-title">Signature Verifier</div>
+        <div class="section-desc">Verify an HMAC JWT signature against a known secret (HS256/384/512).</div>
+        <div class="card card-inner" style="padding:16px;">
+          <div class="ig">
+            <label>Secret Key</label>
+            <input type="text" id="verifySecret" placeholder="Enter HMAC secret..." />
+          </div>
+          <button class="btn btn-primary" onclick="verify()" style="width:100%">Verify Signature</button>
+          <div id="verifyResult" class="result-box" style="display:none;"></div>
+        </div>
+
+        <hr />
+
+        <div class="section-title">alg:none Attack</div>
+        <div class="section-desc">Strip the signature entirely — exploits servers that accept unsigned tokens.</div>
+        <div class="card" style="padding:16px;">
+          <div class="notice warn">Generates a forged token using the <code>alg:none</code> bypass. The signature is removed. Vulnerable servers accept this as valid without any secret.</div>
+          <button class="btn btn-danger" onclick="algNone()" style="width:100%">Generate alg:none Token</button>
+          <div id="algNoneWrap" style="display:none; margin-top:12px;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:5px;">Forged Token:</div>
+            <div id="algNoneOut" class="result-box" style="margin-top:0;"></div>
+            <button class="copy-btn" onclick="copyEl('algNoneOut')">Copy Token</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="section-title">Token Forge</div>
+        <div class="section-desc">Modify the payload and re-sign with a known secret to create a forged JWT.</div>
+        <div class="card" style="padding:16px;">
+          <div class="ig">
+            <label>Modified Payload (JSON)</label>
+            <textarea id="forgePayload" rows="7" placeholder='{"sub":"admin","role":"admin","iat":1700000000}'></textarea>
+          </div>
+          <div class="ig">
+            <label>Algorithm</label>
+            <select id="forgeAlg">
+              <option>HS256</option>
+              <option>HS384</option>
+              <option>HS512</option>
+            </select>
+          </div>
+          <div class="ig">
+            <label>Signing Secret</label>
+            <input type="text" id="forgeSecret" placeholder="secret" />
+          </div>
+          <button class="btn btn-success" onclick="forge()" style="width:100%">Forge Token</button>
+          <div id="forgeWrap" style="display:none; margin-top:12px;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:5px;">Forged Token:</div>
+            <div id="forgeOut" class="result-box" style="margin-top:0;"></div>
+            <button class="copy-btn" onclick="copyEl('forgeOut')">Copy Token</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ BRUTE FORCE ═══ -->
+  <div id="pane-brute" class="tab-pane">
+    <div class="section-title">Weak Secret Brute Force</div>
+    <div class="section-desc">Test the token's HMAC signature against a list of common weak secrets (HS256/384/512 only).</div>
+    <div class="g2">
+
+      <div>
+        <div class="card" style="padding:16px;">
+          <div class="ig">
+            <label>Custom Wordlist (one secret per line)</label>
+            <textarea id="wordlist" rows="11"
+              placeholder="secret&#10;password&#10;123456&#10;jwt_secret&#10;mysecret"
+              oninput="updateWC()"></textarea>
+            <div class="wordlist-info" id="wcLabel">0 secrets loaded</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="startBrute()">Start</button>
+            <button class="btn btn-secondary" onclick="loadWL()">Load Default Wordlist</button>
+            <button class="btn btn-danger" id="stopBtn" onclick="stopBrute()" style="display:none;">Stop</button>
+          </div>
+          <div id="bruteProgress" style="display:none;">
+            <div class="progress-wrap"><div class="progress-fill" id="pBar"></div></div>
+            <div class="progress-lbl" id="pLabel"></div>
+          </div>
+          <div id="bruteFound"    style="display:none;"></div>
+          <div id="bruteNotFound" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="padding:16px;">
+          <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px;">About Weak JWT Secrets</div>
+          <p style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:10px;">
+            HMAC JWTs (HS256/384/512) are only as secure as their secret. Many apps ship with:
+          </p>
+          <ul style="font-size:12px; color:var(--muted); line-height:2.1; padding-left:18px;">
+            <li>Framework defaults (<code>secret</code>, <code>jwt_secret</code>)</li>
+            <li>Common passwords (<code>password</code>, <code>123456</code>)</li>
+            <li>The app name or domain as the secret</li>
+            <li>Secrets committed to public repos</li>
+            <li>Short / low-entropy strings</li>
+          </ul>
+          <p style="font-size:12px; color:var(--muted); line-height:1.7; margin-top:10px;">
+            If the secret is found, an attacker can forge any claims — including <code style="color:var(--red)">admin:true</code> or arbitrary user IDs.
+          </p>
+          <hr />
+          <p style="font-size:12px; color:var(--muted); line-height:1.7;">
+            For large wordlists, use:<br />
+            <code style="color:var(--blue)">hashcat -a 0 -m 16500 &lt;jwt&gt; wordlist.txt</code>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let jwt = null;
+let stopFlag = false;
+
+// ═══════════════════════════════════════════════════════════
+//  SAMPLE TOKENS
+// ═══════════════════════════════════════════════════════════
+const SAMPLES = {
+  normal:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwicm9sZSI6InVzZXIiLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6OTk5OTk5OTk5OX0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+  none:    'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0IiwibmFtZSI6IkF0dGFja2VyIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNjAwMDAwMDAwfQ.',
+  expired: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ODc2IiwibmFtZSI6IkphbmUgRG9lIiwicm9sZSI6InVzZXIiLCJpYXQiOjE1MDAwMDAwMDAsImV4cCI6MTUwMTAwMDAwMH0.abc123',
+  admin:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsInVzZXJuYW1lIjoiZ3Vlc3QiLCJyb2xlIjoiYWRtaW4iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6OTk5OTk5OTk5OX0.fake_sig'
+};
+
+function loadSample(type) {
+  document.getElementById('jwtInput').value = SAMPLES[type];
+  onInput();
+  analyze();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BASE64URL HELPERS
+// ═══════════════════════════════════════════════════════════
+function b64uDecode(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  try {
+    const b = atob(s);
+    const u = new Uint8Array(b.length);
+    for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+    return u;
+  } catch { return null; }
+}
+
+function b64uDecodeStr(s) {
+  const u = b64uDecode(s);
+  return u ? new TextDecoder().decode(u) : null;
+}
+
+function b64uEncode(data) {
+  const u = data instanceof Uint8Array ? data : new Uint8Array(data);
+  let b = '';
+  for (const x of u) b += String.fromCharCode(x);
+  return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+function strToB64u(s) {
+  return btoa(unescape(encodeURIComponent(s)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PARSE  (accepts 2-part or 3-part tokens)
+// ═══════════════════════════════════════════════════════════
+function parseJWT(raw) {
+  const parts = raw.trim().split('.');
+  if (parts.length < 2 || parts.length > 3) return null;
+  if (parts.length === 2) parts.push('');
+  try {
+    const hs = b64uDecodeStr(parts[0]);
+    const ps = b64uDecodeStr(parts[1]);
+    if (!hs || !ps) return null;
+    return {
+      raw: raw.trim(), parts,
+      header:  JSON.parse(hs), headerStr: hs,
+      payload: JSON.parse(ps), payloadStr: ps,
+      sig: parts[2]
+    };
+  } catch { return null; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HTML HELPERS
+// ═══════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function colorJWT(raw) {
+  const p = raw.split('.');
+  if (p.length < 3) return `<span class="jd">${esc(raw)}</span>`;
+  return `<span class="jh">${esc(p[0])}</span><span class="jd">.</span><span class="jp">${esc(p[1])}</span><span class="jd">.</span><span class="js">${esc(p[2])}</span>`;
+}
+
+function syntaxJSON(obj) {
+  return JSON.stringify(obj, null, 2).replace(
+    /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => {
+      if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${esc(m)}</span>` : `<span class="jv">${esc(m)}</span>`;
+      if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+      if (/null/.test(m))       return `<span class="jx">${m}</span>`;
+      return `<span class="jn">${m}</span>`;
+    }
+  );
+}
+
+function fmtTs(ts) {
+  if (!ts || isNaN(ts)) return null;
+  return new Date(ts * 1000).toUTCString();
+}
+
+function timeRelative(ts) {
+  if (!ts) return '';
+  const now = Math.floor(Date.now() / 1000);
+  const diff = ts - now;
+  if (diff < 0) {
+    const ago = -diff;
+    if (ago < 60)    return `expired ${ago}s ago`;
+    if (ago < 3600)  return `expired ${Math.floor(ago/60)}m ago`;
+    if (ago < 86400) return `expired ${Math.floor(ago/3600)}h ago`;
+    return `expired ${Math.floor(ago/86400)}d ago`;
+  }
+  if (diff < 60)    return `expires in ${diff}s`;
+  if (diff < 3600)  return `expires in ${Math.floor(diff/60)}m`;
+  if (diff < 86400) return `expires in ${Math.floor(diff/3600)}h`;
+  return `expires in ${Math.floor(diff/86400)}d`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TAB SWITCHER
+// ═══════════════════════════════════════════════════════════
+function tab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-' + el.dataset.tab).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INPUT HANDLER
+// ═══════════════════════════════════════════════════════════
+function onInput() {
+  const v = document.getElementById('jwtInput').value.trim();
+  const c = document.getElementById('jwtColored');
+  if (v) { c.style.display = 'block'; c.innerHTML = colorJWT(v); }
+  else   { c.style.display = 'none'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ANALYZE
+// ═══════════════════════════════════════════════════════════
+function analyze() {
+  const raw = document.getElementById('jwtInput').value.trim();
+  if (!raw) { alert('Paste a JWT first.'); return; }
+
+  const parsed = parseJWT(raw);
+  if (!parsed) {
+    const c = document.getElementById('jwtColored');
+    c.style.display = 'block';
+    c.innerHTML = '<span style="color:var(--red)">Invalid JWT — expected 3 base64url parts separated by dots.</span>';
+    return;
+  }
+
+  jwt = parsed;
+  renderDecode(jwt);
+  const findings = scan(jwt);
+  renderVulns(findings);
+  document.getElementById('forgePayload').value = JSON.stringify(jwt.payload, null, 2);
+
+  // vuln badge
+  const ch = findings.filter(f => f.sev === 'critical' || f.sev === 'high').length;
+  const badge = document.getElementById('vBadge');
+  if (ch > 0)
+    badge.innerHTML = `<span style="background:var(--red);color:#fff;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;">${ch}</span>`;
+  else if (findings.length > 0)
+    badge.innerHTML = `<span style="background:var(--yellow);color:#0d1117;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;">${findings.length}</span>`;
+  else
+    badge.innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER DECODE
+// ═══════════════════════════════════════════════════════════
+function renderDecode(j) {
+  document.getElementById('decodeEmpty').style.display = 'none';
+  document.getElementById('decodeContent').style.display = 'block';
+
+  // Header JSON
+  document.getElementById('headerOut').innerHTML = syntaxJSON(j.header);
+
+  // Alg badge
+  const alg = (j.header.alg || 'none').toString().toLowerCase();
+  let ac = 'alg-hmac';
+  if (alg === 'none' || alg === '')         ac = 'alg-none';
+  else if (alg.startsWith('rs') || alg.startsWith('ps')) ac = 'alg-rsa';
+  else if (alg.startsWith('es'))            ac = 'alg-ec';
+  document.getElementById('algBadge').innerHTML =
+    `<span class="alg-badge ${ac}">${esc(j.header.alg ?? 'none')}</span>`;
+
+  // Payload claims
+  const now = Math.floor(Date.now() / 1000);
+  let html = '';
+  for (const [k, v] of Object.entries(j.payload)) {
+    let val = esc(JSON.stringify(v));
+    let extra = '';
+    if (k === 'exp') {
+      const expired = now > v;
+      const rel = timeRelative(v);
+      val = `${v} <span class="claim-ts">(${fmtTs(v)}${rel ? ' — ' + rel : ''})</span>`;
+      extra = `<span class="tag-exp ${expired ? 'tag-bad' : 'tag-ok'}">${expired ? 'EXPIRED' : 'Valid'}</span>`;
+    } else if (k === 'iat' || k === 'nbf') {
+      val = `${v} <span class="claim-ts">(${fmtTs(v)})</span>`;
+    }
+    html += `<div class="claim">
+      <span class="claim-k">${esc(k)}</span>
+      <span class="claim-v">${val}</span>
+      ${extra}
+    </div>`;
+  }
+  document.getElementById('payloadOut').innerHTML =
+    html || '<span style="color:var(--muted);font-size:12px;">Empty payload</span>';
+
+  // Signature
+  const sig = j.sig;
+  const hasSignature = sig && sig.length > 4;
+  const rawBytes = sig ? b64uDecode(sig) : null;
+
+  let sHtml = `<div class="sig-stats">
+    <div class="stat">
+      <div class="stat-v">${rawBytes ? rawBytes.length : 0}</div>
+      <div class="stat-l">Bytes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-v">${sig.length}</div>
+      <div class="stat-l">B64 Chars</div>
+    </div>
+    <div class="stat">
+      <div class="stat-v" style="font-size:12px;color:${hasSignature?'var(--green)':'var(--red)'}">
+        ${hasSignature ? 'Present' : 'Missing'}
+      </div>
+      <div class="stat-l">Present</div>
+    </div>
+  </div>`;
+
+  if (hasSignature) {
+    sHtml += `<div style="margin-top:12px;font-size:11px;color:var(--muted);margin-bottom:4px;">Raw Value:</div>
+    <div style="font-family:monospace;font-size:11px;color:var(--sig-col);word-break:break-all;
+      background:var(--bg2);padding:8px;border-radius:4px;border:1px solid var(--border);">${esc(sig)}</div>`;
+  } else {
+    sHtml += `<div style="margin-top:12px;padding:10px;background:rgba(248,81,73,.07);
+      border:1px solid var(--red);border-radius:6px;font-size:12px;color:var(--red);">
+      No signature — token uses alg:none</div>`;
+  }
+  document.getElementById('sigOut').innerHTML = sHtml;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VULNERABILITY SCANNER
+// ═══════════════════════════════════════════════════════════
+function scan(j) {
+  const F = [];
+  const now = Math.floor(Date.now() / 1000);
+  const alg = (j.header.alg || '').toString().toLowerCase();
+
+  const add = (sev, title, desc, exploit) => F.push({ sev, title, desc, exploit });
+
+  // 1. alg:none
+  if (alg === 'none' || alg === '') {
+    add('critical',
+      'Algorithm: None — Signature Completely Bypassed',
+      'The token uses alg:none, carrying no signature. Any server that accepts this without enforcing a real algorithm is fully exploitable — tokens can be forged with zero knowledge of any secret.',
+      'Set alg to "none" in header, clear the signature segment. Many JWT libraries will validate the token successfully.'
+    );
+  }
+
+  // 1b. Missing signature on a signing algorithm
+  if (!j.sig && alg !== 'none' && alg !== '') {
+    add('high',
+      'Missing Signature (Non-None Algorithm)',
+      `The token declares alg="${j.header.alg}" but has no signature segment. Misconfigured JWT libraries may accept this as valid without verifying anything.`,
+      'Send the token as-is; if the server accepts it, signature verification is not enforced.'
+    );
+  }
+
+  // 2. No expiry
+  if (!j.payload.exp) {
+    add('medium',
+      'No Expiration Claim (exp)',
+      'This token has no expiry. It remains valid indefinitely unless revoked server-side. A stolen token can be replayed forever.',
+      'Capture the token once; replay it at any future point in time.'
+    );
+  }
+
+  // 3. No issued-at
+  if (!j.payload.iat) {
+    add('low',
+      'Missing Issued-At Claim (iat)',
+      'No iat claim present. Without it, tokens cannot be checked for age-based revocation or time-based replay protection.'
+    );
+  }
+
+  // 4. Expired
+  if (j.payload.exp && now > j.payload.exp) {
+    const mins = Math.round((now - j.payload.exp) / 60);
+    add('info',
+      `Token is Expired (${mins} minutes ago)`,
+      `exp was ${new Date(j.payload.exp * 1000).toUTCString()}. If the server still accepts it, expiry is not being validated.`,
+      'Present the expired token to the server and observe whether it is rejected.'
+    );
+  }
+
+  // 5. nbf in future
+  if (j.payload.nbf && now < j.payload.nbf) {
+    add('low',
+      'Token Not Yet Valid (nbf in future)',
+      `The "not before" claim is set to ${new Date(j.payload.nbf * 1000).toUTCString()}. If the server accepts it now, nbf is not being checked.`
+    );
+  }
+
+  // 6. Very long lifetime
+  if (j.payload.exp && j.payload.iat) {
+    const hrs = (j.payload.exp - j.payload.iat) / 3600;
+    if (hrs > 24 * 365)
+      add('medium',
+        `Extremely Long Expiry (${Math.round(hrs/24)} days)`,
+        'Token lifetime exceeds 1 year — a wide window for misuse if the token is leaked.',
+        'Steal the token; it remains usable for over a year.'
+      );
+    else if (hrs > 24 * 7)
+      add('low',
+        `Long Expiry (${Math.round(hrs/24)} days)`,
+        'Token lifetime exceeds 7 days. Consider short-lived tokens with refresh rotation.'
+      );
+  }
+
+  // 7. Sensitive fields in payload
+  const sensitiveKeys = ['password','passwd','secret','api_key','apikey','token','credential',
+                         'private','ssn','credit_card','cvv','pin','key','pass'];
+  for (const k of Object.keys(j.payload)) {
+    if (sensitiveKeys.some(s => k.toLowerCase().includes(s))) {
+      add('high',
+        `Sensitive Field in Payload: "${k}"`,
+        `JWT payloads are base64-encoded, NOT encrypted. The field "${k}" is readable by anyone who holds the token.`,
+        'Base64url-decode the second segment to read all payload values including "' + k + '".'
+      );
+    }
+  }
+
+  // 8. Privilege claims
+  const privKeys = ['role','roles','admin','is_admin','isAdmin','group','groups',
+                    'permission','permissions','scope','authority','authorities'];
+  for (const k of privKeys) {
+    if (j.payload[k] !== undefined) {
+      add('medium',
+        `Privilege Claim Found: "${k}" = ${JSON.stringify(j.payload[k])}`,
+        `The payload contains "${k}". If the signing secret is guessed or another algorithm vulnerability exists, this claim can be escalated.`,
+        `Forge a new token with "${k}": "admin" using a discovered or default secret.`
+      );
+      break;
+    }
+  }
+
+  // 9. Algorithm confusion (RSA/EC → HS)
+  if (alg.startsWith('rs') || alg.startsWith('ps') || alg.startsWith('es')) {
+    add('high',
+      `Algorithm Confusion Attack Potential (${j.header.alg} → HS256)`,
+      `The token uses an asymmetric algorithm (${j.header.alg}). Vulnerable JWT libraries can be tricked into accepting a token where alg is changed to HS256 and the server's own public key is used as the HMAC secret.`,
+      'Download the server\'s public key → change alg to HS256 → sign the modified token using that public key as the HMAC secret.'
+    );
+  }
+
+  // 10. HS256 brute-force note
+  if (alg === 'hs256') {
+    add('info',
+      'HS256 Secret Is Offline-Brute-Forceable',
+      'HMAC-SHA256 signatures can be cracked offline with no server interaction. Weak secrets can be found quickly.',
+      'hashcat -a 0 -m 16500 <jwt_token> wordlist.txt'
+    );
+  }
+
+  // 11. Missing standard claims
+  if (!j.payload.iss)
+    add('info',
+      'Missing Issuer Claim (iss)',
+      'No iss present. Without it, tokens from any issuer sharing the same secret may be cross-accepted.'
+    );
+
+  if (!j.payload.sub)
+    add('info',
+      'Missing Subject Claim (sub)',
+      'No sub claim — the intended principal of the token is unspecified.'
+    );
+
+  // 12. kid injection
+  if (j.header.kid !== undefined) {
+    const kid = String(j.header.kid);
+    const sqlSigns   = ["'",'"','--',';','UNION','SELECT',' OR '];
+    const pathSigns  = ['../','/etc/','/dev/','C:\\','\\\\'];
+    if (sqlSigns.some(p => kid.includes(p)))
+      add('critical',
+        'SQL Injection in kid Header',
+        `The "kid" header contains SQL-like content: "${kid}". Servers that fetch signing keys from a database using kid are vulnerable to SQLi — enabling key manipulation or auth bypass.`
+      );
+    else if (pathSigns.some(p => kid.includes(p)))
+      add('critical',
+        'Path Traversal in kid Header',
+        `The "kid" header looks like a file path: "${kid}". Implementations that use kid as a filesystem path to load the signing key can be exploited to read arbitrary files.`
+      );
+    else
+      add('low',
+        `Custom kid Header: "${kid}"`,
+        `Ensure kid values are validated against a strict whitelist. Unvalidated kid can enable injection attacks.`
+      );
+  }
+
+  // 13. jku / x5u SSRF
+  for (const h of ['jku','x5u','jwks_uri']) {
+    if (j.header[h])
+      add('critical',
+        `SSRF / Key Injection via "${h}" Header`,
+        `Header contains "${h}": "${j.header[h]}". If the server fetches this URL to retrieve the verification key, an attacker can host a rogue JWKS and supply their own signing key pair.`,
+        `Host a JWKS at an attacker-controlled URL, set "${h}" to point there, and sign with your own private key.`
+      );
+  }
+
+  // 14. x5c injection
+  if (j.header.x5c)
+    add('high',
+      'x5c Header Present — Possible Certificate Injection',
+      'Some JWT libraries trust the public key embedded in x5c without validating against a CA. An attacker can embed a self-signed certificate to forge tokens.'
+    );
+
+  return F;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER VULNS
+// ═══════════════════════════════════════════════════════════
+function renderVulns(findings) {
+  document.getElementById('vulnsEmpty').style.display = 'none';
+  document.getElementById('vulnsContent').style.display = 'block';
+
+  const cols = {
+    critical: 'var(--red)', high: 'var(--orange)',
+    medium: 'var(--yellow)', low: 'var(--blue)', info: 'var(--muted)'
+  };
+  const counts = { critical:0, high:0, medium:0, low:0, info:0 };
+  findings.forEach(f => counts[f.sev]++);
+
+  let bar = '';
+  for (const [s, c] of Object.entries(counts)) {
+    if (c)
+      bar += `<div class="vc">
+        <div class="vdot" style="background:${cols[s]}"></div>
+        <span style="font-weight:700;color:${cols[s]}">${c}</span>
+        <span style="color:var(--muted)">${s}</span>
+      </div>`;
+  }
+  document.getElementById('vulnBar').innerHTML = bar ||
+    '<span style="color:var(--muted);font-size:12px;">No issues detected</span>';
+
+  if (!findings.length) {
+    document.getElementById('vulnList').innerHTML = `
+      <div class="empty" style="padding:40px 20px;">
+        <div class="ico">✅</div>
+        <h3 style="color:var(--green)">No Obvious Vulnerabilities Found</h3>
+        <p>Manual review is always recommended. This does not guarantee security.</p>
+      </div>`;
+    return;
+  }
+
+  const order = ['critical','high','medium','low','info'];
+  const sorted = [...findings].sort((a,b) => order.indexOf(a.sev)-order.indexOf(b.sev));
+
+  document.getElementById('vulnList').innerHTML = sorted.map(f => `
+    <div class="finding ${f.sev}">
+      <div><span class="sev ${f.sev}">${f.sev}</span></div>
+      <div>
+        <div class="f-title">${esc(f.title)}</div>
+        <div class="f-desc">${esc(f.desc)}</div>
+        ${f.exploit ? `<div class="f-ex">&#9889; ${esc(f.exploit)}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CRYPTO  (Web Crypto API)
+// ═══════════════════════════════════════════════════════════
+const HASH = { HS256:'SHA-256', HS384:'SHA-384', HS512:'SHA-512' };
+
+async function hmacVerify(h, p, sig, secret, hash) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name:'HMAC', hash }, false, ['verify']);
+  const sigBytes = b64uDecode(sig);
+  if (!sigBytes) return false;
+  return crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(`${h}.${p}`));
+}
+
+async function hmacSign(h, p, secret, hash) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name:'HMAC', hash }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${h}.${p}`));
+  return b64uEncode(new Uint8Array(sig));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VERIFY
+// ═══════════════════════════════════════════════════════════
+async function verify() {
+  if (!jwt) { alert('Analyze a token first.'); return; }
+  const secret = document.getElementById('verifySecret').value;
+  if (!secret) { alert('Enter a secret.'); return; }
+
+  const alg = (jwt.header.alg || '').toString().toUpperCase();
+  const hash = HASH[alg];
+  const el = document.getElementById('verifyResult');
+  el.style.display = 'block'; el.className = 'result-box';
+  el.textContent = 'Verifying…';
+
+  if (!hash) {
+    el.className = 'result-box err';
+    el.textContent = `${alg} is not HMAC-based. Only HS256/384/512 are supported.`;
+    return;
+  }
+  try {
+    const ok = await hmacVerify(jwt.parts[0], jwt.parts[1], jwt.sig, secret, hash);
+    el.className = `result-box ${ok ? 'ok' : 'err'}`;
+    el.textContent = ok
+      ? `✓ Signature VALID — secret is: "${secret}"`
+      : `✗ Signature INVALID — wrong secret.`;
+  } catch(e) {
+    el.className = 'result-box err'; el.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALG:NONE ATTACK
+// ═══════════════════════════════════════════════════════════
+function algNone() {
+  if (!jwt) { alert('Analyze a token first.'); return; }
+  const newHdr = { ...jwt.header, alg: 'none' };
+  delete newHdr.kid; delete newHdr.jku; delete newHdr.x5u;
+  const h = strToB64u(JSON.stringify(newHdr));
+  const p = jwt.parts[1];
+  const forged = `${h}.${p}.`;
+
+  const out = document.getElementById('algNoneOut');
+  out.innerHTML = `<span class="jh">${esc(h)}</span><span class="jd">.</span><span class="jp">${esc(p)}</span><span class="jd">.</span><span style="color:var(--muted)">(empty)</span>`;
+  out.dataset.plain = forged;
+  document.getElementById('algNoneWrap').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FORGE
+// ═══════════════════════════════════════════════════════════
+async function forge() {
+  const payloadStr = document.getElementById('forgePayload').value.trim();
+  const alg    = document.getElementById('forgeAlg').value;
+  const secret = document.getElementById('forgeSecret').value;
+  if (!secret) { alert('Enter a signing secret.'); return; }
+
+  let payloadObj;
+  try { payloadObj = JSON.parse(payloadStr); }
+  catch { alert('Payload is not valid JSON.'); return; }
+
+  const hdrObj  = jwt ? { ...jwt.header, alg } : { alg, typ: 'JWT' };
+  const h = strToB64u(JSON.stringify(hdrObj));
+  const p = strToB64u(JSON.stringify(payloadObj));
+
+  try {
+    const sig    = await hmacSign(h, p, secret, HASH[alg]);
+    const token  = `${h}.${p}.${sig}`;
+    const out    = document.getElementById('forgeOut');
+    out.innerHTML  = colorJWT(token);
+    out.dataset.plain = token;
+    document.getElementById('forgeWrap').style.display = 'block';
+  } catch(e) { alert('Forge error: ' + e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BRUTE FORCE
+// ═══════════════════════════════════════════════════════════
+function updateWC() {
+  const n = document.getElementById('wordlist').value.split('\n').filter(l=>l.trim()).length;
+  document.getElementById('wcLabel').textContent = n + ' secrets loaded';
+}
+
+function loadWL() {
+  document.getElementById('wordlist').value = [
+    'secret','password','123456','qwerty','jwt_secret','mysecret','supersecret',
+    'secretkey','secret123','password123','changeme','admin','root','test','jwt',
+    'token','auth','key','private','mykey','app_secret','flask_secret',
+    'django-insecure','rails_secret','laravel_app_key','node_secret','express',
+    'your-256-bit-secret','your-secret-key','shhhhh','asdf','aaaa','bbbb',
+    '1234','12345','123456789','000000','111111','abc123','letmein','welcome',
+    'monkey','dragon','master','iloveyou','sunshine','princess','shadow',
+    'michael','superman','batman','football','baseball','soccer','hockey',
+    'pokemon','pikachu','naruto','hunter2','passw0rd','P@ssw0rd','Passw0rd!',
+    'Secret@123','JWT@Secret','MySecretKey123','development','production',
+    'staging','localhost','example','demo','guest','user','api_key','apikey',
+    'api_secret','client_secret','access_token','refresh_token','signing_key',
+    'HS256','HS384','HS512','RS256','none','NULL','null','undefined','true','false',
+    '0','1','secret_key','app_key','app_secret','jwtSecretKey','jwtSecret',
+    'my_secret','my_jwt_secret','jwt_token_secret','jsonwebtoken',
+  ].join('\n');
+  updateWC();
+}
+
+async function startBrute() {
+  if (!jwt) { alert('Analyze a token first.'); return; }
+
+  const alg  = (jwt.header.alg || '').toUpperCase();
+  const hash = HASH[alg];
+  if (!hash) { alert(`Brute force requires HS256/384/512. This token uses ${alg}.`); return; }
+
+  const lines = document.getElementById('wordlist').value
+    .split('\n').map(l => l.trim()).filter(l => l);
+  if (!lines.length) { alert('Wordlist is empty. Load the default or add secrets.'); return; }
+
+  stopFlag = false;
+  document.getElementById('bruteProgress').style.display = 'block';
+  document.getElementById('stopBtn').style.display       = 'inline-block';
+  document.getElementById('bruteFound').style.display    = 'none';
+  document.getElementById('bruteNotFound').style.display = 'none';
+  document.getElementById('pBar').style.width            = '0%';
+
+  const h = jwt.parts[0], p = jwt.parts[1], sig = jwt.sig;
+  const BATCH = 25;
+  let found = false;
+
+  for (let i = 0; i < lines.length; i += BATCH) {
+    if (stopFlag) break;
+    const batch   = lines.slice(i, i + BATCH);
+    const results = await Promise.all(
+      batch.map(s => hmacVerify(h, p, sig, s, hash).catch(() => false))
+    );
+    for (let j = 0; j < results.length; j++) {
+      if (results[j]) {
+        found = true;
+        const secret = batch[j];
+        document.getElementById('bruteFound').style.display = 'block';
+        document.getElementById('bruteFound').innerHTML =
+          `<div class="found-box">✓ Secret Found: <code>${esc(secret)}</code>
+           <small>Tested ${i+j+1} of ${lines.length} secrets</small></div>`;
+        break;
+      }
+    }
+    if (found) break;
+
+    const pct = Math.min(((i + BATCH) / lines.length) * 100, 100);
+    document.getElementById('pBar').style.width = pct + '%';
+    document.getElementById('pLabel').textContent =
+      `Testing ${Math.min(i+BATCH, lines.length)} / ${lines.length}  —  "${lines[Math.min(i+BATCH-1, lines.length-1)]}"`;
+
+    await new Promise(r => setTimeout(r, 0)); // yield to UI
+  }
+
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('pBar').style.width = '100%';
+
+  if (!found && !stopFlag) {
+    document.getElementById('bruteNotFound').style.display = 'block';
+    document.getElementById('bruteNotFound').innerHTML =
+      `<div style="margin-top:10px;padding:12px 14px;background:rgba(139,148,158,.08);
+        border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--muted);">
+        Secret not found in ${lines.length} attempts.
+        Try a larger wordlist or <code>hashcat -m 16500</code> for GPU-accelerated cracking.
+      </div>`;
+  }
+}
+
+function stopBrute() { stopFlag = true; }
+
+// ═══════════════════════════════════════════════════════════
+//  COPY
+// ═══════════════════════════════════════════════════════════
+function copyEl(id) {
+  const el  = document.getElementById(id);
+  const txt = el.dataset.plain || el.innerText;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = el.nextElementSibling;
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Token', 1600); }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXAMPLE  &  CLEAR
+// ═══════════════════════════════════════════════════════════
+function loadExample() {
+  // Header: {"alg":"HS256","typ":"JWT"}
+  // Payload: {"sub":"1234","name":"alice","role":"user","iat":1700000000,"exp":9999999999}
+  // Secret: secret  (real, verifiable)
+  document.getElementById('jwtInput').value =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' +
+    '.eyJzdWIiOiIxMjM0IiwibmFtZSI6ImFsaWNlIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6OTk5OTk5OTk5OX0' +
+    '.LKCg9XPBR0VKzjyU5TiloJCHvZqj5IFxOZxWHbqdL_s';
+  onInput();
+  analyze();
+}
+
+function clearAll() {
+  document.getElementById('jwtInput').value = '';
+  document.getElementById('jwtColored').style.display = 'none';
+  jwt = null;
+  document.getElementById('decodeEmpty').style.display = 'block';
+  document.getElementById('decodeContent').style.display = 'none';
+  document.getElementById('vulnsEmpty').style.display = 'block';
+  document.getElementById('vulnsContent').style.display = 'none';
+  document.getElementById('vBadge').innerHTML = '';
+  document.getElementById('verifyResult').style.display = 'none';
+  document.getElementById('algNoneWrap').style.display = 'none';
+  document.getElementById('forgeWrap').style.display = 'none';
+}
+
+document.getElementById('wordlist').addEventListener('input', updateWC);
+</script>
+</body>
+</html>

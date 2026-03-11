@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES Encrypt/Decrypt — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #e3b341;
+      --orange: #ff7b72;
+      --accent: #3fb950;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg0); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(63,185,80,.4); }
+    ::selection { background: rgba(63,185,80,.2); }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(63,185,80,.12);
+      border: 1px solid rgba(63,185,80,.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── INFO / WARN BOXES ── */
+    .info-box {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+    .info-box .box-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .info-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .info-box ul li {
+      font-size: 13px;
+      color: var(--muted);
+      padding-left: 14px;
+      position: relative;
+    }
+    .info-box ul li::before {
+      content: '·';
+      position: absolute;
+      left: 4px;
+      color: var(--accent);
+    }
+
+    .warn-box {
+      background: rgba(227,179,65,.06);
+      border: 1px solid rgba(227,179,65,.25);
+      border-left: 3px solid var(--yellow);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .warn-icon {
+      color: var(--yellow);
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .warn-box .box-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--yellow);
+      margin-bottom: 4px;
+    }
+    .warn-box p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+
+    .pass-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pass-wrap input {
+      width: 100%;
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 14px;
+      padding: 10px 42px 10px 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .pass-wrap input:focus { border-color: var(--accent); }
+    .pass-wrap input::placeholder { color: var(--muted); opacity: .5; font-style: italic; }
+
+    .eye-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      transition: color .2s;
+      border-radius: 4px;
+    }
+    .eye-btn:hover { color: var(--text); }
+
+    textarea {
+      width: 100%;
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); opacity: .5; }
+    textarea[readonly] {
+      background: var(--bg2);
+      cursor: default;
+      color: var(--green);
+    }
+    textarea[readonly]::placeholder { color: var(--muted); opacity: .35; }
+
+    /* ── BUTTONS ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 20px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .15s, border-color .15s, color .15s, opacity .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .btn-encrypt {
+      background: rgba(63,185,80,.14);
+      border-color: rgba(63,185,80,.5);
+      color: var(--green);
+    }
+    .btn-encrypt:not(:disabled):hover {
+      background: rgba(63,185,80,.24);
+      border-color: var(--green);
+    }
+
+    .btn-decrypt {
+      background: rgba(248,81,73,.12);
+      border-color: rgba(248,81,73,.45);
+      color: var(--red);
+    }
+    .btn-decrypt:not(:disabled):hover {
+      background: rgba(248,81,73,.22);
+      border-color: var(--red);
+    }
+
+    .btn-ghost {
+      background: var(--bg2);
+      border-color: var(--border);
+      color: var(--muted);
+    }
+    .btn-ghost:not(:disabled):hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    .btn-copy {
+      background: var(--bg2);
+      border-color: var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+    .btn-copy:not(:disabled):hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-copy.copied {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ── STATUS ── */
+    .status {
+      font-size: 13px;
+      padding: 9px 14px;
+      border-radius: 7px;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.error {
+      background: rgba(248,81,73,.1);
+      border: 1px solid rgba(248,81,73,.3);
+      color: var(--red);
+    }
+    .status.success {
+      background: rgba(63,185,80,.09);
+      border: 1px solid rgba(63,185,80,.3);
+      color: var(--green);
+    }
+
+    /* ── OUTPUT SECTION ── */
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .output-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    .copy-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-tip {
+      font-size: 11px;
+      color: var(--green);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .copy-tip.show { opacity: 1; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── SPINNER ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 22px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      opacity: .7;
+    }
+
+    @media (max-width: 540px) {
+      .topbar { padding: 12px 16px; }
+      .main { padding: 20px 16px 48px; }
+      .topbar .tags { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <a href="../index.html" class="back">← ~/tools</a>
+  <div class="logo">AES<span>Crypt</span></div>
+  <span class="badge">v1.0</span>
+  <span class="desc">AES-256-GCM encrypt &amp; decrypt in-browser</span>
+  <div class="tags">
+    <span class="tag">aes</span>
+    <span class="tag">cryptography</span>
+    <span class="tag">encryption</span>
+    <span class="tag">client-side</span>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- Cipher info -->
+  <div class="info-box">
+    <div class="box-title">Cipher Details</div>
+    <ul>
+      <li>AES-256-GCM — authenticated encryption with associated data (AEAD)</li>
+      <li>PBKDF2 key derivation — 100,000 iterations, SHA-256, 256-bit output key</li>
+      <li>Random 128-bit salt + 96-bit IV generated per operation via <code style="font-family:monospace;color:var(--accent)">crypto.getRandomValues</code></li>
+      <li>Output format: Base64(salt[16] || iv[12] || ciphertext) — fully self-contained</li>
+      <li>All processing is client-side only — nothing ever leaves your browser</li>
+    </ul>
+  </div>
+
+  <!-- Warning -->
+  <div class="warn-box">
+    <span class="warn-icon">⚠</span>
+    <div>
+      <div class="box-title">Security Notice</div>
+      <p>The passphrase is never stored or transmitted. Keep it safe — without it you cannot decrypt your data. Use a strong, unique passphrase and store it securely.</p>
+    </div>
+  </div>
+
+  <!-- Passphrase -->
+  <div class="field">
+    <div class="field-header">
+      <label for="passphrase">Passphrase</label>
+      <span id="strengthHint" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div class="pass-wrap">
+      <input type="password" id="passphrase"
+             placeholder="Enter a strong passphrase…"
+             autocomplete="off" spellcheck="false" />
+      <button class="eye-btn" id="eyeBtn" title="Toggle passphrase visibility" aria-label="Toggle passphrase visibility">
+        <svg id="eyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <svg id="eyeClosed" width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="display:none">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Input text -->
+  <div class="field">
+    <label for="inputText">Plaintext (to encrypt) or Ciphertext Base64 (to decrypt)</label>
+    <textarea id="inputText" rows="8"
+              placeholder="Paste plaintext to encrypt, or paste Base64 ciphertext to decrypt…"
+              spellcheck="false"></textarea>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-row">
+    <button class="btn btn-encrypt" id="encryptBtn">🔒 Encrypt</button>
+    <button class="btn btn-decrypt" id="decryptBtn">🔓 Decrypt</button>
+    <button class="btn btn-ghost" id="clearBtn">Clear All</button>
+  </div>
+
+  <!-- Status message -->
+  <div class="status" id="statusEl"></div>
+
+  <hr class="divider" />
+
+  <!-- Output -->
+  <div class="output-header">
+    <span class="output-label">Output</span>
+    <div class="copy-row">
+      <span class="copy-tip" id="copyTip">Copied!</span>
+      <button class="btn btn-copy" id="copyBtn">Copy Output</button>
+    </div>
+  </div>
+  <textarea id="outputText" rows="8" readonly
+            placeholder="Encrypted or decrypted output will appear here…"
+            spellcheck="false"></textarea>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>ghosttools · client-side · open-source</footer>
+
+<script>
+  /* ─────────────────────────────────────────────────────────────────────────
+   * AES-256-GCM + PBKDF2  (Web Crypto API — requires secure context or file://)
+   * ───────────────────────────────────────────────────────────────────────── */
+
+  async function deriveKey(passphrase, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function encrypt(plaintext, passphrase) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv   = crypto.getRandomValues(new Uint8Array(12));
+    const key  = await deriveKey(passphrase, salt);
+    const enc  = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, key, enc.encode(plaintext)
+    );
+    const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+    combined.set(salt, 0);
+    combined.set(iv, salt.length);
+    combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
+    // btoa on large arrays via chunked approach to avoid stack overflow
+    let binary = '';
+    const chunk = 8192;
+    for (let i = 0; i < combined.length; i += chunk) {
+      binary += String.fromCharCode(...combined.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  async function decrypt(b64, passphrase) {
+    let binary;
+    try {
+      binary = atob(b64.trim());
+    } catch {
+      throw new Error('Input is not valid Base64.');
+    }
+    const combined  = Uint8Array.from(binary, c => c.charCodeAt(0));
+    if (combined.length < 29) throw new Error('Ciphertext is too short to be valid.');
+    const salt      = combined.slice(0, 16);
+    const iv        = combined.slice(16, 28);
+    const ciphertext = combined.slice(28);
+    const key       = await deriveKey(passphrase, salt);
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv }, key, ciphertext
+    );
+    return new TextDecoder().decode(plaintext);
+  }
+
+  /* ── DOM refs ── */
+  const passphraseEl  = document.getElementById('passphrase');
+  const inputEl       = document.getElementById('inputText');
+  const outputEl      = document.getElementById('outputText');
+  const statusEl      = document.getElementById('statusEl');
+  const encryptBtn    = document.getElementById('encryptBtn');
+  const decryptBtn    = document.getElementById('decryptBtn');
+  const clearBtn      = document.getElementById('clearBtn');
+  const copyBtn       = document.getElementById('copyBtn');
+  const eyeBtn        = document.getElementById('eyeBtn');
+  const eyeOpen       = document.getElementById('eyeOpen');
+  const eyeClosed     = document.getElementById('eyeClosed');
+  const copyTip       = document.getElementById('copyTip');
+  const strengthHint  = document.getElementById('strengthHint');
+
+  /* ── Show/hide passphrase ── */
+  eyeBtn.addEventListener('click', () => {
+    const show = passphraseEl.type === 'password';
+    passphraseEl.type = show ? 'text' : 'password';
+    eyeOpen.style.display   = show ? 'none'  : 'block';
+    eyeClosed.style.display = show ? 'block' : 'none';
+  });
+
+  /* ── Passphrase strength hint ── */
+  passphraseEl.addEventListener('input', () => {
+    const len = passphraseEl.value.length;
+    if (len === 0) { strengthHint.textContent = ''; return; }
+    if (len < 8)  { strengthHint.style.color = 'var(--red)';    strengthHint.textContent = 'too short'; return; }
+    if (len < 12) { strengthHint.style.color = 'var(--yellow)'; strengthHint.textContent = 'fair'; return; }
+    if (len < 20) { strengthHint.style.color = 'var(--green)';  strengthHint.textContent = 'good'; return; }
+    strengthHint.style.color = 'var(--green)'; strengthHint.textContent = 'strong';
+  });
+
+  /* ── Status helpers ── */
+  let statusTimer = null;
+  function showStatus(msg, type) {
+    clearTimeout(statusTimer);
+    statusEl.textContent = msg;
+    statusEl.className   = `status show ${type}`;
+    if (type === 'success') {
+      statusTimer = setTimeout(() => { statusEl.className = 'status'; }, 4000);
+    }
+  }
+
+  /* ── Loading state ── */
+  function setLoading(btn, loading, originalHTML) {
+    if (loading) {
+      btn._orig = btn.innerHTML;
+      btn.innerHTML = '<span class="spin"></span> Processing…';
+      btn.disabled  = true;
+    } else {
+      btn.innerHTML = btn._orig || originalHTML;
+      btn.disabled  = false;
+    }
+  }
+
+  /* ── Encrypt ── */
+  encryptBtn.addEventListener('click', async () => {
+    const plaintext  = inputEl.value;
+    const passphrase = passphraseEl.value;
+    if (!plaintext.trim())  return showStatus('Enter plaintext to encrypt.', 'error');
+    if (!passphrase)        return showStatus('Enter a passphrase.', 'error');
+    setLoading(encryptBtn, true);
+    try {
+      outputEl.value = await encrypt(plaintext, passphrase);
+      showStatus('Encrypted successfully.', 'success');
+    } catch (e) {
+      showStatus(`Encryption failed: ${e.message}`, 'error');
+    } finally {
+      setLoading(encryptBtn, false);
+    }
+  });
+
+  /* ── Decrypt ── */
+  decryptBtn.addEventListener('click', async () => {
+    const ciphertext = inputEl.value.trim();
+    const passphrase = passphraseEl.value;
+    if (!ciphertext)  return showStatus('Enter ciphertext to decrypt.', 'error');
+    if (!passphrase)  return showStatus('Enter a passphrase.', 'error');
+    setLoading(decryptBtn, true);
+    try {
+      outputEl.value = await decrypt(ciphertext, passphrase);
+      showStatus('Decrypted successfully.', 'success');
+    } catch (e) {
+      if (e.message.includes('Base64')) {
+        showStatus(e.message, 'error');
+      } else {
+        showStatus('Decryption failed — wrong passphrase or corrupted ciphertext.', 'error');
+      }
+    } finally {
+      setLoading(decryptBtn, false);
+    }
+  });
+
+  /* ── Copy output ── */
+  copyBtn.addEventListener('click', async () => {
+    if (!outputEl.value) return;
+    try {
+      await navigator.clipboard.writeText(outputEl.value);
+    } catch {
+      outputEl.select();
+      document.execCommand('copy');
+    }
+    copyBtn.classList.add('copied');
+    copyBtn.textContent = 'Copied!';
+    copyTip.classList.add('show');
+    setTimeout(() => {
+      copyBtn.classList.remove('copied');
+      copyBtn.textContent = 'Copy Output';
+      copyTip.classList.remove('show');
+    }, 2000);
+  });
+
+  /* ── Clear all ── */
+  clearBtn.addEventListener('click', () => {
+    inputEl.value      = '';
+    outputEl.value     = '';
+    passphraseEl.value = '';
+    strengthHint.textContent = '';
+    statusEl.className = 'status';
+    statusEl.textContent = '';
+  });
+
+  /* ── Keyboard shortcut: Ctrl+Enter to encrypt ── */
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      encryptBtn.click();
+    }
+  });
+</script>
+
+</body>
+</html>

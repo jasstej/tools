@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSP Analyzer — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #e3b341;
+      --orange: #ff7b72;
+      --accent: #d2a8ff;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(210,168,255,.12);
+      border: 1px solid rgba(210,168,255,.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* ── INPUT SECTION ── */
+    .input-section {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 10px;
+    }
+    .input-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-family: 'Courier New', monospace;
+    }
+    textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+      resize: vertical;
+      min-height: 90px;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ── BUTTON ROW ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .8; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--bg2); border: 1px solid var(--border); color: var(--muted); }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+    }
+    .card-body { padding: 16px; }
+
+    /* ── DIRECTIVES TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(33,38,45,.5); }
+    .td-directive {
+      font-family: 'Courier New', monospace;
+      color: var(--accent);
+      white-space: nowrap;
+      min-width: 180px;
+    }
+    .td-sources {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .src-token {
+      display: inline-block;
+      background: var(--bg0);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0 5px;
+      margin: 1px 2px;
+      font-size: 11px;
+    }
+    .src-danger  { color: var(--red);    border-color: rgba(248,81,73,.4); }
+    .src-wild    { color: var(--yellow); border-color: rgba(227,179,65,.4); }
+    .src-self    { color: var(--green);  border-color: rgba(63,185,80,.4); }
+    .src-normal  { color: var(--muted); }
+    .src-url     { color: var(--text); }
+
+    /* ── SEVERITY BADGES ── */
+    .sev {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 800;
+      padding: 2px 7px; border-radius: 3px;
+      letter-spacing: .5px; white-space: nowrap;
+    }
+    .sev-critical { background: rgba(248,81,73,.15);  border: 1px solid rgba(248,81,73,.4);   color: var(--red); }
+    .sev-high     { background: rgba(255,123,114,.12); border: 1px solid rgba(255,123,114,.35); color: var(--orange); }
+    .sev-medium   { background: rgba(227,179,65,.12);  border: 1px solid rgba(227,179,65,.35);  color: var(--yellow); }
+    .sev-low      { background: rgba(139,148,158,.1);  border: 1px solid var(--border);         color: var(--muted); }
+    .sev-info     { background: rgba(210,168,255,.1);  border: 1px solid rgba(210,168,255,.3);  color: var(--accent); }
+
+    /* ── ISSUES LIST ── */
+    .issue-list { display: flex; flex-direction: column; gap: 8px; }
+    .issue-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+    }
+    .issue-item.critical { background: rgba(248,81,73,.06);   border-left-color: var(--red); }
+    .issue-item.high     { background: rgba(255,123,114,.05); border-left-color: var(--orange); }
+    .issue-item.medium   { background: rgba(227,179,65,.05);  border-left-color: var(--yellow); }
+    .issue-item.low      { background: rgba(139,148,158,.04); border-left-color: var(--border); }
+    .issue-item.info     { background: rgba(210,168,255,.04); border-left-color: rgba(210,168,255,.35); }
+    .issue-sev-col { flex-shrink: 0; padding-top: 1px; }
+    .issue-body { flex: 1; }
+    .issue-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .issue-desc  { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    /* ── SCORE ── */
+    .score-block {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+    .score-num-col { flex-shrink: 0; }
+    .score-num {
+      font-size: 64px;
+      font-weight: 800;
+      font-family: 'Courier New', monospace;
+      line-height: 1;
+    }
+    .score-rating-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+    }
+    .score-bar-col { flex: 1; min-width: 160px; padding-top: 6px; }
+    .score-scale-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .score-track {
+      height: 10px;
+      background: var(--bg2);
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .score-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width .5s ease;
+    }
+    .score-legend {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .score-deduct-col { flex: 1; min-width: 200px; padding-top: 4px; }
+    .deduct-heading {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .deduct-list { list-style: none; font-size: 12px; line-height: 1.9; }
+    .deduct-list li { color: var(--muted); }
+    .deduct-list li::before { content: "- "; color: var(--red); font-weight: 700; }
+    .deduct-list li.bonus::before { content: "+ "; color: var(--green); font-weight: 700; }
+
+    /* ── PLACEHOLDER ── */
+    .placeholder {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .placeholder .ph-icon { font-size: 36px; margin-bottom: 12px; opacity: .4; }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 32px 16px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    .footer span { opacity: .6; }
+
+    @media (max-width: 640px) {
+      .topbar { padding: 12px 16px; }
+      .container { padding: 16px; }
+      .score-block { flex-direction: column; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="back">&#8592; ~/tools</a>
+  <div class="logo">CSP<span>Analyzer</span></div>
+  <span class="badge">v1.0</span>
+  <span class="desc">Audit Content-Security-Policy headers</span>
+  <div class="tags">
+    <span class="tag">csp</span>
+    <span class="tag">web-security</span>
+    <span class="tag">headers</span>
+    <span class="tag">content-security</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="input-section">
+    <div class="input-label">Paste CSP header value</div>
+    <div class="input-hint">Content-Security-Policy: &lt;paste this part&gt;</div>
+    <textarea id="cspInput" spellcheck="false" placeholder="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.example.com; style-src 'self'; img-src *; ..."></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runAnalysis()">Analyze</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div id="output">
+    <div class="placeholder">
+      <div class="ph-icon">&#128737;</div>
+      Paste a CSP header value above and click Analyze
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>ghosttools &middot; client-side &middot; open-source</span>
+</div>
+
+<script>
+'use strict';
+
+/* ─── EXAMPLE ─────────────────────────────────────────────────────── */
+const EXAMPLE = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.example.com; style-src 'self' 'unsafe-inline'; img-src *; connect-src 'self' https://api.example.com; frame-ancestors 'none'; upgrade-insecure-requests";
+
+function loadExample() {
+  document.getElementById('cspInput').value = EXAMPLE;
+  runAnalysis();
+}
+
+function clearAll() {
+  document.getElementById('cspInput').value = '';
+  setOutput(`<div class="placeholder"><div class="ph-icon">&#128737;</div>Paste a CSP header value above and click Analyze</div>`);
+}
+
+function setOutput(html) {
+  document.getElementById('output').innerHTML = html;
+}
+
+/* ─── PARSER ──────────────────────────────────────────────────────── */
+
+/**
+ * Parse a CSP header value string into a map of directive -> [sources].
+ * Handles bare directives (no sources) like upgrade-insecure-requests.
+ */
+function parseCSP(raw) {
+  // Strip leading header name if pasted with it
+  raw = raw.replace(/^content-security-policy\s*:\s*/i, '').trim();
+
+  const directives = {};
+  const parts = raw.split(';').map(s => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    const tokens = part.split(/\s+/);
+    const name = tokens[0].toLowerCase();
+    directives[name] = tokens.slice(1);
+  }
+  return directives;
+}
+
+/* ─── ISSUE DETECTION ─────────────────────────────────────────────── */
+
+const SEV_RANK = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+
+function detectIssues(dir) {
+  const issues = [];
+
+  function add(sev, title, desc) { issues.push({ sev, title, desc }); }
+
+  /* Helpers */
+  function hasSrc(d, val) {
+    return d && d.some(s => s.toLowerCase() === val.toLowerCase());
+  }
+  function hasSrcStart(d, prefix) {
+    return d && d.some(s => s.toLowerCase().startsWith(prefix.toLowerCase()));
+  }
+
+  // Effective script sources: prefer script-src, fall back to default-src
+  const scriptEffective = dir['script-src'] || dir['default-src'] || null;
+
+  /* CRITICAL: unsafe-eval */
+  if (hasSrc(scriptEffective, "'unsafe-eval'")) {
+    add('critical',
+      "'unsafe-eval' in script-src / default-src",
+      "Permits eval(), new Function(), and setTimeout/setInterval with string arguments. An attacker can turn any string injection into code execution, completely bypassing the CSP. Refactor code to eliminate dynamic code evaluation.");
+  }
+
+  /* CRITICAL: unsafe-inline in script-src without nonce or hash */
+  const hasNonce = scriptEffective && scriptEffective.some(s => s.toLowerCase().startsWith("'nonce-"));
+  const hasHash  = scriptEffective && scriptEffective.some(s => /^'sha(256|384|512)-/i.test(s));
+  if (hasSrc(scriptEffective, "'unsafe-inline'") && !hasNonce && !hasHash) {
+    add('critical',
+      "'unsafe-inline' in script-src (no nonce or hash fallback)",
+      "Allows all inline <script> blocks to execute. This is the most commonly exploited CSP misconfiguration — any injected XSS payload in the page will run. Replace with nonces ('nonce-<random>') or subresource hashes.");
+  }
+
+  /* HIGH: wildcard in script-src / default-src */
+  if (hasSrc(scriptEffective, '*')) {
+    add('high',
+      "Wildcard (*) in script-src / default-src",
+      "Allows loading scripts from any origin, defeating the purpose of a script source allowlist. Enumerate and explicitly list only the origins your application requires.");
+  }
+
+  /* HIGH: http: in script-src */
+  if (hasSrc(scriptEffective, 'http:')) {
+    add('high',
+      "http: scheme permitted in script-src",
+      "Scripts may be loaded over unencrypted HTTP and are vulnerable to man-in-the-middle injection. Replace http: with https: or remove the scheme entirely.");
+  }
+
+  /* HIGH: no script-src and no default-src */
+  if (!dir['script-src'] && !dir['default-src']) {
+    add('high',
+      "No script-src or default-src defined",
+      "Without either directive the browser places no restrictions on script sources. Inline scripts and scripts from any URL are permitted by default. Add at minimum default-src 'self'.");
+  }
+
+  /* MEDIUM: unsafe-inline in style-src */
+  const styleEffective = dir['style-src'] || dir['default-src'] || null;
+  if (hasSrc(styleEffective, "'unsafe-inline'")) {
+    add('medium',
+      "'unsafe-inline' in style-src",
+      "Allows inline <style> blocks and style= attributes. While less severe than script unsafe-inline, this enables CSS-based data exfiltration attacks via attribute selectors and can assist UI redressing attacks.");
+  }
+
+  /* MEDIUM: data: in script-src */
+  if (hasSrc(scriptEffective, 'data:')) {
+    add('medium',
+      "data: URI scheme in script-src",
+      "Equivalent to unsafe-inline for scripts — an attacker can use data:text/javascript,<code> to execute arbitrary JavaScript. Remove data: from script-src.");
+  }
+
+  /* MEDIUM: missing object-src */
+  if (!dir['object-src'] && !dir['default-src']) {
+    add('medium',
+      "Missing object-src directive",
+      "Without object-src the browser defaults to allow all plugin content (legacy Flash, Java applets, etc.). Add object-src 'none' to block plugin-based attack vectors.");
+  } else if (dir['object-src'] && hasSrc(dir['object-src'], '*')) {
+    add('medium',
+      "Wildcard (*) in object-src",
+      "Permits plugin content from any origin. Unless your application actively uses browser plugins, set object-src 'none'.");
+  }
+
+  /* MEDIUM: missing base-uri */
+  if (!dir['base-uri']) {
+    add('medium',
+      "Missing base-uri directive",
+      "An attacker who can inject a <base href> tag can redirect all relative resource URLs to a hostile origin. Add base-uri 'self' or base-uri 'none' to prevent this.");
+  }
+
+  /* LOW: report-uri deprecated */
+  if (dir['report-uri']) {
+    add('low',
+      "report-uri is deprecated (CSP Level 3)",
+      "The report-uri directive is deprecated in favour of report-to with a Reporting-Endpoints response header. New browsers may ignore report-uri in the future.");
+  }
+
+  /* INFO: upgrade-insecure-requests */
+  if ('upgrade-insecure-requests' in dir) {
+    add('info',
+      "upgrade-insecure-requests present",
+      "The browser will automatically upgrade HTTP sub-resource requests to HTTPS, helping prevent mixed content. Good practice alongside an HTTPS-only deployment.");
+  }
+
+  /* INFO: frame-ancestors */
+  if (dir['frame-ancestors']) {
+    const val = dir['frame-ancestors'].join(' ') || '(none)';
+    add('info',
+      "frame-ancestors configured (" + val + ")",
+      "Restricts which origins may embed this page in a frame or iframe, providing clickjacking protection equivalent to (and superseding) the X-Frame-Options header.");
+  }
+
+  /* INFO: report-to */
+  if (dir['report-to']) {
+    add('info',
+      "report-to violation reporting is configured",
+      "CSP violations will be reported to the endpoint group specified in a Reporting-Endpoints header. Monitoring violation reports helps iteratively tighten the policy.");
+  }
+
+  issues.sort((a, b) => SEV_RANK[a.sev] - SEV_RANK[b.sev]);
+  return issues;
+}
+
+/* ─── SCORE ───────────────────────────────────────────────────────── */
+
+function computeScore(issues, dir) {
+  let score = 100;
+  const adjustments = [];
+
+  for (const issue of issues) {
+    switch (issue.sev) {
+      case 'critical': score -= 25; adjustments.push({ text: issue.title + ' (−25)', type: 'deduct' }); break;
+      case 'high':     score -= 15; adjustments.push({ text: issue.title + ' (−15)', type: 'deduct' }); break;
+      case 'medium':   score -= 10; adjustments.push({ text: issue.title + ' (−10)', type: 'deduct' }); break;
+      case 'low':      score -= 5;  adjustments.push({ text: issue.title + ' (−5)',  type: 'deduct' }); break;
+      default: break; // info: no deduction
+    }
+  }
+
+  if ('upgrade-insecure-requests' in dir) {
+    score += 5;
+    adjustments.push({ text: 'upgrade-insecure-requests (+5)', type: 'bonus' });
+  }
+  if (dir['frame-ancestors']) {
+    score += 5;
+    adjustments.push({ text: 'frame-ancestors present (+5)', type: 'bonus' });
+  }
+  if (dir['report-to'] || dir['report-uri']) {
+    score += 5;
+    adjustments.push({ text: 'violation reporting configured (+5)', type: 'bonus' });
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  return { score, adjustments };
+}
+
+/* ─── RENDER HELPERS ──────────────────────────────────────────────── */
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function sevBadge(sev) {
+  return `<span class="sev sev-${sev}">${sev.toUpperCase()}</span>`;
+}
+
+function renderSrcTokens(sources) {
+  if (!sources || sources.length === 0) {
+    return '<span style="color:var(--muted);font-style:italic;font-size:12px">no sources (bare directive)</span>';
+  }
+  return sources.map(s => {
+    const sl = s.toLowerCase();
+    let cls = 'src-normal';
+    if (sl === "'unsafe-eval'" || sl === "'unsafe-inline'" || sl === 'http:' || sl === 'data:') {
+      cls = 'src-danger';
+    } else if (sl === '*' || sl.startsWith('*.')) {
+      cls = 'src-wild';
+    } else if (sl === "'self'" || sl === "'none'" || sl === "'strict-dynamic'") {
+      cls = 'src-self';
+    } else if (sl.startsWith('http') || sl.startsWith('/')) {
+      cls = 'src-url';
+    }
+    return `<span class="src-token ${cls}">${esc(s)}</span>`;
+  }).join(' ');
+}
+
+function scoreColor(s) {
+  if (s >= 80) return 'var(--green)';
+  if (s >= 50) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function scoreRating(s) {
+  if (s >= 80) return 'GOOD';
+  if (s >= 60) return 'FAIR';
+  if (s >= 40) return 'POOR';
+  return 'CRITICAL';
+}
+
+/* ─── KNOWN DIRECTIVES ────────────────────────────────────────────── */
+const KNOWN = new Set([
+  'default-src','script-src','style-src','img-src','connect-src','font-src',
+  'frame-src','media-src','object-src','frame-ancestors','form-action','base-uri',
+  'upgrade-insecure-requests','block-all-mixed-content','report-uri','report-to',
+  'worker-src','manifest-src','child-src','navigate-to','prefetch-src',
+  'script-src-elem','script-src-attr','style-src-elem','style-src-attr',
+  'sandbox','plugin-types'
+]);
+
+/* ─── MAIN ANALYSIS ──────────────────────────────────────────────── */
+
+function runAnalysis() {
+  const raw = document.getElementById('cspInput').value.trim();
+  if (!raw) {
+    setOutput(`<div class="placeholder"><div class="ph-icon">&#128737;</div>Nothing to analyze — paste a CSP header value first.</div>`);
+    return;
+  }
+
+  const dir = parseCSP(raw);
+  const keys = Object.keys(dir);
+
+  if (keys.length === 0) {
+    setOutput(`<div class="placeholder">Could not parse any directives from the input.</div>`);
+    return;
+  }
+
+  /* ── 1. Directives Table ── */
+  const tableRows = keys.map(k => {
+    const sources = dir[k];
+    const unknown = !KNOWN.has(k)
+      ? `<span class="sev sev-low">UNKNOWN</span>`
+      : '';
+    return `<tr>
+      <td class="td-directive">${esc(k)}</td>
+      <td class="td-sources">${renderSrcTokens(sources)}</td>
+      <td>${unknown}</td>
+    </tr>`;
+  }).join('');
+
+  const tableHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Directives</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto">${keys.length} directive${keys.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Directive</th><th>Sources</th><th>Note</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  /* ── 2. Issues ── */
+  const issues = detectIssues(dir);
+
+  let issueBodyHTML;
+  if (issues.length === 0) {
+    issueBodyHTML = `<div style="color:var(--green);font-size:13px;text-align:center;padding:16px 0">No issues detected — this policy looks clean.</div>`;
+  } else {
+    issueBodyHTML = `<div class="issue-list">${issues.map(i => `
+      <div class="issue-item ${esc(i.sev)}">
+        <div class="issue-sev-col">${sevBadge(i.sev)}</div>
+        <div class="issue-body">
+          <div class="issue-title">${esc(i.title)}</div>
+          <div class="issue-desc">${esc(i.desc)}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+
+  const issuesHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Issues</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto">${issues.length} finding${issues.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="card-body">${issueBodyHTML}</div>
+    </div>`;
+
+  /* ── 3. Score ── */
+  const { score, adjustments } = computeScore(issues, dir);
+  const col    = scoreColor(score);
+  const rating = scoreRating(score);
+
+  const adjHTML = adjustments.length > 0
+    ? `<ul class="deduct-list">${adjustments.map(a =>
+        `<li class="${a.type === 'bonus' ? 'bonus' : ''}">${esc(a.text)}</li>`
+      ).join('')}</ul>`
+    : `<p style="font-size:12px;color:var(--muted)">No adjustments.</p>`;
+
+  const scoreHTML = `
+    <div class="card">
+      <div class="card-header"><span class="card-title">Security Score</span></div>
+      <div class="card-body">
+        <div class="score-block">
+          <div class="score-num-col">
+            <div class="score-num" style="color:${col}">${score}</div>
+            <div class="score-rating-label" style="color:${col}">${rating}</div>
+          </div>
+          <div class="score-bar-col">
+            <div class="score-scale-row"><span>0</span><span>50</span><span>100</span></div>
+            <div class="score-track">
+              <div class="score-fill" style="width:${score}%;background:${col}"></div>
+            </div>
+            <div class="score-legend">
+              Starts at 100. Deductions: CRITICAL &minus;25, HIGH &minus;15, MEDIUM &minus;10, LOW &minus;5.
+              Bonuses: upgrade-insecure-requests, frame-ancestors, reporting each +5.
+            </div>
+          </div>
+          <div class="score-deduct-col">
+            <div class="deduct-heading">Adjustments</div>
+            ${adjHTML}
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  setOutput(tableHTML + issuesHTML + scoreHTML);
+}
+
+/* ─── KEYBOARD SHORTCUT ───────────────────────────────────────────── */
+document.getElementById('cspInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runAnalysis();
+});
+</script>
+</body>
+</html>

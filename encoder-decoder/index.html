@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payload Encoder/Decoder — ghosttools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0: #0d1117;
+      --bg1: #161b22;
+      --bg2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+    }
+
+    body {
+      background: var(--bg0);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg0); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(88,166,255,.4); }
+    ::selection { background: rgba(88,166,255,.25); }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .back:hover { color: var(--accent); }
+    .topbar .logo { font-size: 18px; font-weight: 700; }
+    .topbar .logo span { color: var(--accent); }
+    .topbar .badge {
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .topbar .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .topbar .tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── MODE SELECTOR ── */
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .mode-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mode-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      font-family: inherit;
+    }
+    .mode-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .mode-btn.active {
+      background: rgba(88,166,255,.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── IO PANEL ── */
+    .io-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 640px) {
+      .io-grid { grid-template-columns: 1fr; }
+    }
+
+    .io-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .io-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .io-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .char-count {
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    textarea {
+      width: 100%;
+      height: 220px;
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); opacity: .6; }
+
+    /* ── ACTION BUTTONS ── */
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .15s, border-color .15s, color .15s, opacity .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: #79c0ff; border-color: #79c0ff; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--border); color: var(--text); }
+
+    .btn-danger {
+      background: transparent;
+      color: #f85149;
+      border-color: rgba(248,81,73,.35);
+    }
+    .btn-danger:hover { background: rgba(248,81,73,.1); }
+
+    .divider {
+      flex: 1;
+    }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none;
+      background: rgba(248,81,73,.1);
+      border: 1px solid rgba(248,81,73,.35);
+      color: #f85149;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      align-items: center;
+      gap: 6px;
+    }
+    .error-msg.visible { display: flex; }
+
+    /* ── INFO NOTE ── */
+    .info-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(88,166,255,.07);
+      border: 1px solid rgba(88,166,255,.2);
+      color: var(--muted);
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+    .info-note svg { color: var(--accent); flex-shrink: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    footer span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <a href="../index.html" class="back">← ~/tools</a>
+    <div class="logo">Payload<span>Coder</span></div>
+    <span class="badge">v1.0</span>
+    <span class="desc">encode & decode security payloads client-side</span>
+    <div class="tags">
+      <span class="tag">encoding</span>
+      <span class="tag">decoding</span>
+      <span class="tag">web-security</span>
+      <span class="tag">utility</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- MODE SELECTOR -->
+    <div>
+      <div class="section-label">Encoding Mode</div>
+      <div class="mode-row" id="modeRow">
+        <button class="mode-btn active" data-mode="base64">Base64</button>
+        <button class="mode-btn" data-mode="url">URL</button>
+        <button class="mode-btn" data-mode="html">HTML Entities</button>
+        <button class="mode-btn" data-mode="hex">Hex</button>
+        <button class="mode-btn" data-mode="unicode">Unicode Escape</button>
+      </div>
+    </div>
+
+    <!-- IO PANEL -->
+    <div class="io-grid">
+      <div class="io-box">
+        <div class="io-header">
+          <span class="io-label">Input</span>
+          <span class="char-count" id="inputCount">0 chars</span>
+        </div>
+        <textarea
+          id="inputArea"
+          placeholder="Paste your payload or text here…"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+        ></textarea>
+      </div>
+      <div class="io-box">
+        <div class="io-header">
+          <span class="io-label">Output</span>
+          <span class="char-count" id="outputCount">0 chars</span>
+        </div>
+        <textarea
+          id="outputArea"
+          placeholder="Result will appear here…"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          readonly
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-msg" id="errorMsg">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="errorText"></span>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="actions">
+      <button class="btn btn-primary" id="encodeBtn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+          <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+        </svg>
+        Encode
+      </button>
+      <button class="btn btn-secondary" id="decodeBtn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Decode
+      </button>
+      <button class="btn btn-ghost" id="copyBtn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy Output
+      </button>
+      <button class="btn btn-ghost" id="swapBtn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+        Swap ⇅
+      </button>
+      <div class="divider"></div>
+      <button class="btn btn-danger" id="clearBtn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+        Clear
+      </button>
+    </div>
+
+    <!-- INFO NOTE -->
+    <div class="info-note">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      All processing is done client-side — nothing leaves your browser.
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>ghosttools · <span>client-side</span> · open-source</footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── STATE ── */
+      let activeMode = 'base64';
+
+      const inputArea   = document.getElementById('inputArea');
+      const outputArea  = document.getElementById('outputArea');
+      const inputCount  = document.getElementById('inputCount');
+      const outputCount = document.getElementById('outputCount');
+      const errorMsg    = document.getElementById('errorMsg');
+      const errorText   = document.getElementById('errorText');
+      const copyBtn     = document.getElementById('copyBtn');
+
+      /* ── MODE BUTTONS ── */
+      document.getElementById('modeRow').addEventListener('click', function (e) {
+        const btn = e.target.closest('.mode-btn');
+        if (!btn) return;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeMode = btn.dataset.mode;
+        clearError();
+      });
+
+      /* ── CHAR COUNTERS ── */
+      inputArea.addEventListener('input', function () {
+        inputCount.textContent = inputArea.value.length + ' chars';
+        clearError();
+      });
+
+      function updateOutputCount() {
+        outputCount.textContent = outputArea.value.length + ' chars';
+      }
+
+      /* ── ENCODE / DECODE LOGIC ── */
+      const codecs = {
+        base64: {
+          encode: function (s) {
+            return btoa(unescape(encodeURIComponent(s)));
+          },
+          decode: function (s) {
+            return decodeURIComponent(escape(atob(s.trim())));
+          }
+        },
+        url: {
+          encode: function (s) {
+            return encodeURIComponent(s);
+          },
+          decode: function (s) {
+            return decodeURIComponent(s);
+          }
+        },
+        html: {
+          encode: function (s) {
+            return s
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#x27;');
+          },
+          decode: function (s) {
+            return s
+              .replace(/&#x27;/gi, "'")
+              .replace(/&quot;/gi, '"')
+              .replace(/&lt;/gi, '<')
+              .replace(/&gt;/gi, '>')
+              .replace(/&amp;/gi, '&');
+          }
+        },
+        hex: {
+          encode: function (s) {
+            return Array.from(s)
+              .map(function (c) { return c.charCodeAt(0).toString(16).padStart(2, '0'); })
+              .join(' ');
+          },
+          decode: function (s) {
+            var parts = s.trim().split(/\s+/);
+            return parts.map(function (h) {
+              var n = parseInt(h, 16);
+              if (isNaN(n)) throw new Error('Invalid hex byte: "' + h + '"');
+              return String.fromCharCode(n);
+            }).join('');
+          }
+        },
+        unicode: {
+          encode: function (s) {
+            return Array.from(s).map(function (c) {
+              var cp = c.codePointAt(0);
+              if (cp > 0xFFFF) {
+                return '\\u{' + cp.toString(16).toUpperCase() + '}';
+              }
+              return '\\u' + cp.toString(16).toUpperCase().padStart(4, '0');
+            }).join('');
+          },
+          decode: function (s) {
+            return s
+              .replace(/\\u\{([0-9a-fA-F]+)\}/g, function (_, hex) {
+                return String.fromCodePoint(parseInt(hex, 16));
+              })
+              .replace(/\\u([0-9a-fA-F]{4})/g, function (_, hex) {
+                return String.fromCharCode(parseInt(hex, 16));
+              });
+          }
+        }
+      };
+
+      function showError(msg) {
+        errorText.textContent = msg;
+        errorMsg.classList.add('visible');
+      }
+
+      function clearError() {
+        errorMsg.classList.remove('visible');
+      }
+
+      function setOutput(val) {
+        outputArea.value = val;
+        updateOutputCount();
+      }
+
+      document.getElementById('encodeBtn').addEventListener('click', function () {
+        clearError();
+        var input = inputArea.value;
+        if (!input) return;
+        try {
+          setOutput(codecs[activeMode].encode(input));
+        } catch (err) {
+          showError('Encode failed: ' + err.message);
+        }
+      });
+
+      document.getElementById('decodeBtn').addEventListener('click', function () {
+        clearError();
+        var input = inputArea.value;
+        if (!input) return;
+        try {
+          setOutput(codecs[activeMode].decode(input));
+        } catch (err) {
+          showError('Decode failed: ' + (err.message || 'Invalid input for selected mode.'));
+        }
+      });
+
+      /* ── COPY OUTPUT ── */
+      copyBtn.addEventListener('click', function () {
+        var val = outputArea.value;
+        if (!val) return;
+        navigator.clipboard.writeText(val).then(function () {
+          copyBtn.textContent = '✓ Copied!';
+          copyBtn.style.color = '#3fb950';
+          copyBtn.style.borderColor = 'rgba(63,185,80,.4)';
+          setTimeout(function () {
+            copyBtn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Output';
+            copyBtn.style.color = '';
+            copyBtn.style.borderColor = '';
+          }, 1800);
+        }).catch(function () {
+          /* Fallback for non-secure contexts */
+          outputArea.select();
+          document.execCommand('copy');
+        });
+      });
+
+      /* ── SWAP ── */
+      document.getElementById('swapBtn').addEventListener('click', function () {
+        clearError();
+        var temp = inputArea.value;
+        inputArea.value = outputArea.value;
+        outputArea.value = temp;
+        inputCount.textContent = inputArea.value.length + ' chars';
+        updateOutputCount();
+      });
+
+      /* ── CLEAR ── */
+      document.getElementById('clearBtn').addEventListener('click', function () {
+        clearError();
+        inputArea.value = '';
+        outputArea.value = '';
+        inputCount.textContent = '0 chars';
+        outputCount.textContent = '0 chars';
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
