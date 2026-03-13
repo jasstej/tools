@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "GhostVault - Password Manager",
+  "version": "1.0.0",
+  "description": "Encrypted password manager using GhostCipher. Vault saved to external device.",
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GhostVault",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  }
+}
