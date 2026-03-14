@@ -5,6 +5,264 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>~/tools — Security Toolkit</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Keyframes ─────────────────────────────── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes terminalGlow {
+            0%,100% { box-shadow: 0 0 10px rgba(64,196,99,.08); }
+            50%     { box-shadow: 0 0 30px rgba(64,196,99,.18), 0 0 60px rgba(64,196,99,.05); }
+        }
+        @keyframes blink {
+            0%,50%   { opacity: 1; }
+            51%,100% { opacity: 0; }
+        }
+
+        /* ── Terminal ───────────────────────────────── */
+        .terminal-box {
+            position: relative;
+            overflow: hidden;
+            border-radius: .5rem;
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            animation: fadeInUp .6s ease, terminalGlow 5s ease-in-out .6s infinite;
+        }
+        .terminal-box::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);
+            pointer-events: none;
+            border-radius: .5rem;
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .terminal-button.red    { background-color: rgba(218,54,51,.6); }
+        .terminal-button.yellow { background-color: rgba(139,148,158,.4); }
+        .terminal-button.green  { background-color: rgba(64,196,99,.6); }
+        .terminal-title {
+            font-size: .75rem;
+            color: var(--muted-foreground);
+            margin-left: .75rem;
+        }
+        .terminal-body { min-height: 120px; }
+        .terminal-line {
+            line-height: 1.6;
+            font-size: .875rem;
+            margin-bottom: .35rem;
+        }
+        .terminal-prompt  { color: var(--primary); font-weight: 600; }
+        .terminal-separator { color: var(--muted-foreground); }
+        .terminal-path    { color: var(--secondary); }
+        .terminal-dollar  { color: var(--muted-foreground); }
+        .terminal-command { color: var(--foreground); }
+        .terminal-output  { color: var(--muted-foreground); padding-left: .25rem; }
+        .terminal-cursor  { animation: blink 1s infinite; color: var(--primary); }
+
+        /* ── Project grid & cards ───────────────────── */
+        .projects-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .projects-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .project-card {
+            border-radius: .5rem;
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            padding: 1.5rem;
+            transition: border-color .3s ease, transform .3s ease, box-shadow .3s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(64,196,99,.1);
+            border-color: rgba(64,196,99,.4);
+        }
+        .project-card:hover .project-title { color: var(--primary); }
+
+        .project-card-featured {
+            grid-column: 1 / -1;
+            border-color: rgba(64,196,99,.3);
+            background: linear-gradient(135deg, rgba(64,196,99,.06) 0%, var(--card) 60%);
+            position: relative;
+            cursor: pointer;
+        }
+        .project-card-featured:hover {
+            border-color: rgba(64,196,99,.6);
+            box-shadow: 0 8px 40px rgba(64,196,99,.15);
+        }
+        .project-card-featured .project-title {
+            font-size: 1rem;
+            color: var(--primary);
+        }
+        .project-card-featured .project-link::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            border-radius: .5rem;
+        }
+
+        .project-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: .75rem;
+        }
+        .project-header-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+        }
+        .project-header-text { flex: 1; }
+
+        .project-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: rgba(64,196,99,.08);
+            border: 1px solid rgba(64,196,99,.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+            transition: background .3s, border-color .3s;
+        }
+        .project-card:hover .project-icon {
+            background: rgba(64,196,99,.14);
+            border-color: rgba(64,196,99,.3);
+        }
+
+        .project-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .875rem;
+            font-weight: 600;
+            color: var(--foreground);
+            transition: color .3s ease;
+        }
+        .project-description {
+            font-size: .875rem;
+            color: var(--muted-foreground);
+            margin-bottom: .5rem;
+            line-height: 1.6;
+        }
+        .project-approach {
+            font-size: .75rem;
+            color: #6f7878;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        .approach-label {
+            color: var(--secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Scroll animation ───────────────────────── */
+        .scroll-hidden {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity .55s ease, transform .55s ease;
+        }
+        .scroll-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Page layout helpers ─────────────────────── */
+        .lab-hero {
+            padding: 8rem 1.5rem 4rem;
+            display: flex;
+            justify-content: center;
+        }
+        .lab-hero .terminal-box {
+            max-width: 680px;
+            width: 100%;
+        }
+        .lab-section {
+            padding: 3rem 1.5rem 6rem;
+        }
+        .lab-intro {
+            max-width: 680px;
+            color: var(--muted-foreground);
+            font-family: 'Inter', sans-serif;
+            font-size: .95rem;
+            line-height: 1.7;
+            margin: .5rem 0 2.5rem;
+        }
+        .lab-intro a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+        .lab-intro a:hover { text-decoration: underline; }
+
+        .lab-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+        .lab-stat {
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+        }
+        .lab-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .lab-stat-label {
+            font-family: 'Inter', sans-serif;
+            font-size: .78rem;
+            color: var(--muted-foreground);
+        }
+
+        .project-category {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: 1.5rem;
+        }
+        .project-category-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .project-category-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .72rem;
+            color: var(--muted-foreground);
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        @media (max-width: 640px) {
+            .terminal-box  { padding: 1rem; }
+            .terminal-line { font-size: .75rem; }
+            .lab-stats     { gap: 1.5rem; }
+        }
+    </style>
 </head>
 <body>
 
@@ -13,655 +271,970 @@
         <div class="navbar-container">
             <span class="navbar-logo">~/tools</span>
             <div class="nav-links-desktop">
-                <a href="https://jasstej.tech" class="nav-link" target="_blank" rel="noopener noreferrer">Portfolio</a>
+                <a href="https://jasstej.tech" class="nav-link" rel="noopener noreferrer">Portfolio</a>
+                <a href="https://jasstej.tech/security-lab.html" class="nav-link" rel="noopener noreferrer">Security Lab</a>
             </div>
             <button class="mobile-menu-toggle" id="mobileMenuBtn">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
             </button>
         </div>
         <div class="nav-links-mobile" id="mobileMenu">
-            <a href="https://jasstej.tech" class="nav-link" target="_blank" rel="noopener noreferrer">Portfolio</a>
+            <a href="https://jasstej.tech" class="nav-link" rel="noopener noreferrer">Portfolio</a>
+            <a href="https://jasstej.tech/security-lab.html" class="nav-link" rel="noopener noreferrer">Security Lab</a>
         </div>
     </nav>
 
-    <!-- Tools Section -->
-    <section id="tools">
+    <!-- Terminal Hero -->
+    <div class="lab-hero">
+        <div class="terminal-box">
+            <div class="terminal-header">
+                <div class="terminal-button red"></div>
+                <div class="terminal-button yellow"></div>
+                <div class="terminal-button green"></div>
+                <span class="terminal-title">~/tools</span>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-line">
+                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command"> ls -1 | head -8</span>
+                </div>
+                <div class="terminal-line terminal-output">aes-tool/</div>
+                <div class="terminal-line terminal-output">anomaly-detection/</div>
+                <div class="terminal-line terminal-output">cloud-scanner/</div>
+                <div class="terminal-line terminal-output">cyber-defense-sim/</div>
+                <div class="terminal-line terminal-output">malware-analysis/</div>
+                <div class="terminal-line terminal-output">network-recon/</div>
+                <div class="terminal-line terminal-output">redteam-toolkit/</div>
+                <div class="terminal-line terminal-output">vulnscout/</div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command"> ls | wc -l</span>
+                </div>
+                <div class="terminal-line terminal-output">      24</div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command terminal-cursor"> _</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Section -->
+    <section class="lab-section">
         <div class="section-container">
+
             <div class="section-header">
-                <div class="section-label">$ ls -la ~/tools</div>
-                <h2 class="section-title">All Tools</h2>
+                <h2 class="section-label">$ ls -la ~/tools</h2>
+                <h3 class="section-title">All Tools</h3>
             </div>
 
-            <div class="tools-grid">
+            <p class="lab-intro">
+                24 browser-based security tools and Python CLI utilities — covering recon, web security,
+                cryptography, and a full security lab with Python dashboards.
+                Built for researchers, pentesters, and defenders.
+            </p>
 
-                <!-- VulnScout — Primary Tool -->
-                <div class="tool-card tool-card-featured">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="8"></circle>
-                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                        <line x1="11" y1="8" x2="11" y2="14"></line>
-                                        <line x1="8" y1="11" x2="14" y2="11"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">VulnScout</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./vulnscout/index.html" class="project-link" title="Open VulnScout" target="_blank" rel="noopener noreferrer">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+            <div class="lab-stats">
+                <div class="lab-stat">
+                    <span class="lab-stat-value">24</span>
+                    <span class="lab-stat-label">total tools</span>
+                </div>
+                <div class="lab-stat">
+                    <span class="lab-stat-value">14</span>
+                    <span class="lab-stat-label">browser tools</span>
+                </div>
+                <div class="lab-stat">
+                    <span class="lab-stat-value">10</span>
+                    <span class="lab-stat-label">Python CLI + dashboard</span>
+                </div>
+                <div class="lab-stat">
+                    <span class="lab-stat-value">5</span>
+                    <span class="lab-stat-label">categories</span>
+                </div>
+            </div>
+
+            <!-- ── Recon & OSINT ─────────────────────── -->
+            <div class="project-category">
+                <span class="project-category-label">recon &amp; osint</span>
+                <div class="project-category-line"></div>
+            </div>
+
+            <div class="projects-grid" style="margin-bottom:3rem;">
+
+                <!-- VulnScout — Featured -->
+                <div class="project-card project-card-featured scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon" style="background:rgba(64,196,99,.12);border-color:rgba(64,196,99,.3);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    <line x1="11" y1="8" x2="11" y2="14"></line>
+                                    <line x1="8" y1="11" x2="14" y2="11"></line>
                                 </svg>
-                            </a>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">VulnScout — Bug Hunting Toolkit</h4>
+                            </div>
                         </div>
-                        <p class="tool-description">
-                            Advanced bug hunting toolkit and reconnaissance platform. A comprehensive suite for security researchers and bug bounty hunters — covering subdomain enumeration, dorking, CVE lookup, OWASP references, payload generation, and more.
-                        </p>
+                        <a href="./vulnscout/index.html" class="project-link" title="Open VulnScout">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
                     </div>
-
-                    <div class="tool-features">
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>Subdomain enumeration &amp; URL collection</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>Google dorking &amp; advanced search operators</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>CVE / vulnerability database lookup</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>Tech stack detector &amp; HTTP reference</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>OWASP Top 10 interactive guide</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-bullet">▸</span>
-                            <span>Payload generators &amp; wordlist collections</span>
-                        </div>
-                    </div>
-
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">recon</span>
-                            <span class="tag">bug-bounty</span>
-                            <span class="tag">osint</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">html</span>
-                        </div>
-                        <a href="./vulnscout/index.html" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Launch Tool →</a>
+                    <p class="project-description">Comprehensive bug bounty and reconnaissance platform. Subdomain enumeration, Google dorking, CVE lookup, OWASP guides, payload wordlists, and tech stack detection — all in one tool.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Subdomain enumeration, Google dork builder, CVE/NVD lookup, OWASP Top 10 guide, payload generators, HTTP reference, tech stack detector</p>
+                    <div class="project-tags">
+                        <span class="tag">recon</span>
+                        <span class="tag">bug-bounty</span>
+                        <span class="tag">osint</span>
+                        <span class="tag">web-security</span>
                     </div>
                 </div>
 
-                <!-- Password Strength Checker — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Password Strength</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./password-strength/index.html" class="project-link" title="Open Password Strength Checker">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                <!-- WHOIS/IP Lookup -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                                 </svg>
-                            </a>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">WHOIS &amp; IP Lookup</h4>
+                            </div>
                         </div>
-                        <p class="tool-description">
-                            Analyze password strength, entropy bits, and offline crack-time estimate — entirely client-side. No data leaves your browser.
-                        </p>
+                        <a href="./whois-lookup/index.html" class="project-link" title="Open WHOIS Lookup">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
                     </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">passwords</span>
-                            <span class="tag">entropy</span>
-                            <span class="tag">security</span>
-                            <span class="tag">client-side</span>
-                        </div>
-                        <a href="./password-strength/index.html" class="btn btn-primary">Launch Tool →</a>
+                    <p class="project-description">Domain WHOIS lookup and IP geolocation in one tool. Returns registrar info, name servers, ASN, abuse contacts, and geographic data.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> WHOIS lookup, IP geolocation, ASN resolution, DNS records, abuse contact lookup</p>
+                    <div class="project-tags">
+                        <span class="tag">whois</span>
+                        <span class="tag">ip-lookup</span>
+                        <span class="tag">osint</span>
+                        <span class="tag">recon</span>
                     </div>
                 </div>
 
-                <!-- Payload Encoder/Decoder — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                        <line x1="9" y1="20" x2="15" y2="20"></line>
-                                        <line x1="12" y1="4" x2="12" y2="20"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Payload Encoder/Decoder</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./encoder-decoder/index.html" class="project-link" title="Open Payload Encoder/Decoder">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                <!-- Metadata Inspector -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="12" y1="11" x2="12" y2="17"></line>
+                                    <line x1="9" y1="14" x2="15" y2="14"></line>
                                 </svg>
-                            </a>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Metadata Inspector</h4>
+                            </div>
                         </div>
-                        <p class="tool-description">
-                            Encode and decode Base64, URL, HTML entities, Hex, and Unicode escape — all in one tool. Clean offline-ready utility for quick payload transformations during testing.
-                        </p>
+                        <a href="./metadata-inspector/index.html" class="project-link" title="Open Metadata Inspector">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
                     </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">encoding</span>
-                            <span class="tag">decoding</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">utility</span>
-                        </div>
-                        <a href="./encoder-decoder/index.html" class="btn btn-primary">Launch Tool →</a>
+                    <p class="project-description">Drag-and-drop EXIF and metadata extractor. Reads embedded GPS coordinates, camera model, software stamps, and authorship data from images and documents.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> EXIF extraction, GPS coordinate reveal, camera model, software stamp, timestamps — browser-side only</p>
+                    <div class="project-tags">
+                        <span class="tag">exif</span>
+                        <span class="tag">metadata</span>
+                        <span class="tag">privacy</span>
+                        <span class="tag">osint</span>
                     </div>
                 </div>
 
-                <!-- JWT Analyzer — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">JWT Analyzer</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./jwt-analyzer/index.html" class="project-link" title="Open JWT Analyzer">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                <!-- JSIntelliHawk -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="4 17 10 11 4 5"></polyline>
+                                    <line x1="12" y1="19" x2="20" y2="19"></line>
                                 </svg>
-                            </a>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">JSIntelliHawk</h4>
+                            </div>
                         </div>
-                        <p class="tool-description">
-                            Decode, inspect, and analyze JSON Web Tokens. Identify algorithm misconfigurations, weak secrets, and common JWT vulnerabilities used in web authentication bypasses.
-                        </p>
+                        <a href="./jsintelliHawk/index.html" class="project-link" title="Open JSIntelliHawk">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
                     </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">jwt</span>
-                            <span class="tag">auth</span>
-                            <span class="tag">web-security</span>
-                        </div>
-                        <a href="./jwt-analyzer/index.html" class="btn btn-primary">Launch Tool →</a>
+                    <p class="project-description">JavaScript file analyzer for bug bounty recon. Extracts hidden endpoints, API keys, hardcoded credentials, and secrets from client-side JS files.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Endpoint extraction, API key regex, secret detection, source map analysis, inline credential scanner</p>
+                    <div class="project-tags">
+                        <span class="tag">javascript</span>
+                        <span class="tag">recon</span>
+                        <span class="tag">bug-bounty</span>
+                        <span class="tag">web-security</span>
                     </div>
                 </div>
 
-                <!-- Hash Generator — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="4" y1="9" x2="20" y2="9"></line>
-                                        <line x1="4" y1="15" x2="20" y2="15"></line>
-                                        <line x1="10" y1="3" x2="8" y2="21"></line>
-                                        <line x1="16" y1="3" x2="14" y2="21"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Hash Generator</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./hash-generator/index.html" class="project-link" title="Open Hash Generator">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                <!-- Network Recon -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <circle cx="12" cy="12" r="4"></circle>
+                                    <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                                    <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                                    <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                                    <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
                                 </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            Generate MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes from text or files. Also identifies unknown hash types by length and format.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">hashing</span>
-                            <span class="tag">sha256</span>
-                            <span class="tag">md5</span>
-                            <span class="tag">integrity</span>
-                        </div>
-                        <a href="./hash-generator/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- Metadata Inspector — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="12" y1="11" x2="12" y2="17"></line>
-                                        <line x1="9" y1="14" x2="15" y2="14"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Metadata Inspector</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
                             </div>
-                            <a href="./metadata-inspector/index.html" class="project-link" title="Open Metadata Inspector">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            Drop an image or document to extract and inspect embedded EXIF and metadata. Web version of the Metadata Nuker project — read before you strip.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">exif</span>
-                            <span class="tag">metadata</span>
-                            <span class="tag">privacy</span>
-                            <span class="tag">osint</span>
-                        </div>
-                        <a href="./metadata-inspector/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- JSIntelliHawk — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="4 17 10 11 4 5"></polyline>
-                                        <line x1="12" y1="19" x2="20" y2="19"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">JSIntelliHawk</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Network Recon &amp; Attack Surface Mapper</h4>
                             </div>
-                            <a href="./jsintelliHawk/index.html" class="project-link" title="Open JSIntelliHawk">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
                         </div>
-                        <p class="tool-description">
-                            Paste or upload a JavaScript file to scan for vulnerable libraries, sensitive data leaks, hardcoded secrets, and exposed security endpoints — with a visual web GUI.
-                        </p>
+                        <a href="./network-recon/index.html" class="project-link" title="Open Network Recon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
                     </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">javascript</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">static-analysis</span>
-                        </div>
-                        <a href="./jsintelliHawk/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- WHOIS / IP Lookup — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">WHOIS / IP Lookup</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./whois-lookup/index.html" class="project-link" title="Open WHOIS / IP Lookup">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            Look up WHOIS records, IP geolocation, ASN info, and DNS data for any domain or IP address. A quick OSINT reference for recon workflows.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">whois</span>
-                            <span class="tag">osint</span>
-                            <span class="tag">recon</span>
-                            <span class="tag">dns</span>
-                        </div>
-                        <a href="./whois-lookup/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- Security Workflow — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Security Workflow</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./Security_Workflow/workflow.html" class="project-link" title="Open Security Workflow">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            A guided 10-step security reconnaissance workflow — from subdomain enumeration to reporting. Enter a target domain and get auto-populated commands for each phase.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">recon</span>
-                            <span class="tag">workflow</span>
-                            <span class="tag">bug-bounty</span>
-                            <span class="tag">osint</span>
-                        </div>
-                        <a href="./Security_Workflow/workflow.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- XSS Payload Generator — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="16 18 22 12 16 6"></polyline>
-                                        <polyline points="8 6 2 12 8 18"></polyline>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">XSS Payload Generator</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./xss-payloads/index.html" class="project-link" title="Open XSS Payload Generator">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            40 categorized XSS payloads — Basic, Event Handlers, SVG/HTML5, Filter Bypass, DOM-based, and Encoded. Live search, category filter, and one-click copy.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">xss</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">pentesting</span>
-                            <span class="tag">payloads</span>
-                        </div>
-                        <a href="./xss-payloads/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- Cookie Analyzer — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                        <line x1="12" y1="2" x2="12" y2="5"></line>
-                                        <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Cookie Analyzer</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./cookie-analyzer/index.html" class="project-link" title="Open Cookie Analyzer">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            Paste a Set-Cookie header to analyze security flags — HttpOnly, Secure, SameSite, expiry. PASS/WARN/FAIL badges with an overall risk rating.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">cookies</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">session</span>
-                            <span class="tag">http</span>
-                        </div>
-                        <a href="./cookie-analyzer/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- CSP Analyzer — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">CSP Analyzer</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./csp-analyzer/index.html" class="project-link" title="Open CSP Analyzer">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            Paste a Content-Security-Policy header to get a directive breakdown, weakness detection (unsafe-inline, wildcards, missing directives), and a 0–100 security score.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">csp</span>
-                            <span class="tag">web-security</span>
-                            <span class="tag">headers</span>
-                            <span class="tag">content-security</span>
-                        </div>
-                        <a href="./csp-analyzer/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- AES Encrypt/Decrypt — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">AES Encrypt/Decrypt</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./aes-tool/index.html" class="project-link" title="Open AES Encrypt/Decrypt">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            AES-256-GCM encryption and decryption via the Web Crypto API. PBKDF2 key derivation (100k iterations), random salt + IV per operation, Base64 output. Fully client-side.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">aes</span>
-                            <span class="tag">cryptography</span>
-                            <span class="tag">encryption</span>
-                            <span class="tag">client-side</span>
-                        </div>
-                        <a href="./aes-tool/index.html" class="btn btn-primary">Launch Tool →</a>
-                    </div>
-                </div>
-
-                <!-- Cipher Tools — Live -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <div class="tool-card-title-row">
-                            <div class="tool-icon-name">
-                                <div class="tool-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="tool-title">Cipher Tools</span>
-                                    <span class="tool-badge">v1.0</span>
-                                </div>
-                            </div>
-                            <a href="./cipher-tools/index.html" class="project-link" title="Open Cipher Tools">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="tool-description">
-                            ROT13, Caesar cipher, Vigenère, Atbash, and Morse Code — all in one tool. Encode and decode classic ciphers client-side with a clean tabbed interface.
-                        </p>
-                    </div>
-                    <div class="tool-footer">
-                        <div class="project-tags">
-                            <span class="tag">ciphers</span>
-                            <span class="tag">cryptography</span>
-                            <span class="tag">encoding</span>
-                            <span class="tag">morse</span>
-                        </div>
-                        <a href="./cipher-tools/index.html" class="btn btn-primary">Launch Tool →</a>
+                    <p class="project-description">TCP connect scanner with banner grabbing, subdomain enumeration against a 20-entry wordlist, OS fingerprinting, and high-risk port flagging. Generates JSON and HTML risk reports.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> ThreadPoolExecutor scanner, 31-entry service map, subdomain brute-force, JSON + HTML report generator — Python CLI + dashboard</p>
+                    <div class="project-tags">
+                        <span class="tag">recon</span>
+                        <span class="tag">port-scan</span>
+                        <span class="tag">network</span>
+                        <span class="tag">Python</span>
                     </div>
                 </div>
 
             </div>
+
+            <!-- ── Web Security ──────────────────────── -->
+            <div class="project-category">
+                <span class="project-category-label">web security</span>
+                <div class="project-category-line"></div>
+            </div>
+
+            <div class="projects-grid" style="margin-bottom:3rem;">
+
+                <!-- Payload Encoder/Decoder -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                    <line x1="9" y1="20" x2="15" y2="20"></line>
+                                    <line x1="12" y1="4" x2="12" y2="20"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Payload Encoder / Decoder</h4>
+                            </div>
+                        </div>
+                        <a href="./encoder-decoder/index.html" class="project-link" title="Open Encoder/Decoder">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Multi-format payload encoder and decoder. Base64, URL, HTML entities, Hex, and Unicode escape — all in one offline-ready utility.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Base64, URL, HTML entity, Hex, Unicode escape — bidirectional, offline, client-side</p>
+                    <div class="project-tags">
+                        <span class="tag">encoding</span>
+                        <span class="tag">decoding</span>
+                        <span class="tag">payloads</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+                <!-- JWT Analyzer -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">JWT Analyzer</h4>
+                            </div>
+                        </div>
+                        <a href="./jwt-analyzer/index.html" class="project-link" title="Open JWT Analyzer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Decode, inspect, and analyze JSON Web Tokens. Flags algorithm misconfigurations, weak signing secrets, expiry issues, and common authentication bypass vectors.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> JWT decode, algorithm check (alg:none), expiry analysis, claim inspector, vulnerability flag list</p>
+                    <div class="project-tags">
+                        <span class="tag">jwt</span>
+                        <span class="tag">auth</span>
+                        <span class="tag">tokens</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+                <!-- XSS Payload Generator -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"></polyline>
+                                    <polyline points="8 6 2 12 8 18"></polyline>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">XSS Payload Generator</h4>
+                            </div>
+                        </div>
+                        <a href="./xss-payloads/index.html" class="project-link" title="Open XSS Payloads">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Context-aware XSS payload library organized by injection context. Covers HTML, attribute, JavaScript, and URL contexts with WAF bypass and polyglot variants.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Basic, HTML, attribute, JS-context, URL, bypass, event-handler, and polyglot payloads</p>
+                    <div class="project-tags">
+                        <span class="tag">xss</span>
+                        <span class="tag">payloads</span>
+                        <span class="tag">bug-bounty</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+                <!-- Cookie Analyzer -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Cookie Analyzer</h4>
+                            </div>
+                        </div>
+                        <a href="./cookie-analyzer/index.html" class="project-link" title="Open Cookie Analyzer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Parse and audit HTTP cookies for security misconfigurations. Flags missing Secure, HttpOnly, and SameSite attributes with severity ratings.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Cookie parser, Secure/HttpOnly/SameSite flag checker, domain scope analysis, expiry inspection</p>
+                    <div class="project-tags">
+                        <span class="tag">cookies</span>
+                        <span class="tag">http</span>
+                        <span class="tag">auth</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+                <!-- CSP Analyzer -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">CSP Analyzer</h4>
+                            </div>
+                        </div>
+                        <a href="./csp-analyzer/index.html" class="project-link" title="Open CSP Analyzer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Content Security Policy analyzer and visualizer. Parses policy strings, identifies weak directives like unsafe-inline and unsafe-eval, and surfaces bypass vectors.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> CSP parser, directive breakdown, unsafe-inline/eval detection, wildcard source flagging, bypass vector list</p>
+                    <div class="project-tags">
+                        <span class="tag">csp</span>
+                        <span class="tag">headers</span>
+                        <span class="tag">hardening</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── Cryptography ──────────────────────── -->
+            <div class="project-category">
+                <span class="project-category-label">cryptography</span>
+                <div class="project-category-line"></div>
+            </div>
+
+            <div class="projects-grid" style="margin-bottom:3rem;">
+
+                <!-- Hash Generator -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Hash Generator</h4>
+                            </div>
+                        </div>
+                        <a href="./hash-generator/index.html" class="project-link" title="Open Hash Generator">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Generate MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes from text or dropped files. Also identifies unknown hash types by length and format pattern.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> MD5/SHA-1/SHA-256/SHA-384/SHA-512, file hashing via FileReader, hash type identifier</p>
+                    <div class="project-tags">
+                        <span class="tag">hashing</span>
+                        <span class="tag">sha256</span>
+                        <span class="tag">md5</span>
+                        <span class="tag">integrity</span>
+                    </div>
+                </div>
+
+                <!-- AES Encrypt/Decrypt -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">AES Encrypt / Decrypt</h4>
+                            </div>
+                        </div>
+                        <a href="./aes-tool/index.html" class="project-link" title="Open AES Tool">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Browser-side AES encryption and decryption via the SubtleCrypto API. Supports CBC and GCM modes with configurable key sizes and automatic IV management.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> AES-128/192/256, CBC and GCM modes, SubtleCrypto API, key generation, IV management — no data leaves the browser</p>
+                    <div class="project-tags">
+                        <span class="tag">aes</span>
+                        <span class="tag">encryption</span>
+                        <span class="tag">cryptography</span>
+                        <span class="tag">privacy</span>
+                    </div>
+                </div>
+
+                <!-- Cipher Tools -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="17 1 21 5 17 9"></polyline>
+                                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                    <polyline points="7 23 3 19 7 15"></polyline>
+                                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Cipher Tools</h4>
+                            </div>
+                        </div>
+                        <a href="./cipher-tools/index.html" class="project-link" title="Open Cipher Tools">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Classic and historical cipher suite with a tabbed interface. ROT13, Caesar, Vigenère, Atbash, and Morse Code — encode and decode fully client-side.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> ROT13, Caesar cipher (configurable shift), Vigenère, Atbash, Morse Code — bidirectional</p>
+                    <div class="project-tags">
+                        <span class="tag">ciphers</span>
+                        <span class="tag">cryptography</span>
+                        <span class="tag">encoding</span>
+                        <span class="tag">morse</span>
+                    </div>
+                </div>
+
+                <!-- Password Strength -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    <polyline points="9 12 11 14 15 10"></polyline>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Password Strength Checker</h4>
+                            </div>
+                        </div>
+                        <a href="./password-strength/index.html" class="project-link" title="Open Password Strength">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Password entropy analyzer with offline crack-time estimation. Scores character class diversity, detects common patterns, and estimates offline attack cost — no data leaves the browser.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Entropy bits, character class scoring, common pattern detection, offline crack-time estimate</p>
+                    <div class="project-tags">
+                        <span class="tag">passwords</span>
+                        <span class="tag">entropy</span>
+                        <span class="tag">security</span>
+                        <span class="tag">client-side</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── Security Lab ──────────────────────── -->
+            <div class="project-category">
+                <span class="project-category-label">security lab — Python CLI + browser dashboards</span>
+                <div class="project-category-line"></div>
+            </div>
+
+            <div class="projects-grid" style="margin-bottom:3rem;">
+
+                <!-- Red Team Toolkit -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="22" y1="12" x2="18" y2="12"></line>
+                                    <line x1="6" y1="12" x2="2" y2="12"></line>
+                                    <line x1="12" y1="6" x2="12" y2="2"></line>
+                                    <line x1="12" y1="22" x2="12" y2="18"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Red Team Simulation Toolkit</h4>
+                            </div>
+                        </div>
+                        <a href="./redteam-toolkit/index.html" class="project-link" title="Open Red Team Toolkit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">7-phase Lockheed Martin Kill Chain simulator mapped to 20 MITRE ATT&amp;CK techniques. OSINT module, credential spray dry-run, defense gap analysis, and detection coverage scoring.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> MITRE ATT&amp;CK mini-matrix (T1595–T1562), OSINT simulation, kill chain tabs, live detection counter</p>
+                    <div class="project-tags">
+                        <span class="tag">red-team</span>
+                        <span class="tag">mitre-att&amp;ck</span>
+                        <span class="tag">kill-chain</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- HIDS Agent -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">HIDS Agent</h4>
+                            </div>
+                        </div>
+                        <a href="./hids/index.html" class="project-link" title="Open HIDS Agent">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Host-based intrusion detection with SHA-256/SHA-512 file integrity baselines, a 12-rule engine mapped to MITRE ATT&amp;CK, and live process monitoring across three operational modes.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> FIM baseline &amp; diff, regex rule engine, 24-hour alert trend chart, process anomaly flagging</p>
+                    <div class="project-tags">
+                        <span class="tag">hids</span>
+                        <span class="tag">fim</span>
+                        <span class="tag">log-analysis</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- Deception Defense -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Deception-Based Security System</h4>
+                            </div>
+                        </div>
+                        <a href="./deception-defense/index.html" class="project-link" title="Open Deception Defense">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">SOC honeypot framework that deploys fake credentials, decoy files, and synthetic services as tripwires. Watchdog-monitored with real-time alert feed and threat actor profiling.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Fake credential generators, watchdog FileSystemEventHandler, 24-bar alert timeline, webhook integration</p>
+                    <div class="project-tags">
+                        <span class="tag">honeypot</span>
+                        <span class="tag">deception</span>
+                        <span class="tag">blue-team</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- SOAR-Lite -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">SOAR-Lite</h4>
+                            </div>
+                        </div>
+                        <a href="./soar-lite/index.html" class="project-link" title="Open SOAR-Lite">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Security orchestration engine with JSON playbook execution, alert correlation by IP/asset/pattern, MD5-based deduplication, and 10 pre-built sample incidents.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Playbook step runner (8 action handlers), MTTR metrics, correlation graph, 7-day bar chart, SIEM event feed</p>
+                    <div class="project-tags">
+                        <span class="tag">soar</span>
+                        <span class="tag">playbooks</span>
+                        <span class="tag">automation</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- Cloud Scanner -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Cloud Security Misconfiguration Scanner</h4>
+                            </div>
+                        </div>
+                        <a href="./cloud-scanner/index.html" class="project-link" title="Open Cloud Scanner">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">AWS auditor aligned to 20 CIS Foundations Benchmark controls. Checks IAM policies, S3 bucket exposure, and security group ingress rules for critical port exposure.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> IAM auditor (7 checks), S3 auditor (6 checks), SG auditor, CIS scorecard, remediation accordion</p>
+                    <div class="project-tags">
+                        <span class="tag">cloud</span>
+                        <span class="tag">aws</span>
+                        <span class="tag">cis-benchmark</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- Anomaly Detection -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">AI-Driven Anomaly Detection</h4>
+                            </div>
+                        </div>
+                        <a href="./anomaly-detection/index.html" class="project-link" title="Open Anomaly Detection">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Isolation Forest ML model trained on network traffic logs with 6 engineered features. Real-time anomaly scoring 0–100, business-hours baseline comparison, and CSV upload.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> 200-estimator Isolation Forest (scikit-learn), Z-score baseline, canvas time-series chart, event feed</p>
+                    <div class="project-tags">
+                        <span class="tag">machine-learning</span>
+                        <span class="tag">anomaly</span>
+                        <span class="tag">isolation-forest</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- Malware Analyzer -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Malware Behavior Analysis Framework</h4>
+                            </div>
+                        </div>
+                        <a href="./malware-analysis/index.html" class="project-link" title="Open Malware Analyzer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Static malware analysis with 8 YARA rules covering process injection, ransomware, keyloggers, C2 callbacks, and info stealers. Shannon entropy, PE parsing, and IOC extraction.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> MD5/SHA1/SHA256/SHA512 hashing, string categorization (8 categories), entropy-based packing detection, drag-and-drop UI</p>
+                    <div class="project-tags">
+                        <span class="tag">malware</span>
+                        <span class="tag">yara</span>
+                        <span class="tag">static-analysis</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- DFIR Toolkit -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    <line x1="11" y1="8" x2="11" y2="14"></line>
+                                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Digital Forensics &amp; IR Toolkit</h4>
+                            </div>
+                        </div>
+                        <a href="./dfir-toolkit/index.html" class="project-link" title="Open DFIR Toolkit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">DFIR platform with evidence timeline construction, chain of custody documentation, volatile artifact collection (processes, network, users, scheduled tasks), and auth log parsing.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Order-of-volatility collector, SHA-256 evidence manifest, CEF-format SIEM events, IR playbook with checkboxes</p>
+                    <div class="project-tags">
+                        <span class="tag">dfir</span>
+                        <span class="tag">forensics</span>
+                        <span class="tag">incident-response</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+                <!-- Cyber Defense Sim — Featured -->
+                <div class="project-card project-card-featured scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon" style="background:rgba(64,196,99,.12);border-color:rgba(64,196,99,.3);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Enterprise Cyber Defense Simulation Platform</h4>
+                            </div>
+                        </div>
+                        <a href="./cyber-defense-sim/index.html" class="project-link" title="Open Cyber Defense Sim">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Purple team simulation built around the "FinCorp International" APT-41 scenario. Runs a 7-phase kill chain against 8 enterprise assets with 10 configurable security controls and maturity sliders.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Ensemble detection model P = 1 − ∏(1 − Pᵢ), APT evasion (35%), risk scoring (likelihood × impact), SIEM CEF event feed, executive summary ring, MITRE ATT&amp;CK heatmap</p>
+                    <div class="project-tags">
+                        <span class="tag">simulation</span>
+                        <span class="tag">purple-team</span>
+                        <span class="tag">kill-chain</span>
+                        <span class="tag">enterprise</span>
+                        <span class="tag">Python</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── Utilities ──────────────────────────── -->
+            <div class="project-category">
+                <span class="project-category-label">utilities</span>
+                <div class="project-category-line"></div>
+            </div>
+
+            <div class="projects-grid" style="margin-bottom:1rem;">
+
+                <!-- Security Workflow -->
+                <div class="project-card scroll-hidden">
+                    <div class="project-header">
+                        <div class="project-header-inner">
+                            <div class="project-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </div>
+                            <div class="project-header-text">
+                                <h4 class="project-title">Security Workflow Reference</h4>
+                            </div>
+                        </div>
+                        <a href="./Security_Workflow/index.html" class="project-link" title="Open Security Workflow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <p class="project-description">Structured web application security testing workflow reference. Documents methodology phases from recon through exploitation and reporting.</p>
+                    <p class="project-approach"><span class="approach-label">includes:</span> Recon phase checklist, scanning methodology, exploitation reference, reporting templates</p>
+                    <div class="project-tags">
+                        <span class="tag">workflow</span>
+                        <span class="tag">methodology</span>
+                        <span class="tag">reference</span>
+                        <span class="tag">web-security</span>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-inner">
+    <div class="footer">
+        <div style="max-width:56rem;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;">
             <span>
-                <span style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">~/tools</span>
+                <span style="color:var(--primary);font-family:'JetBrains Mono',monospace;">~/tools</span>
                 &nbsp;—&nbsp;built by
-                <a href="https://jasstej.tech" target="_blank" rel="noopener noreferrer" style="color: var(--secondary); text-decoration: none;">jasstej</a>
+                <a href="https://jasstej.tech" rel="noopener noreferrer" style="color:var(--secondary);text-decoration:none;">jasstej</a>
             </span>
-            <span class="footer-copy">open-source · security tools</span>
+            <span>open-source &middot; security tools</span>
         </div>
-    </footer>
+    </div>
 
     <script>
         // Mobile menu toggle
         const btn = document.getElementById('mobileMenuBtn');
         const menu = document.getElementById('mobileMenu');
-        btn.addEventListener('click', () => {
-            btn.classList.toggle('active');
-            menu.classList.toggle('active');
-        });
-
-        // Close mobile menu on nav link click
-        document.querySelectorAll('.nav-links-mobile .nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                btn.classList.remove('active');
-                menu.classList.remove('active');
+        if (btn && menu) {
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('open');
+                btn.classList.toggle('open');
             });
+        }
+
+        // Navbar scroll class
+        window.addEventListener('scroll', () => {
+            document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 20);
         });
 
-        // Fade-in on scroll
+        // Scroll-reveal
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) {
+                    e.target.style.transitionDelay = (i * 0.05) + 's';
+                    e.target.classList.add('scroll-visible');
+                    observer.unobserve(e.target);
                 }
             });
         }, { threshold: 0.1 });
 
-        document.querySelectorAll('.tool-card').forEach(card => {
-            observer.observe(card);
-        });
+        document.querySelectorAll('.scroll-hidden').forEach(el => observer.observe(el));
     </script>
 </body>
 </html>

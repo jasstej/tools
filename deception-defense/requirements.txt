@@ -1,0 +1,4 @@
+watchdog
+requests
+psutil
+colorama

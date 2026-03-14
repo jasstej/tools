@@ -1,0 +1,137 @@
+{
+  "name": "Enterprise APT Intrusion Scenario",
+  "version": "1.0",
+  "description": "Simulates a sophisticated APT (Advanced Persistent Threat) campaign targeting an enterprise financial institution. The attacker uses spear-phishing, living-off-the-land techniques, and credential theft to achieve persistent access and data exfiltration.",
+  "target_environment": {
+    "org_name": "FinCorp International",
+    "org_size": "large",
+    "industry": "Financial Services",
+    "employee_count": 8500,
+    "revenue_usd": "4.2B",
+    "regulatory_frameworks": ["PCI-DSS", "SOX", "GDPR", "FFIEC"],
+    "assets": [
+      { "name": "DC-PRIMARY",     "type": "Domain Controller",   "criticality": 10, "ip": "10.0.1.10", "os": "Windows Server 2022" },
+      { "name": "ERP-SERVER",     "type": "ERP Application",     "criticality": 9,  "ip": "10.0.1.55", "os": "Windows Server 2019" },
+      { "name": "DB-FINANCE-01",  "type": "Database Server",     "criticality": 10, "ip": "10.0.2.10", "os": "Windows Server 2022" },
+      { "name": "JUMPBOX-01",     "type": "Jump Server",         "criticality": 8,  "ip": "10.0.1.200","os": "Windows Server 2019" },
+      { "name": "WORKSTATION-07", "type": "End User Workstation","criticality": 4,  "ip": "10.0.3.107","os": "Windows 11 Pro" },
+      { "name": "MAIL-SERVER",    "type": "Exchange Server",     "criticality": 7,  "ip": "10.0.1.25", "os": "Windows Server 2019" },
+      { "name": "WEB-APP-01",     "type": "Web Application",     "criticality": 6,  "ip": "172.16.0.50","os": "Ubuntu 22.04" },
+      { "name": "BACKUP-SERVER",  "type": "Backup Infrastructure","criticality": 8, "ip": "10.0.4.5",  "os": "Windows Server 2022" }
+    ]
+  },
+  "attack_vector": "Spear-phishing email with malicious Office macro targeting finance department employees",
+  "attacker_profile": {
+    "group": "APT-41 (Simulated)",
+    "type": "APT",
+    "skill": "high",
+    "motivation": "Financial gain and intellectual property theft",
+    "origin": "Nation-state sponsored",
+    "avg_dwell_time_days": 207,
+    "known_ttps": ["T1566.001","T1059.001","T1003.001","T1021.002","T1486","T1041"]
+  },
+  "security_controls": [
+    { "name": "Firewall",           "type": "network",   "maturity": 3, "enabled": true,  "vendor": "Palo Alto Networks" },
+    { "name": "EDR",                "type": "endpoint",  "maturity": 4, "enabled": true,  "vendor": "CrowdStrike Falcon" },
+    { "name": "SIEM",               "type": "monitoring","maturity": 3, "enabled": true,  "vendor": "Splunk Enterprise" },
+    { "name": "MFA",                "type": "identity",  "maturity": 2, "enabled": true,  "vendor": "Duo Security" },
+    { "name": "PAM",                "type": "identity",  "maturity": 2, "enabled": true,  "vendor": "CyberArk" },
+    { "name": "WAF",                "type": "network",   "maturity": 3, "enabled": true,  "vendor": "F5 BIG-IP ASM" },
+    { "name": "IDS/IPS",            "type": "network",   "maturity": 3, "enabled": true,  "vendor": "Snort/Suricata" },
+    { "name": "Email Gateway",      "type": "email",     "maturity": 4, "enabled": true,  "vendor": "Proofpoint TAP" },
+    { "name": "DLP",                "type": "data",      "maturity": 2, "enabled": true,  "vendor": "Symantec DLP" },
+    { "name": "DNS Filter",         "type": "network",   "maturity": 3, "enabled": true,  "vendor": "Cisco Umbrella" }
+  ],
+  "attack_phases": [
+    {
+      "phase": "Reconnaissance",
+      "mitre_tactic": "TA0043",
+      "techniques": [
+        { "id": "T1589.002", "name": "Email Addresses",      "description": "Harvest employee email addresses from LinkedIn and company website" },
+        { "id": "T1596.005", "name": "Scan Databases",       "description": "Query Shodan/Censys for internet-exposed services" },
+        { "id": "T1593.002", "name": "Social Media",         "description": "Profile finance department employees on LinkedIn" }
+      ],
+      "success_probability": 0.92,
+      "avg_duration_hours": 24
+    },
+    {
+      "phase": "Weaponization",
+      "mitre_tactic": "TA0001",
+      "techniques": [
+        { "id": "T1587.001", "name": "Malware Development",  "description": "Compile custom CobaltStrike beacon with malleable C2 profile" },
+        { "id": "T1608.001", "name": "Upload Malware",       "description": "Stage payload on attacker-controlled CDN infrastructure" },
+        { "id": "T1566.001", "name": "Spearphishing Attachment", "description": "Craft malicious Excel macro-enabled workbook targeting CFO assistant" }
+      ],
+      "success_probability": 0.85,
+      "avg_duration_hours": 48
+    },
+    {
+      "phase": "Delivery",
+      "mitre_tactic": "TA0001",
+      "techniques": [
+        { "id": "T1566.001", "name": "Spearphishing Attachment", "description": "Send phishing email impersonating Big Four auditing firm" },
+        { "id": "T1534",     "name": "Internal Spearphishing",   "description": "Abuse compromised mailbox to send internal phishing" }
+      ],
+      "success_probability": 0.72,
+      "avg_duration_hours": 2
+    },
+    {
+      "phase": "Exploitation",
+      "mitre_tactic": "TA0002",
+      "techniques": [
+        { "id": "T1059.001", "name": "PowerShell",           "description": "Execute macro that spawns PowerShell to download stage-2 payload" },
+        { "id": "T1203",     "name": "Exploitation for Client Execution", "description": "Exploit CVE-2023-23397 Outlook 0-click for initial access" }
+      ],
+      "success_probability": 0.68,
+      "avg_duration_hours": 0.5
+    },
+    {
+      "phase": "Installation",
+      "mitre_tactic": "TA0003",
+      "techniques": [
+        { "id": "T1547.001", "name": "Registry Run Keys",    "description": "Establish persistence via HKCU Run key" },
+        { "id": "T1053.005", "name": "Scheduled Task",       "description": "Create scheduled task running under user context" },
+        { "id": "T1105",     "name": "Ingress Tool Transfer","description": "Download CobaltStrike beacon and supporting tools" }
+      ],
+      "success_probability": 0.78,
+      "avg_duration_hours": 1
+    },
+    {
+      "phase": "Command & Control",
+      "mitre_tactic": "TA0011",
+      "techniques": [
+        { "id": "T1071.001", "name": "Web Protocols",        "description": "HTTPS C2 beacon to attacker-controlled CDN over port 443" },
+        { "id": "T1573.002", "name": "Asymmetric Cryptography","description": "Encrypted C2 channel using RSA+AES" },
+        { "id": "T1090.001", "name": "Internal Proxy",       "description": "Pivot through compromised workstation to reach internal targets" }
+      ],
+      "success_probability": 0.81,
+      "avg_duration_hours": 168
+    },
+    {
+      "phase": "Actions on Objectives",
+      "mitre_tactic": "TA0009",
+      "techniques": [
+        { "id": "T1003.001", "name": "LSASS Memory",         "description": "Dump LSASS to extract domain admin credentials" },
+        { "id": "T1021.002", "name": "SMB/Windows Admin Shares","description": "Lateral movement to DC using harvested credentials" },
+        { "id": "T1041",     "name": "Exfiltration Over C2", "description": "Exfiltrate financial records and strategic plans" },
+        { "id": "T1486",     "name": "Data Encrypted for Impact","description": "Deploy ransomware as distraction during exfiltration" }
+      ],
+      "success_probability": 0.55,
+      "avg_duration_hours": 4
+    }
+  ],
+  "success_criteria": {
+    "attacker_goals": [
+      "Achieve persistent access (dwell time > 72 hours)",
+      "Reach Domain Controller",
+      "Exfiltrate financial data (> 1GB)",
+      "Maintain stealth (avoid detection for > 48 hours)"
+    ],
+    "defender_goals": [
+      "Detect intrusion within 1 hour of initial access",
+      "Contain incident before lateral movement to DC",
+      "Preserve forensic evidence",
+      "Restore operations within 4 hours"
+    ]
+  }
+}
