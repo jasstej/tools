@@ -1,0 +1,302 @@
+{
+  "T1595": {
+    "id": "T1595",
+    "name": "Active Scanning",
+    "tactic": "Reconnaissance",
+    "description": "Adversaries may execute active reconnaissance scans to gather information that can be used during targeting. Active scans are those where the adversary probes victim infrastructure via network traffic.",
+    "procedure_examples": [
+      "APT28 used port scans and banner grabbing to identify exposed services before launching targeted attacks.",
+      "Lazarus Group conducted network scanning using custom tools to enumerate open ports and services on target networks."
+    ],
+    "mitigations": [
+      "Pre-compromise: This technique cannot easily be mitigated; focus on detection and network segmentation.",
+      "Network Intrusion Prevention: Use network intrusion prevention systems (IPS) to detect and block scanning activity."
+    ],
+    "detection": "Monitor for suspicious port scanning activity in network flow data. Correlate scanning traffic with threat intelligence feeds. IDS/IPS signatures can identify common scanning tool patterns such as nmap."
+  },
+  "T1566": {
+    "id": "T1566",
+    "name": "Phishing",
+    "tactic": "Initial Access",
+    "description": "Adversaries may send phishing messages to gain access to victim systems. All forms of phishing are electronically delivered social engineering. Phishing can be targeted (spearphishing) or sent in bulk.",
+    "procedure_examples": [
+      "APT29 sent spearphishing emails with malicious PDF attachments to government targets, delivering COZYCAR malware.",
+      "FIN7 crafted highly convincing phishing emails impersonating legitimate HR or finance communications to deliver backdoors."
+    ],
+    "mitigations": [
+      "Anti-Phishing: Deploy anti-phishing solutions and user training to reduce susceptibility to phishing.",
+      "Email Filtering: Use email gateway filtering with sandboxing to inspect and block malicious attachments and links."
+    ],
+    "detection": "Network intrusion detection systems and email security solutions can identify phishing messages. Look for suspicious email attachments, unusual sender domains, and links to recently-registered domains."
+  },
+  "T1059": {
+    "id": "T1059",
+    "name": "Command and Scripting Interpreter",
+    "tactic": "Execution",
+    "description": "Adversaries may abuse command and script interpreters to execute commands, scripts, or binaries. These interfaces and languages provide ways of interacting with computer systems and are common features across many different platforms.",
+    "procedure_examples": [
+      "APT32 used PowerShell and Bash scripts to execute reconnaissance commands and establish persistence on compromised Linux hosts.",
+      "Cobalt Strike's Beacon payload uses PowerShell to execute commands in memory, avoiding disk-based detection."
+    ],
+    "mitigations": [
+      "Disable or Restrict Command Shell: Restrict the use of command shells to only authorised users where possible.",
+      "Script Blocking: Use application control policies to prevent execution of unauthorised scripts."
+    ],
+    "detection": "Enable command-line logging (Windows Event 4688, auditd on Linux). Alert on suspicious parent-child process relationships, encoded commands, and scripts launched from unusual locations."
+  },
+  "T1053": {
+    "id": "T1053",
+    "name": "Scheduled Task/Job",
+    "tactic": "Persistence",
+    "description": "Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time.",
+    "procedure_examples": [
+      "APT41 modified cron jobs on Linux servers to maintain persistence across reboots, executing a dropper every 15 minutes.",
+      "FIN6 created Windows scheduled tasks to periodically execute POS malware and re-establish C2 connectivity."
+    ],
+    "mitigations": [
+      "Audit: Regularly audit scheduled tasks and cron jobs for unauthorised entries.",
+      "Restrict Permissions: Restrict permissions on task-scheduling tools to prevent unauthorised creation."
+    ],
+    "detection": "Monitor crontab modification events in auditd logs. On Windows, audit Scheduled Task creation events (4698, 4702). Alert on tasks created by non-administrative users or from unusual paths."
+  },
+  "T1068": {
+    "id": "T1068",
+    "name": "Exploitation for Privilege Escalation",
+    "tactic": "Privilege Escalation",
+    "description": "Adversaries may exploit software vulnerabilities in an attempt to elevate privileges. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the OS software.",
+    "procedure_examples": [
+      "PLATINUM exploited CVE-2019-0841 on Windows to escalate privileges from a standard user account to SYSTEM.",
+      "APT28 leveraged a local privilege escalation in the Linux kernel to move from a low-privilege web shell to root access."
+    ],
+    "mitigations": [
+      "Update Software: Regularly patch operating systems and applications to close known privilege escalation vulnerabilities.",
+      "Exploit Protection: Enable OS-level exploit protection features such as ASLR and DEP."
+    ],
+    "detection": "Monitor for unusual process spawning patterns where a low-privilege process creates a high-privilege child. Integrate with vulnerability management to correlate CVE exploitation attempts."
+  },
+  "T1027": {
+    "id": "T1027",
+    "name": "Obfuscated Files or Information",
+    "tactic": "Defense Evasion",
+    "description": "Adversaries may attempt to make an executable or file difficult to discover or analyze by encrypting, encoding, or otherwise obfuscating its contents on the system or in transit.",
+    "procedure_examples": [
+      "DarkHydrus used Base64-encoded PowerShell commands embedded in macro-enabled documents to evade email gateway scanning.",
+      "Turla compressed and XOR-encrypted their second-stage payloads to defeat signature-based antivirus detection."
+    ],
+    "mitigations": [
+      "Anti-virus: Use behaviour-based antivirus solutions that detect suspicious execution patterns rather than relying solely on signatures.",
+      "Code Signing: Require signed executables and scripts to reduce execution of obfuscated or unsigned code."
+    ],
+    "detection": "Monitor for high-entropy file writes and Base64-encoded command arguments in process logs. Sandbox suspicious files. Alert on scripts containing encoded or compressed payloads."
+  },
+  "T1003": {
+    "id": "T1003",
+    "name": "OS Credential Dumping",
+    "tactic": "Credential Access",
+    "description": "Adversaries may attempt to dump credentials to obtain account login and credential material, normally in the form of a hash or a clear text password, from the operating system and software.",
+    "procedure_examples": [
+      "APT28 used Mimikatz to extract NTLM hashes from LSASS memory on compromised Windows domain controllers.",
+      "Lazarus Group accessed /etc/shadow on Linux systems to harvest password hashes for offline cracking."
+    ],
+    "mitigations": [
+      "Privileged Account Management: Restrict access to sensitive credential stores using the principle of least privilege.",
+      "Credential Access Protection: Enable Windows Credential Guard and Protected Users security group to restrict LSASS access."
+    ],
+    "detection": "Monitor access to /etc/shadow and LSASS process memory reads. Alert on known credential dumping tool signatures. Audit privileged account access patterns."
+  },
+  "T1016": {
+    "id": "T1016",
+    "name": "System Network Configuration Discovery",
+    "tactic": "Discovery",
+    "description": "Adversaries may look for details about the network configuration and settings of systems they access or through information gathering. Several operating system administration utilities exist that can be used to gather this information.",
+    "procedure_examples": [
+      "OilRig ran ipconfig, route, and arp commands immediately after initial access to map the victim's network topology.",
+      "Sofacy used custom scripts invoking netstat, ifconfig, and ss to enumerate network interfaces and active connections."
+    ],
+    "mitigations": [
+      "Network Segmentation: Segment networks to limit what an adversary can discover from a single compromised host.",
+      "User Account Management: Restrict access to network configuration tools to prevent broad reconnaissance."
+    ],
+    "detection": "Monitor execution of network discovery commands (ipconfig, ifconfig, netstat, arp, route). Alert on rapid succession of these commands from non-administrative accounts."
+  },
+  "T1021": {
+    "id": "T1021",
+    "name": "Remote Services",
+    "tactic": "Lateral Movement",
+    "description": "Adversaries may use Valid Accounts to log into a service specifically designed to accept remote connections, such as telnet, SSH, and VNC. The adversary may then perform actions as the logged-on user.",
+    "procedure_examples": [
+      "APT41 used stolen SSH keys to pivot laterally between Linux servers in a financial institution's data centre.",
+      "Dragonfly 2.0 used RDP with harvested credentials to move laterally across ICS engineer workstations."
+    ],
+    "mitigations": [
+      "Multi-Factor Authentication: Enforce MFA on all remote access services to prevent use of stolen credentials.",
+      "Limit Remote Services: Restrict which accounts can use remote services and from which network locations."
+    ],
+    "detection": "Monitor authentication logs for unusual remote login patterns. Alert on logins from new source IPs, off-hours access, and rapid sequential logins across multiple hosts."
+  },
+  "T1041": {
+    "id": "T1041",
+    "name": "Exfiltration Over C2 Channel",
+    "tactic": "Exfiltration",
+    "description": "Adversaries may steal data by exfiltrating it over an existing command and control channel. Stolen data is encoded into the normal communications channel using the same protocol as C2 communications.",
+    "procedure_examples": [
+      "HAMMERTOSS exfiltrated collected data by uploading it to attacker-controlled GitHub repositories over HTTPS.",
+      "OceanSalt exfiltrated sensitive files over the same C2 channel used for command execution, blending into normal traffic."
+    ],
+    "mitigations": [
+      "Network Intrusion Prevention: Deploy DLP and IPS solutions that inspect outbound traffic for data exfiltration patterns.",
+      "Data Loss Prevention: Implement DLP policies to monitor and restrict transfer of sensitive data to external locations."
+    ],
+    "detection": "Monitor for abnormal outbound data volumes from endpoints. Correlate C2 beaconing patterns with data transfer events. Alert on large uploads to known-bad IP addresses or uncommon external destinations."
+  },
+  "T1078": {
+    "id": "T1078",
+    "name": "Valid Accounts",
+    "tactic": "Initial Access",
+    "description": "Adversaries may obtain and abuse credentials of existing accounts as a means of gaining Initial Access, Persistence, Privilege Escalation, or Defense Evasion.",
+    "procedure_examples": [
+      "FIN5 obtained VPN credentials through phishing and used them to gain initial access to a retail company's network.",
+      "APT33 reused leaked credentials from third-party breaches to authenticate to cloud service portals."
+    ],
+    "mitigations": [
+      "Password Policies: Enforce strong password policies and regular rotation to limit credential reuse.",
+      "Multi-Factor Authentication: Require MFA for all interactive logins to reduce the impact of compromised credentials."
+    ],
+    "detection": "Monitor for authentication events from unusual geolocations or IP addresses. Alert on impossible-travel scenarios. Correlate logins with HR systems to flag terminated employee accounts."
+  },
+  "T1548": {
+    "id": "T1548",
+    "name": "Abuse Elevation Control Mechanism",
+    "tactic": "Privilege Escalation",
+    "description": "Adversaries may circumvent mechanisms designed to control elevate privileges to gain higher-level permissions. Most modern systems contain native elevation control mechanisms that are intended to limit privileges that a user can perform.",
+    "procedure_examples": [
+      "Threat actors exploit misconfigured sudo rules to execute arbitrary commands as root on Linux systems.",
+      "Attackers set the SUID bit on copies of /bin/bash to create a persistent privilege escalation backdoor."
+    ],
+    "mitigations": [
+      "Restrict sudo: Audit and restrict sudoers configuration using the principle of least privilege.",
+      "Privileged File Access Monitoring: Monitor SUID/SGID bit changes on system binaries."
+    ],
+    "detection": "Monitor auditd for SUID bit changes (chmod +s). Alert on sudo executions by non-standard users. Track executions of setuid binaries from unexpected locations."
+  },
+  "T1136": {
+    "id": "T1136",
+    "name": "Create Account",
+    "tactic": "Persistence",
+    "description": "Adversaries may create an account to maintain access to victim systems. With a sufficient level of access, creating such accounts may be used to establish secondary credentialed access that do not require persistent remote access tools to remain installed on the system.",
+    "procedure_examples": [
+      "APT3 created new local administrator accounts after gaining access to ensure persistence even after password resets.",
+      "Threat actors added backdoor accounts to /etc/passwd on Linux servers for persistent root access."
+    ],
+    "mitigations": [
+      "Privileged Account Management: Regularly audit local accounts and disable unused accounts.",
+      "Operating System Configuration: Restrict the ability to create accounts to administrators only."
+    ],
+    "detection": "Monitor for user account creation events (useradd, adduser on Linux; Event 4720 on Windows). Alert on accounts created outside change management windows."
+  },
+  "T1110": {
+    "id": "T1110",
+    "name": "Brute Force",
+    "tactic": "Credential Access",
+    "description": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained. Without knowledge of the password for an account, an adversary may opt to guess the password.",
+    "procedure_examples": [
+      "APT28 conducted password spraying attacks against Office 365 accounts using a list of common passwords.",
+      "Turla brute forced SSH credentials using automated tools targeting publicly exposed management interfaces."
+    ],
+    "mitigations": [
+      "Account Lockout Policy: Configure account lockout policies to limit repeated failed authentication attempts.",
+      "Multi-Factor Authentication: Implement MFA to make brute-forced credentials insufficient for access."
+    ],
+    "detection": "Monitor authentication logs for multiple failed login attempts. Alert on more than 5 failures per minute from a single source. Correlate with threat intelligence for known brute-force source IPs."
+  },
+  "T1070": {
+    "id": "T1070",
+    "name": "Indicator Removal on Host",
+    "tactic": "Defense Evasion",
+    "description": "Adversaries may delete or alter generated artifacts on a host system, including logs and captured files such as quarantined malware. Locations and format of logs are often specific to the operating system.",
+    "procedure_examples": [
+      "APT28 cleared Windows event logs after gaining access to avoid leaving forensic evidence of their activity.",
+      "Attackers truncated /var/log/auth.log using redirection operators to destroy SSH brute force evidence."
+    ],
+    "mitigations": [
+      "Remote Data Storage: Forward logs to a centralised SIEM in real time so local clearing has no effect.",
+      "Restrict File and Directory Permissions: Prevent non-root processes from modifying or deleting system logs."
+    ],
+    "detection": "Alert on log file truncation or deletion events. Monitor for large sudden decreases in log file size. Detect execution of log-clearing commands via auditd or process monitoring."
+  },
+  "T1014": {
+    "id": "T1014",
+    "name": "Rootkit",
+    "tactic": "Defense Evasion",
+    "description": "Adversaries may use rootkits to hide the presence of programs, files, network connections, services, drivers, and other system components. Rootkits are programs that hide the existence of malware by intercepting OS API calls that supply system information.",
+    "procedure_examples": [
+      "Equation Group deployed the Fanny rootkit that persisted in hard drive firmware to survive OS reinstallation.",
+      "Necurs rootkit used kernel-mode drivers to hide its files and registry keys from security software."
+    ],
+    "mitigations": [
+      "Update Software: Maintain up-to-date OS and firmware to prevent exploitation of vulnerabilities used by rootkits.",
+      "Privileged Account Management: Restrict kernel module loading to authorised administrators only."
+    ],
+    "detection": "Use integrity checking tools (AIDE, Tripwire) to detect tampering with system binaries. Monitor for unexpected kernel module loads via auditd. Boot from trusted media to inspect the live filesystem."
+  },
+  "T1105": {
+    "id": "T1105",
+    "name": "Ingress Tool Transfer",
+    "tactic": "Command and Control",
+    "description": "Adversaries may transfer tools or other files from an external system into a compromised environment. Files may be copied from an external adversary-controlled system through the C2 channel or through alternate protocols such as ftp, scp, and rsync.",
+    "procedure_examples": [
+      "OilRig used curl and wget to download additional malware stages onto compromised Linux web servers.",
+      "APT41 transferred post-exploitation tools via SMB shares after gaining initial access to corporate networks."
+    ],
+    "mitigations": [
+      "Network Intrusion Prevention: Block downloads of executable content from untrusted external sources at the network perimeter.",
+      "Restrict Web Traffic: Use web proxies to inspect and control outbound HTTP/S traffic from servers."
+    ],
+    "detection": "Monitor command execution logs for wget, curl, and similar tools. Alert on large file downloads from external hosts to server systems. Correlate with network flow data for anomalous outbound connections."
+  },
+  "T1571": {
+    "id": "T1571",
+    "name": "Non-Standard Port",
+    "tactic": "Command and Control",
+    "description": "Adversaries may communicate using a protocol and port pairing that are typically not associated. For example, HTTPS over port 8088 or port 587 as opposed to the standard port 443. Adversaries may make changes to the standard port used by a protocol to bypass filtering or muddle analysis.",
+    "procedure_examples": [
+      "HAMMERTOSS used port 443 for HTTP communication and port 80 for DNS queries to blend with expected traffic patterns.",
+      "Cobalt Strike Beacon can be configured to communicate on any arbitrary port, including non-standard ones."
+    ],
+    "mitigations": [
+      "Network Segmentation: Enforce strict egress filtering policies that only permit traffic on authorised ports.",
+      "Network Intrusion Prevention: Use IPS signatures to detect protocol-port mismatches."
+    ],
+    "detection": "Monitor network flows for traffic on non-standard ports. Alert on services listening on unexpected ports. Correlate outbound connections from servers with approved application communication patterns."
+  },
+  "T1083": {
+    "id": "T1083",
+    "name": "File and Directory Discovery",
+    "tactic": "Discovery",
+    "description": "Adversaries may enumerate files and directories or may search in specific locations of a host or network share for certain information within a file system. Adversaries may use the information from File and Directory Discovery during automated collection.",
+    "procedure_examples": [
+      "APT32 used find and ls commands to enumerate sensitive files on compromised web servers after initial access.",
+      "DarkHydrus used directory traversal to locate configuration files containing database credentials."
+    ],
+    "mitigations": [
+      "Restrict File and Directory Permissions: Implement the principle of least privilege on file system access.",
+      "Audit: Monitor file access patterns for unusual enumeration behaviour."
+    ],
+    "detection": "Monitor for rapid file system enumeration via auditd file-access events. Alert on access to sensitive directories (/etc, /root, /home) by non-standard processes."
+  },
+  "T1562": {
+    "id": "T1562",
+    "name": "Impair Defenses",
+    "tactic": "Defense Evasion",
+    "description": "Adversaries may maliciously modify components of a victim environment in order to hinder or disable defensive mechanisms. This not only involves impairing preventative defenses, such as firewalls and anti-virus, but also detection capabilities.",
+    "procedure_examples": [
+      "Fancy Bear disabled Windows Defender via registry modification before deploying their toolset on compromised hosts.",
+      "APT28 stopped and disabled logging services (auditd, rsyslog) on Linux systems after gaining root access."
+    ],
+    "mitigations": [
+      "Restrict Registry Permissions: Prevent modification of security tool registry keys by non-administrative users.",
+      "User Account Management: Ensure security tools run as dedicated service accounts with restricted modification rights."
+    ],
+    "detection": "Alert on disabling of security services (Windows Defender, auditd, SELinux). Monitor registry keys for security tool configuration changes. Use file integrity monitoring on security tool binaries."
+  }
+}

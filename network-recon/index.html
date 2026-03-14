@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Recon Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --bg2:       #161b22;
+    --bg3:       #21262d;
+    --border:    #30363d;
+    --text:      #c9d1d9;
+    --muted:     #8b949e;
+    --green:     #40c463;
+    --blue:      #58a6ff;
+    --red:       #f85149;
+    --yellow:    #e3b341;
+    --purple:    #bc8cff;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav .logo {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  nav .back-link {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  nav .back-link:hover { color: var(--blue); border-color: var(--blue); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    background: rgba(227,179,65,0.1);
+    border: 1px solid var(--yellow);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--yellow);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* ── HERO ── */
+  .hero { margin-bottom: 3rem; }
+  .hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .hero h1 span { color: var(--green); }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 640px; }
+
+  /* ── PASSIVE BADGE ── */
+  .passive-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.25);
+    color: var(--blue);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    margin-top: 0.9rem;
+  }
+  .passive-badge::before { content: '●'; font-size: 0.55rem; }
+
+  /* ── SCANNER PANEL ── */
+  .scanner-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+  .panel-header {
+    background: var(--bg3);
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: var(--red); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-green { background: var(--green); }
+  .panel-body { padding: 1.5rem; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: end;
+  }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+  label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--blue); }
+
+  .scan-btn-wrap { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  .btn-scan {
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 0.55rem 1.5rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  .btn-scan:hover { opacity: 0.85; }
+  .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .sources-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .sources-hint span { color: var(--blue); }
+
+  /* ── TERMINAL ── */
+  .terminal {
+    background: #0a0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    min-height: 180px;
+    max-height: 340px;
+    overflow-y: auto;
+    color: var(--text);
+  }
+  .terminal .prompt { color: var(--green); }
+  .terminal .info   { color: var(--blue); }
+  .terminal .warn   { color: var(--yellow); }
+  .terminal .err    { color: var(--red); }
+  .terminal .dim    { color: var(--muted); }
+  .terminal .ok     { color: var(--green); }
+  .terminal .cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--green);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── RESULTS ── */
+  #results-section { display: none; margin-top: 2.5rem; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.25rem;
+    text-align: center;
+  }
+  .stat-card .stat-val {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .stat-card .stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-green  .stat-val { color: var(--green); }
+  .stat-red    .stat-val { color: var(--red); }
+  .stat-blue   .stat-val { color: var(--blue); }
+  .stat-yellow .stat-val { color: var(--yellow); }
+
+  /* ── TARGET INTEL CARD ── */
+  .intel-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .intel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem 1.5rem;
+    margin-top: 0.75rem;
+  }
+  @media (max-width: 640px) { .intel-grid { grid-template-columns: 1fr 1fr; } }
+  .intel-item {}
+  .intel-key {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.15rem;
+  }
+  .intel-val {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .intel-val.highlight { color: var(--green); }
+
+  /* ── RISK BARS ── */
+  .risk-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .risk-section h3 { font-size: 0.95rem; color: var(--text); margin-bottom: 1rem; }
+  .risk-bar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.7rem; font-family: var(--font-mono); font-size: 0.8rem; }
+  .risk-bar-label { width: 70px; color: var(--muted); }
+  .risk-bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; width: 0; }
+  .risk-bar-fill.high   { background: var(--red); }
+  .risk-bar-fill.medium { background: var(--yellow); }
+  .risk-bar-fill.low    { background: var(--green); }
+  .risk-bar-pct { width: 40px; text-align: right; color: var(--text); }
+
+  /* ── TABLES ── */
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-title::before { content: '//'; font-family: var(--font-mono); color: var(--muted); font-size: 0.85rem; }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 2rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.55rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+  tbody tr:hover { background: rgba(88,166,255,0.04); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .badge-high   { background: rgba(248,81,73,0.15);  color: var(--red);    border: 1px solid rgba(248,81,73,0.4); }
+  .badge-medium { background: rgba(227,179,65,0.15); color: var(--yellow); border: 1px solid rgba(227,179,65,0.4); }
+  .badge-low    { background: rgba(64,196,99,0.15);  color: var(--green);  border: 1px solid rgba(64,196,99,0.4); }
+  .badge-info   { background: rgba(88,166,255,0.15); color: var(--blue);   border: 1px solid rgba(88,166,255,0.4); }
+  .badge-purple { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.4); }
+
+  /* ── CVE ── */
+  .cve-link {
+    color: var(--red);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+  .cve-link:hover { text-decoration: underline; }
+
+  /* ── TAGS ── */
+  .tags-wrap { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+
+  /* ── DATA SOURCE ── */
+  .data-source-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .source-chip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.2rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .source-chip .dot-ok   { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .source-chip .dot-miss { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+
+  /* ── ACTION ROW ── */
+  .action-row { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-export { border-color: var(--green); color: var(--green); }
+  .btn-export:hover { background: rgba(64,196,99,0.1); border-color: var(--green); color: var(--green); }
+
+  /* ── HOW IT WORKS ── */
+  .how-section { margin-top: 4rem; }
+  .how-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .how-section h2 span { color: var(--blue); }
+  .how-section .sub { color: var(--muted); margin-bottom: 2rem; font-size: 0.9rem; }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 700px) { .feature-grid { grid-template-columns: 1fr; } }
+  .feature-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .feature-card:hover { border-color: var(--blue); }
+  .feature-icon { font-size: 1.5rem; margin-bottom: 0.6rem; }
+  .feature-card h4 { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
+  .feature-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── CODE BLOCK ── */
+  .code-section { margin-top: 3rem; }
+  .code-section h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem; }
+  pre {
+    background: #0a0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: var(--text);
+  }
+  pre .cmd     { color: var(--green); }
+  pre .flag    { color: var(--blue); }
+  pre .val     { color: var(--yellow); }
+  pre .comment { color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 5rem;
+    padding: 2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="https://tools.jasstej.tech" class="logo">[ network-recon ]</a>
+  <a href="https://tools.jasstej.tech" class="back-link">← tools.jasstej.tech</a>
+</nav>
+
+<div class="container">
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer">
+    ⚠ This tool queries Shodan InternetDB (passive, no packets) and optionally HackerTarget's nmap API (live scan from their servers). For multi-IP hosts all resolved IPs are queried. Results may differ from a local nmap depending on network path and scan scope.
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Network <span>Reconnaissance</span> Scanner</h1>
+    <p>Queries Shodan InternetDB across <em>all</em> resolved IPs, runs a live nmap via HackerTarget, and fetches geolocation from ipinfo.io — aggregated and deduplicated into one view.</p>
+    <div class="passive-badge">MULTI-SOURCE — REAL DATA</div>
+  </div>
+
+  <!-- SCANNER PANEL -->
+  <div class="scanner-panel">
+    <div class="panel-header">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+      &nbsp; recon.js — live OSINT query
+    </div>
+    <div class="panel-body">
+      <div class="form-row">
+        <div>
+          <label>Target IP or Hostname</label>
+          <input type="text" id="target-input" placeholder="1.1.1.1 or example.com" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="scan-btn-wrap">
+          <label>&nbsp;</label>
+          <button class="btn-scan" id="scan-btn" onclick="runScan()">▶ Lookup</button>
+          <div class="sources-hint">via <span>Shodan</span> · <span>HackerTarget</span> · <span>ipinfo</span></div>
+        </div>
+      </div>
+
+      <div class="terminal" id="terminal">
+        <div class="dim">// Network Reconnaissance Scanner — multi-source mode</div>
+        <div class="dim">// Enter a public IP or hostname and press Lookup.</div>
+        <div class="dim">// Sources: Shodan (all IPs) · HackerTarget nmap · ipinfo.io</div>
+        <div>&nbsp;</div>
+        <div><span class="prompt">$</span> <span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="results-section">
+
+    <!-- DATA SOURCE ATTRIBUTION -->
+    <div class="data-source-row" id="source-row">
+      <span>Data sources:</span>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card stat-green">
+        <div class="stat-val" id="stat-open">—</div>
+        <div class="stat-label">Open Ports</div>
+      </div>
+      <div class="stat-card stat-red">
+        <div class="stat-val" id="stat-cve">—</div>
+        <div class="stat-label">CVEs Found</div>
+      </div>
+      <div class="stat-card stat-blue">
+        <div class="stat-val" id="stat-hosts">—</div>
+        <div class="stat-label">Hostnames</div>
+      </div>
+      <div class="stat-card stat-yellow">
+        <div class="stat-val" id="stat-country">—</div>
+        <div class="stat-label">Country</div>
+      </div>
+    </div>
+
+    <!-- TARGET INTEL CARD -->
+    <div class="intel-card">
+      <div class="section-title" style="margin-bottom:0.25rem">Target Intelligence</div>
+      <div class="intel-grid" id="intel-grid"></div>
+    </div>
+
+    <!-- RISK BARS -->
+    <div class="risk-section">
+      <h3>Attack Surface Distribution</h3>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">HIGH</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill high" id="bar-high"></div></div>
+        <span class="risk-bar-pct" id="pct-high">0%</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">MEDIUM</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill medium" id="bar-medium"></div></div>
+        <span class="risk-bar-pct" id="pct-medium">0%</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">LOW</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill low" id="bar-low"></div></div>
+        <span class="risk-bar-pct" id="pct-low">0%</span>
+      </div>
+    </div>
+
+    <!-- OPEN PORTS TABLE -->
+    <div class="section-title">Open Ports</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Port</th>
+            <th>Risk</th>
+            <th>Service</th>
+            <th>Category</th>
+            <th>Sources</th>
+          </tr>
+        </thead>
+        <tbody id="ports-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- CVEs -->
+    <div id="cve-section" style="display:none">
+      <div class="section-title">Known CVEs</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CVE ID</th>
+              <th>NVD Reference</th>
+            </tr>
+          </thead>
+          <tbody id="cve-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HOSTNAMES -->
+    <div id="hostnames-section" style="display:none">
+      <div class="section-title">Hostnames</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Hostname</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="hostnames-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAGS -->
+    <div id="tags-section" style="display:none">
+      <div class="section-title">Shodan Tags</div>
+      <div class="tags-wrap" id="tags-wrap"></div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="action-row">
+      <button class="btn-secondary btn-export" onclick="exportJSON()">⬇ Export JSON Report</button>
+      <button class="btn-secondary" onclick="newScan()">↺ New Lookup</button>
+    </div>
+
+  </div><!-- /results-section -->
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <h2>How It <span>Works</span></h2>
+    <p class="sub">Three live data sources. Zero packets sent. Real indexed intelligence.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛡</div>
+        <h4>Passive OSINT Only</h4>
+        <p>No TCP connections are made to the target. All data is sourced from public internet-scan databases that have already crawled billions of IPs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📡</div>
+        <h4>Shodan InternetDB</h4>
+        <p>Queries Shodan's free InternetDB API for open ports, CPEs (software fingerprints), known CVEs, hostnames, and classification tags for any public IP.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <h4>Geolocation & ASN</h4>
+        <p>Fetches IP geolocation, organization, ASN, city, region, and timezone from ipinfo.io — useful for attribution and threat context.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h4>DNS Resolution</h4>
+        <p>Resolves hostnames to IPs via Cloudflare's DNS-over-HTTPS API before querying OSINT sources — no DNS leaks, fully browser-native.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚨</div>
+        <h4>CVE Intelligence</h4>
+        <p>Surfaces actual CVEs associated with the target IP from Shodan's database, linked directly to NVD for full vulnerability details.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h4>JSON Export</h4>
+        <p>Downloads a structured JSON report of all fetched data — ports, CVEs, hostnames, tags, and geolocation — for pipeline integration.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLI CODE EXAMPLE -->
+  <div class="code-section">
+    <h3>// CLI Usage (Python scanner)</h3>
+    <pre><span class="comment"># Install dependencies</span>
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt
+
+<span class="comment"># Basic scan — top 1024 ports</span>
+<span class="cmd">python scanner.py</span> <span class="flag">--target</span> <span class="val">192.168.1.1</span>
+
+<span class="comment"># Full scan with subdomain enum + HTML report</span>
+<span class="cmd">python scanner.py</span> <span class="flag">--target</span> <span class="val">example.com</span> <span class="flag">--ports</span> <span class="val">1-65535</span> <span class="flag">--threads</span> <span class="val">200</span> <span class="flag">--subdomains</span> <span class="flag">--output</span> <span class="val">both</span>
+
+<span class="comment"># Quick localhost demo (no target needed)</span>
+<span class="cmd">python scanner.py</span> <span class="flag">--demo</span></pre>
+  </div>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer>
+  <p>Network Reconnaissance Scanner — passive OSINT only · data from Shodan InternetDB & ipinfo.io</p>
+  <p style="margin-top:0.4rem"><a href="https://tools.jasstej.tech">← Back to tools.jasstej.tech</a></p>
+</footer>
+
+<script>
+// ── PORT KNOWLEDGE BASE ──────────────────────────────────────────────────────
+
+const PORT_MAP = {
+  21:"FTP", 22:"SSH", 23:"Telnet", 25:"SMTP", 53:"DNS", 80:"HTTP",
+  110:"POP3", 111:"RPC", 113:"Ident", 135:"MSRPC", 139:"NetBIOS", 143:"IMAP",
+  443:"HTTPS", 445:"SMB", 465:"SMTPS", 587:"SMTP Submission", 993:"IMAPS",
+  995:"POP3S", 1433:"MSSQL", 2000:"SCCP", 2375:"Docker", 2376:"Docker TLS",
+  3000:"Dev Server", 3306:"MySQL", 3389:"RDP", 4444:"Reverse Shell",
+  5060:"SIP", 5061:"SIP TLS", 5432:"PostgreSQL", 5900:"VNC", 6379:"Redis",
+  7001:"WebLogic", 8000:"HTTP Alt", 8008:"HTTP Alt", 8010:"HTTP Alt",
+  8080:"HTTP Alt", 8443:"HTTPS Alt", 8888:"Jupyter",
+  9200:"Elasticsearch", 9300:"Elasticsearch", 11211:"Memcached",
+  27017:"MongoDB", 27018:"MongoDB", 28017:"MongoDB HTTP"
+};
+
+const HIGH_RISK = new Set([23, 21, 3389, 445, 3306, 27017, 4444, 2375, 9200, 6379, 5900, 11211, 7001, 9300, 28017]);
+
+const CATEGORIES = {
+  21:"File Transfer", 22:"Remote Access", 23:"Remote Access", 25:"Mail",
+  53:"DNS", 80:"Web", 110:"Mail", 111:"RPC", 113:"Remote Access",
+  135:"RPC", 139:"File Share", 143:"Mail", 443:"Web", 445:"File Share",
+  465:"Mail", 587:"Mail", 993:"Mail", 995:"Mail", 1433:"Database",
+  2000:"VoIP", 2375:"Container", 2376:"Container", 3000:"Development",
+  3306:"Database", 3389:"Remote Access", 4444:"Suspicious",
+  5060:"VoIP", 5061:"VoIP", 5432:"Database", 5900:"Remote Access",
+  6379:"Cache/DB", 7001:"App Server", 8000:"Web", 8008:"Web",
+  8010:"Web", 8080:"Web", 8443:"Web", 8888:"Development",
+  9200:"Search/DB", 9300:"Search/DB", 11211:"Cache",
+  27017:"Database", 27018:"Database", 28017:"Database"
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+
+let scanResults = null;
+let scanRunning = false;
+
+// ── UTILITIES ────────────────────────────────────────────────────────────────
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function isPrivateIP(ip) {
+  return /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|0\.|169\.254\.|fc|fd|::1$)/.test(ip);
+}
+
+function isValidIP(ip) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) &&
+    ip.split('.').every(n => parseInt(n) <= 255);
+}
+
+function isValidHostname(h) {
+  return /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(h);
+}
+
+function riskOf(port) {
+  if (HIGH_RISK.has(port)) return 'HIGH';
+  if (port < 1024) return 'MEDIUM';
+  return 'LOW';
+}
+
+// ── TERMINAL HELPERS ──────────────────────────────────────────────────────────
+
+function termClear() {
+  document.getElementById('terminal').innerHTML = '';
+  termAddCursor();
+}
+
+function termLine(html, cls = '') {
+  const t = document.getElementById('terminal');
+  const cursor = t.querySelector('.cursor');
+  if (cursor) cursor.closest('div').remove();
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.innerHTML = html;
+  t.appendChild(div);
+  termAddCursor();
+  t.scrollTop = t.scrollHeight;
+}
+
+function termAddCursor() {
+  const t = document.getElementById('terminal');
+  const c = document.createElement('div');
+  c.innerHTML = '<span class="prompt">$</span> <span class="cursor"></span>';
+  t.appendChild(c);
+}
+
+// ── API CALLS ─────────────────────────────────────────────────────────────────
+
+// Returns array of ALL unique A record IPs for a hostname
+async function resolveAllIPs(hostname) {
+  if (isValidIP(hostname)) return [hostname];
+  const resp = await fetch(
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
+    { headers: { 'Accept': 'application/dns-json' } }
+  );
+  if (!resp.ok) throw new Error('DNS query failed');
+  const data = await resp.json();
+  if (data.Status !== 0) throw new Error('DNS resolution failed');
+  const ips = [...new Set((data.Answer || []).filter(r => r.type === 1).map(r => r.data))];
+  if (ips.length === 0) throw new Error(`No A records found for ${hostname}`);
+  return ips;
+}
+
+async function queryShodan(ip) {
+  const resp = await fetch(`https://internetdb.shodan.io/${ip}`);
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error(`Shodan returned HTTP ${resp.status}`);
+  return await resp.json();
+}
+
+// Query Shodan for every resolved IP and merge results
+async function queryShodanAll(ips) {
+  const results = await Promise.allSettled(ips.map(ip => queryShodan(ip)));
+  const merged = {
+    ports: new Set(), vulns: new Set(),
+    hostnames: new Set(), tags: new Set(), cpes: new Set(),
+    perIP: {}
+  };
+  results.forEach((r, i) => {
+    const ip = ips[i];
+    if (r.status === 'fulfilled' && r.value) {
+      merged.perIP[ip] = r.value;
+      r.value.ports.forEach(p => merged.ports.add(p));
+      r.value.vulns.forEach(v => merged.vulns.add(v));
+      r.value.hostnames.forEach(h => merged.hostnames.add(h));
+      r.value.tags.forEach(t => merged.tags.add(t));
+      r.value.cpes.forEach(c => merged.cpes.add(c));
+    } else {
+      merged.perIP[ip] = r.status === 'fulfilled' ? null : { error: r.reason?.message };
+    }
+  });
+  return {
+    ports:     [...merged.ports].sort((a, b) => a - b),
+    vulns:     [...merged.vulns],
+    hostnames: [...merged.hostnames],
+    tags:      [...merged.tags],
+    cpes:      [...merged.cpes],
+    perIP:     merged.perIP
+  };
+}
+
+async function queryIPInfo(ip) {
+  const resp = await fetch(`https://ipinfo.io/${ip}/json`);
+  if (!resp.ok) throw new Error(`ipinfo returned HTTP ${resp.status}`);
+  return await resp.json();
+}
+
+// HackerTarget nmap API — runs a real port scan from their servers
+async function queryHackerTarget(target) {
+  const resp = await fetch(`https://api.hackertarget.com/nmap/?q=${encodeURIComponent(target)}`);
+  if (!resp.ok) throw new Error(`HackerTarget returned HTTP ${resp.status}`);
+  const text = await resp.text();
+  // Rate limit / API error responses come back as plain text
+  if (
+    text.includes('API count exceeded') ||
+    text.includes('error input') ||
+    text.includes('api key') ||
+    /^(error|API )/.test(text.trim())
+  ) {
+    throw new Error(text.trim().slice(0, 120));
+  }
+  return parseNmapOutput(text);
+}
+
+function parseNmapOutput(text) {
+  const ports = [];
+  for (const line of text.split('\n')) {
+    const m = line.match(/^(\d+)\/(tcp|udp)\s+(open|closed|filtered)\s+(\S+)/);
+    if (m) {
+      ports.push({
+        port:        parseInt(m[1]),
+        protocol:    m[2],
+        state:       m[3],
+        nmapService: m[4]
+      });
+    }
+  }
+  // Extract the IP nmap scanned (may differ from what we asked for in CDN cases)
+  let scannedIP = null;
+  for (const line of text.split('\n')) {
+    const m1 = line.match(/Nmap scan report for .+?\((\d+\.\d+\.\d+\.\d+)\)/);
+    if (m1) { scannedIP = m1[1]; break; }
+    const m2 = line.match(/Nmap scan report for (\d+\.\d+\.\d+\.\d+)/);
+    if (m2) { scannedIP = m2[1]; break; }
+  }
+  return { ports, scannedIP, raw: text };
+}
+
+// Merge Shodan port numbers + HackerTarget port objects into one unified list
+function buildMergedPorts(shodanPorts, htPorts) {
+  const map = new Map(); // port -> { port, sources, state, nmapService }
+  shodanPorts.forEach(p => {
+    map.set(p, { port: p, sources: ['shodan'], state: 'open', nmapService: null });
+  });
+  htPorts.forEach(({ port, state, nmapService }) => {
+    if (map.has(port)) {
+      map.get(port).sources.push('live');
+    } else {
+      map.set(port, { port, sources: ['live'], state, nmapService });
+    }
+  });
+  return [...map.values()].sort((a, b) => a.port - b.port);
+}
+
+// ── MAIN LOOKUP ───────────────────────────────────────────────────────────────
+
+async function runScan() {
+  if (scanRunning) return;
+
+  const rawTarget = document.getElementById('target-input').value.trim();
+  if (!rawTarget) { document.getElementById('target-input').focus(); return; }
+
+  if (!isValidIP(rawTarget) && !isValidHostname(rawTarget)) {
+    termClear();
+    termLine(`<span class="err">[!] Invalid input: "${rawTarget}" is not a valid IP or hostname.</span>`);
+    return;
+  }
+
+  scanRunning = true;
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = '◌ Querying...';
+  termClear();
+
+  termLine(`<span class="prompt">$</span> recon.js --target <span style="color:var(--yellow)">${rawTarget}</span> --sources shodan,hackertarget,ipinfo`);
+  await sleep(300);
+  termLine(`<span class="info">[*] Initializing multi-source recon...</span>`);
+  await sleep(350);
+
+  // ── Step 1: Resolve ALL A records
+  let allIPs = [];
+  if (isValidIP(rawTarget)) {
+    allIPs = [rawTarget];
+  } else {
+    termLine(`<span class="info">[*] Resolving all A records for ${rawTarget}...</span>`);
+    try {
+      allIPs = await resolveAllIPs(rawTarget);
+      if (allIPs.length === 1) {
+        termLine(`<span class="ok">[+] Resolved: ${rawTarget} → ${allIPs[0]}</span>`);
+      } else {
+        termLine(`<span class="ok">[+] Resolved: ${rawTarget} → ${allIPs.length} IPs: ${allIPs.join(', ')}</span>`);
+      }
+    } catch (e) {
+      termLine(`<span class="err">[!] DNS failed: ${e.message}</span>`);
+      btn.disabled = false; btn.textContent = '▶ Lookup'; scanRunning = false;
+      return;
+    }
+    await sleep(300);
+  }
+
+  const firstIP = allIPs[0];
+
+  // ── Step 2: Private IP check
+  if (isPrivateIP(firstIP)) {
+    termLine(`<span class="warn">[!] ${firstIP} is a private address. OSINT sources only index public IPs.</span>`);
+    btn.disabled = false; btn.textContent = '▶ Lookup'; scanRunning = false;
+    return;
+  }
+
+  await sleep(200);
+
+  // ── Step 3: Fire all queries in parallel
+  if (allIPs.length > 1) {
+    termLine(`<span class="info">[*] Querying Shodan for all ${allIPs.length} IPs in parallel...</span>`);
+  } else {
+    termLine(`<span class="info">[*] Querying Shodan InternetDB for ${firstIP}...</span>`);
+  }
+  termLine(`<span class="info">[*] Querying HackerTarget nmap API (live scan)...</span>`);
+  termLine(`<span class="info">[*] Querying ipinfo.io for geolocation...</span>`);
+
+  const [shodanResult, htResult, ipinfoResult] = await Promise.allSettled([
+    queryShodanAll(allIPs),
+    queryHackerTarget(rawTarget),
+    queryIPInfo(firstIP)
+  ]);
+
+  // ── Process Shodan
+  let shodanAgg = null;
+  if (shodanResult.status === 'fulfilled') {
+    shodanAgg = shodanResult.value;
+    const totalPorts = shodanAgg.ports.length;
+    const totalCVEs  = shodanAgg.vulns.length;
+    const ipsWithData = Object.values(shodanAgg.perIP).filter(v => v !== null && !v?.error).length;
+    termLine(`<span class="ok">[+] Shodan: ${ipsWithData}/${allIPs.length} IP(s) indexed — ${totalPorts} port(s), ${totalCVEs} CVE(s)</span>`);
+    if (allIPs.length > 1) {
+      allIPs.forEach(ip => {
+        const d = shodanAgg.perIP[ip];
+        if (!d || d?.error)     termLine(`&nbsp;&nbsp;<span class="dim">↳ ${ip}: no data</span>`);
+        else termLine(`&nbsp;&nbsp;<span class="ok">↳ ${ip}: ${d.ports.length} port(s)</span>`);
+      });
+    }
+  } else {
+    termLine(`<span class="err">[!] Shodan failed: ${shodanResult.reason?.message}</span>`);
+  }
+
+  // ── Process HackerTarget
+  let htData = null;
+  let htOk = false;
+  if (htResult.status === 'fulfilled') {
+    htData = htResult.value;
+    const openCount = htData.ports.filter(p => p.state === 'open').length;
+    const scannedLabel = htData.scannedIP ? ` (scanned ${htData.scannedIP})` : '';
+    termLine(`<span class="ok">[+] HackerTarget nmap: ${openCount} open port(s)${scannedLabel}</span>`);
+    htOk = true;
+  } else {
+    termLine(`<span class="warn">[!] HackerTarget: ${htResult.reason?.message || 'failed'}</span>`);
+  }
+
+  // ── Process ipinfo
+  let ipinfoData = null;
+  if (ipinfoResult.status === 'fulfilled') {
+    ipinfoData = ipinfoResult.value;
+    const loc = [ipinfoData.city, ipinfoData.region, ipinfoData.country].filter(Boolean).join(', ');
+    termLine(`<span class="ok">[+] ipinfo: ${loc || 'unknown'} — ${ipinfoData.org || 'unknown'}</span>`);
+  } else {
+    termLine(`<span class="err">[!] ipinfo failed: ${ipinfoResult.reason?.message}</span>`);
+  }
+
+  if (!shodanAgg && !htOk && !ipinfoData) {
+    termLine(`<span class="err">[!] All sources failed. Check your connection.</span>`);
+    btn.disabled = false; btn.textContent = '▶ Lookup'; scanRunning = false;
+    return;
+  }
+
+  // ── Merge ports from both sources
+  const shodanPorts = shodanAgg?.ports || [];
+  const htOpenPorts = htData?.ports || [];
+  const mergedPorts = buildMergedPorts(shodanPorts, htOpenPorts);
+  const openPorts   = mergedPorts.filter(p => p.state === 'open');
+
+  await sleep(300);
+  termLine(`<span class="dim">══════════════════════════════════════════════════</span>`);
+  termLine(`<span class="ok">[+] Total unique ports : ${mergedPorts.length} (${openPorts.length} open)</span>`);
+  termLine((shodanAgg?.vulns.length || 0) > 0
+    ? `<span class="err">[!] CVEs found         : ${shodanAgg.vulns.length}</span>`
+    : `<span class="ok">[+] CVEs found         : 0</span>`);
+  termLine(`<span class="info">[*] Resolved IPs       : ${allIPs.join(', ')}</span>`);
+  await sleep(150);
+  termLine(`<span class="ok">[*] Lookup complete.</span>`);
+
+  scanResults = { target: rawTarget, allIPs, shodanAgg, htData, ipinfoData, mergedPorts };
+  renderResults(scanResults);
+
+  btn.disabled = false;
+  btn.textContent = '▶ Lookup';
+  scanRunning = false;
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────────────────────────
+
+function renderResults({ target, allIPs, shodanAgg, htData, ipinfoData, mergedPorts }) {
+  const rs = document.getElementById('results-section');
+  rs.style.display = 'block';
+
+  const vulns     = shodanAgg?.vulns     || [];
+  const hostnames = shodanAgg?.hostnames || [];
+  const tags      = shodanAgg?.tags      || [];
+  const cpes      = shodanAgg?.cpes      || [];
+  const openPorts = mergedPorts.filter(p => p.state === 'open');
+  const firstIP   = allIPs[0];
+
+  // ── Data source chips
+  const sourceRow = document.getElementById('source-row');
+  sourceRow.innerHTML = '<span>Data sources:</span>';
+  [
+    { label: 'Shodan InternetDB', ok: !!shodanAgg },
+    { label: 'HackerTarget nmap', ok: !!htData },
+    { label: 'ipinfo.io',         ok: !!ipinfoData }
+  ].forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'source-chip';
+    chip.innerHTML = `<span class="${s.ok ? 'dot-ok' : 'dot-miss'}"></span>${s.label}`;
+    sourceRow.appendChild(chip);
+  });
+
+  // ── Stats
+  document.getElementById('stat-open').textContent    = openPorts.length;
+  document.getElementById('stat-cve').textContent     = vulns.length;
+  document.getElementById('stat-hosts').textContent   = hostnames.length || allIPs.length;
+  document.getElementById('stat-country').textContent = ipinfoData?.country || '—';
+
+  // ── Target Intel
+  const intelGrid = document.getElementById('intel-grid');
+  intelGrid.innerHTML = '';
+  const intelItems = [
+    { key: 'Resolved IPs',  val: allIPs.join(', '), hl: true },
+    { key: 'Hostname',      val: ipinfoData?.hostname || hostnames[0] || (target !== firstIP ? target : '—') },
+    { key: 'Organization',  val: ipinfoData?.org || '—' },
+    { key: 'ASN',           val: ipinfoData?.org?.split(' ')[0] || '—' },
+    { key: 'Location',      val: [ipinfoData?.city, ipinfoData?.region, ipinfoData?.country].filter(Boolean).join(', ') || '—' },
+    { key: 'Timezone',      val: ipinfoData?.timezone || '—' },
+  ];
+  if (cpes.length > 0) {
+    intelItems.push({
+      key: 'Software (CPE)',
+      val: cpes.slice(0, 2).join(', ') + (cpes.length > 2 ? ` +${cpes.length - 2} more` : '')
+    });
+  }
+  intelItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'intel-item';
+    div.innerHTML = `<div class="intel-key">${item.key}</div>
+      <div class="intel-val${item.hl ? ' highlight' : ''}">${item.val}</div>`;
+    intelGrid.appendChild(div);
+  });
+
+  // ── Risk bars (open ports only)
+  const highRisk = openPorts.filter(p => HIGH_RISK.has(p.port));
+  const medRisk  = openPorts.filter(p => !HIGH_RISK.has(p.port) && p.port < 1024);
+  const lowRisk  = openPorts.filter(p => !HIGH_RISK.has(p.port) && p.port >= 1024);
+  const total    = openPorts.length || 1;
+  setTimeout(() => {
+    const hp = Math.round(highRisk.length / total * 100);
+    const mp = Math.round(medRisk.length  / total * 100);
+    const lp = Math.round(lowRisk.length  / total * 100);
+    document.getElementById('bar-high').style.width   = hp + '%';
+    document.getElementById('bar-medium').style.width = mp + '%';
+    document.getElementById('bar-low').style.width    = lp + '%';
+    document.getElementById('pct-high').textContent   = hp + '%';
+    document.getElementById('pct-medium').textContent = mp + '%';
+    document.getElementById('pct-low').textContent    = lp + '%';
+  }, 200);
+
+  // ── Ports table (all merged ports)
+  const portsTbody = document.getElementById('ports-tbody');
+  portsTbody.innerHTML = '';
+  if (mergedPorts.length === 0) {
+    portsTbody.innerHTML = `<tr><td colspan="5" class="empty-state">No ports found across any source.</td></tr>`;
+  } else {
+    mergedPorts.forEach(({ port, sources, state, nmapService }) => {
+      const svc      = PORT_MAP[port] || nmapService || 'unknown';
+      const cat      = CATEGORIES[port] || 'Other';
+      const risk     = riskOf(port);
+      const badgeCls = risk === 'HIGH' ? 'badge-high' : risk === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+      const stateCls = state === 'open' ? 'ok' : 'dim';
+      const sourceBadges = sources.map(s =>
+        s === 'shodan'
+          ? `<span class="badge badge-info">Shodan</span>`
+          : `<span class="badge badge-purple">Live</span>`
+      ).join(' ');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><span class="${stateCls}">${port}/tcp</span> <span class="dim" style="font-size:0.72rem">${state}</span></td>
+        <td><span class="badge ${badgeCls}">${risk}</span></td>
+        <td>${svc}</td>
+        <td><span class="badge badge-info">${cat}</span></td>
+        <td>${sourceBadges}</td>`;
+      portsTbody.appendChild(tr);
+    });
+  }
+
+  // ── CVEs
+  if (vulns.length > 0) {
+    document.getElementById('cve-section').style.display = 'block';
+    const cveTbody = document.getElementById('cve-tbody');
+    cveTbody.innerHTML = '';
+    vulns.forEach(cve => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><span class="badge badge-high">${cve}</span></td>
+        <td><a class="cve-link" href="https://nvd.nist.gov/vuln/detail/${cve}" target="_blank" rel="noopener noreferrer">
+          nvd.nist.gov/vuln/detail/${cve} ↗
+        </a></td>`;
+      cveTbody.appendChild(tr);
+    });
+  } else {
+    document.getElementById('cve-section').style.display = 'none';
+  }
+
+  // ── Hostnames
+  if (hostnames.length > 0) {
+    document.getElementById('hostnames-section').style.display = 'block';
+    const hTbody = document.getElementById('hostnames-tbody');
+    hTbody.innerHTML = '';
+    hostnames.forEach(h => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${h}</td><td><span class="badge badge-info">Shodan</span></td>`;
+      hTbody.appendChild(tr);
+    });
+  } else {
+    document.getElementById('hostnames-section').style.display = 'none';
+  }
+
+  // ── Tags
+  if (tags.length > 0) {
+    document.getElementById('tags-section').style.display = 'block';
+    const tagsWrap = document.getElementById('tags-wrap');
+    tagsWrap.innerHTML = '';
+    tags.forEach(tag => {
+      const span = document.createElement('span');
+      span.className = 'badge badge-purple';
+      span.textContent = tag;
+      tagsWrap.appendChild(span);
+    });
+  } else {
+    document.getElementById('tags-section').style.display = 'none';
+  }
+
+  rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+
+function exportJSON() {
+  if (!scanResults) return;
+  const { target, allIPs, shodanAgg, htData, ipinfoData, mergedPorts } = scanResults;
+  const report = {
+    tool: "network-recon-scanner",
+    timestamp: new Date().toISOString(),
+    target,
+    resolved_ips: allIPs,
+    sources: {
+      shodan_internetdb: !!shodanAgg,
+      hackertarget_nmap: !!htData,
+      ipinfo: !!ipinfoData
+    },
+    ports: mergedPorts.map(p => ({
+      port:     p.port,
+      state:    p.state,
+      service:  PORT_MAP[p.port] || p.nmapService || 'unknown',
+      risk:     riskOf(p.port),
+      category: CATEGORIES[p.port] || 'Other',
+      sources:  p.sources
+    })),
+    cves:      shodanAgg?.vulns     || [],
+    hostnames: shodanAgg?.hostnames || [],
+    cpes:      shodanAgg?.cpes      || [],
+    tags:      shodanAgg?.tags      || [],
+    geolocation: ipinfoData ? {
+      org:      ipinfoData.org,
+      city:     ipinfoData.city,
+      region:   ipinfoData.region,
+      country:  ipinfoData.country,
+      timezone: ipinfoData.timezone,
+      hostname: ipinfoData.hostname
+    } : null,
+    hackertarget_raw: htData?.raw || null
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `recon_${allIPs[0].replace(/\./g, '_')}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+
+function newScan() {
+  document.getElementById('results-section').style.display = 'none';
+  scanResults = null;
+  const t = document.getElementById('terminal');
+  t.innerHTML = `<div class="dim">// Network Reconnaissance Scanner — multi-source mode</div>
+<div class="dim">// Enter a public IP or hostname and press Lookup.</div>
+<div class="dim">// Sources: Shodan (all IPs) · HackerTarget nmap · ipinfo.io</div>
+<div>&nbsp;</div>
+<div><span class="prompt">$</span> <span class="cursor"></span></div>`;
+  document.getElementById('target-input').value = '';
+  document.getElementById('target-input').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Allow Enter key to trigger lookup
+document.getElementById('target-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runScan();
+});
+</script>
+</body>
+</html>

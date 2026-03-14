@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud Security Misconfiguration Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #161b22;
+      --border: #21262d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --green: #40c463;
+      --green-dim: #0f2d1a;
+      --orange: #f0883e;
+      --orange-dim: #2d1f0a;
+      --red: #f85149;
+      --red-dim: #2d1018;
+      --blue: #58a6ff;
+      --blue-dim: #0d1d3b;
+      --purple: #bc8cff;
+      --yellow: #e3b341;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; color: var(--text); }
+    .nav-brand .icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--blue), var(--green)); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); transition: all .2s; }
+    .nav-links a:hover, .nav-links a.active { background: rgba(88,166,255,.1); color: var(--blue); text-decoration: none; }
+    .nav-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; margin-left: 4px; }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+    .page-title { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .page-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+    /* ── Config Panel ────────────────────────────────────── */
+    .config-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .config-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 20px; }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    input[type="text"], select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus, select:focus { border-color: var(--blue); }
+    .check-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .check-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); cursor: pointer; }
+    .check-item input[type="checkbox"] { accent-color: var(--blue); width: 14px; height: 14px; }
+    .btn-run {
+      background: linear-gradient(135deg, #1a6cf5, #0f5cd9);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-run:hover { opacity: .85; }
+
+    /* ── Terminal ────────────────────────────────────────── */
+    .terminal {
+      background: #0a0c10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 28px;
+      overflow: hidden;
+      display: none;
+    }
+    .terminal.visible { display: block; }
+    .terminal-bar { background: var(--surface); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .terminal-title { font-size: 12px; color: var(--muted); margin-left: 4px; font-family: 'JetBrains Mono', monospace; }
+    .terminal-body { padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; max-height: 280px; overflow-y: auto; }
+    .t-green { color: var(--green); }
+    .t-blue { color: var(--blue); }
+    .t-yellow { color: var(--yellow); }
+    .t-red { color: var(--red); }
+    .t-muted { color: var(--muted); }
+    .t-white { color: #fff; }
+    .cursor { display: inline-block; width: 8px; height: 14px; background: var(--green); animation: blink .7s step-end infinite; vertical-align: middle; margin-left: 2px; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Summary Strip ───────────────────────────────────── */
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 16px;
+      text-align: center;
+      transition: border-color .2s;
+    }
+    .stat-card:hover { border-color: var(--blue); }
+    .stat-val { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+    .stat-lbl { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+    .c-green { color: var(--green); }
+    .c-red { color: var(--red); }
+    .c-orange { color: var(--orange); }
+    .c-blue { color: var(--blue); }
+    .c-yellow { color: var(--yellow); }
+
+    /* ── Section ─────────────────────────────────────────── */
+    .section { margin-bottom: 32px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .section-title .icon-box { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .icon-iam { background: rgba(188,140,255,.15); }
+    .icon-s3 { background: rgba(240,136,62,.15); }
+    .icon-sg { background: rgba(248,81,73,.15); }
+    .icon-cis { background: rgba(88,166,255,.15); }
+    .badge-count { background: var(--border); color: var(--muted); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #0d1117; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .text-muted { color: var(--muted); font-size: 12px; }
+
+    /* ── Badges ──────────────────────────────────────────── */
+    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+    .b-pass { background: var(--green-dim); color: var(--green); }
+    .b-fail { background: var(--red-dim); color: var(--red); }
+    .b-warn { background: var(--orange-dim); color: var(--orange); }
+    .b-critical { background: var(--red-dim); color: var(--red); }
+    .b-high { background: #2d1310; color: #f0883e; }
+    .b-medium { background: var(--orange-dim); color: var(--yellow); }
+    .b-low { background: var(--blue-dim); color: var(--blue); }
+
+    /* ── CIS Scorecard ───────────────────────────────────── */
+    .cis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .cis-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transition: border-color .2s;
+    }
+    .cis-card.pass { border-left: 3px solid var(--green); }
+    .cis-card.fail { border-left: 3px solid var(--red); }
+    .cis-card.warn { border-left: 3px solid var(--orange); }
+    .cis-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--muted); min-width: 30px; padding-top: 1px; }
+    .cis-info { flex: 1; }
+    .cis-title { font-size: 12px; font-weight: 500; line-height: 1.4; }
+    .cis-status { font-size: 10px; font-weight: 700; margin-top: 3px; }
+    .cis-card.pass .cis-status { color: var(--green); }
+    .cis-card.fail .cis-status { color: var(--red); }
+    .cis-card.warn .cis-status { color: var(--orange); }
+
+    /* ── Accordion ───────────────────────────────────────── */
+    .accordion-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .accordion-header {
+      padding: 14px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: background .2s;
+    }
+    .accordion-header:hover { background: rgba(255,255,255,.03); }
+    .accordion-header .title { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+    .accordion-arrow { color: var(--muted); transition: transform .25s; font-size: 12px; }
+    .accordion-item.open .accordion-arrow { transform: rotate(90deg); }
+    .accordion-body { padding: 0 16px 16px; display: none; }
+    .accordion-item.open .accordion-body { display: block; }
+    .steps { list-style: none; counter-reset: step; }
+    .steps li { counter-increment: step; display: flex; gap: 12px; margin-bottom: 10px; font-size: 13px; }
+    .steps li::before { content: counter(step); min-width: 22px; height: 22px; background: var(--blue-dim); color: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .code-block { background: #0a0c10; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--green); margin-top: 8px; overflow-x: auto; }
+
+    /* ── Donut Chart ─────────────────────────────────────── */
+    .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 32px; }
+    .chart-legend { flex: 1; }
+    .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Export Button ───────────────────────────────────── */
+    .btn-export {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-export:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 40px;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 900px) {
+      .config-grid { grid-template-columns: 1fr 1fr; }
+      .summary-strip { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .config-grid { grid-template-columns: 1fr; }
+      .summary-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-brand">
+    <div class="icon">&#9730;</div>
+    Cloud Scanner
+  </div>
+  <div class="nav-links">
+    <a href="#config" class="active">Scan</a>
+    <a href="#findings">Findings <span class="nav-badge" id="failCount">18</span></a>
+    <a href="#cis">CIS Scorecard</a>
+    <a href="#remediation">Remediation</a>
+  </div>
+  <button class="btn-export" onclick="exportReport()">&#8595; Export JSON</button>
+</nav>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<div class="container">
+  <h1 class="page-title">Cloud Security Misconfiguration Scanner</h1>
+  <p class="page-subtitle">AWS CIS Foundations Benchmark v1.4 &mdash; Automated misconfiguration detection for IAM, S3, and network security.</p>
+
+  <!-- Config Panel -->
+  <div class="config-panel" id="config">
+    <div class="config-title">Scan Configuration</div>
+    <div class="config-grid">
+      <div>
+        <label>AWS Profile</label>
+        <input type="text" id="awsProfile" placeholder="default" value="prod-audit" />
+      </div>
+      <div>
+        <label>Region</label>
+        <select id="awsRegion">
+          <option value="us-east-1" selected>us-east-1 (N. Virginia)</option>
+          <option value="us-east-2">us-east-2 (Ohio)</option>
+          <option value="us-west-1">us-west-1 (N. California)</option>
+          <option value="us-west-2">us-west-2 (Oregon)</option>
+          <option value="eu-west-1">eu-west-1 (Ireland)</option>
+          <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+          <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+          <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+        </select>
+      </div>
+      <div>
+        <label>Check Types</label>
+        <div class="check-group">
+          <label class="check-item"><input type="checkbox" id="chkIAM" checked /> IAM</label>
+          <label class="check-item"><input type="checkbox" id="chkS3" checked /> S3</label>
+          <label class="check-item"><input type="checkbox" id="chkSG" checked /> Security Groups</label>
+          <label class="check-item"><input type="checkbox" id="chkCT" checked /> CloudTrail</label>
+        </div>
+      </div>
+      <div>
+        <button class="btn-run" onclick="runScan()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          Run Scan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal visible" id="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">cloud_scanner.py --profile prod-audit --region us-east-1 --checks all</span>
+    </div>
+    <div class="terminal-body" id="termBody"></div>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="summary-strip" id="summary">
+    <div class="stat-card">
+      <div class="stat-val c-blue">18</div>
+      <div class="stat-lbl">Total Findings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val c-red">4</div>
+      <div class="stat-lbl">Critical</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val c-orange">8</div>
+      <div class="stat-lbl">High</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val c-yellow">3</div>
+      <div class="stat-lbl">Medium</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val c-blue">3</div>
+      <div class="stat-lbl">Low</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val c-green">38.9%</div>
+      <div class="stat-lbl">CIS Compliance</div>
+    </div>
+  </div>
+
+  <!-- IAM Findings -->
+  <div class="section" id="findings">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="icon-box icon-iam">&#128100;</div>
+        IAM Findings
+        <span class="badge-count">7 findings</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Resource</th>
+            <th>Result</th>
+            <th>CIS Control</th>
+            <th>Severity</th>
+            <th>Remediation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Root Account MFA</td>
+            <td class="mono">root</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">1.2</td>
+            <td><span class="badge b-critical">Critical</span></td>
+            <td class="text-muted">Enable virtual MFA for root account</td>
+          </tr>
+          <tr>
+            <td>Root Access Keys</td>
+            <td class="mono">root</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">1.5</td>
+            <td><span class="badge b-critical">Critical</span></td>
+            <td class="text-muted">Delete all root access keys immediately</td>
+          </tr>
+          <tr>
+            <td>IAM Password Policy</td>
+            <td class="mono">account</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">1.7</td>
+            <td><span class="badge b-medium">Medium</span></td>
+            <td class="text-muted">Min length &lt; 14, no symbol requirement</td>
+          </tr>
+          <tr>
+            <td>User MFA</td>
+            <td class="mono">alice</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">1.4</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Assign MFA device to user alice</td>
+          </tr>
+          <tr>
+            <td>User MFA</td>
+            <td class="mono">bob</td>
+            <td><span class="badge b-pass">PASS</span></td>
+            <td class="mono">1.4</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">No action required</td>
+          </tr>
+          <tr>
+            <td>Unused Access Key</td>
+            <td class="mono">alice/AKIAIOSFODNN7EXAMPLE</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">1.3</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Key not used in 120 days — disable or delete</td>
+          </tr>
+          <tr>
+            <td>Admin Policy Attached</td>
+            <td class="mono">alice</td>
+            <td><span class="badge b-warn">WARN</span></td>
+            <td class="mono">1.9</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Use IAM groups/roles for admin access</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- S3 Findings -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="icon-box icon-s3">&#128230;</div>
+        S3 Bucket Findings
+        <span class="badge-count">7 findings</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Bucket</th>
+            <th>Result</th>
+            <th>CIS Control</th>
+            <th>Severity</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>S3 Public Access Block</td>
+            <td class="mono">my-company-data</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">2.1</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Block public access not enabled</td>
+          </tr>
+          <tr>
+            <td>S3 Bucket Policy Public</td>
+            <td class="mono">my-company-data</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">2.2</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Policy allows Principal: * (public read)</td>
+          </tr>
+          <tr>
+            <td>S3 Encryption</td>
+            <td class="mono">my-company-data</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">2.3</td>
+            <td><span class="badge b-medium">Medium</span></td>
+            <td class="text-muted">Default encryption not configured</td>
+          </tr>
+          <tr>
+            <td>S3 Versioning</td>
+            <td class="mono">my-company-data</td>
+            <td><span class="badge b-warn">WARN</span></td>
+            <td class="mono">2.4</td>
+            <td><span class="badge b-low">Low</span></td>
+            <td class="text-muted">Versioning is Disabled</td>
+          </tr>
+          <tr>
+            <td>S3 Access Logging</td>
+            <td class="mono">my-company-data</td>
+            <td><span class="badge b-warn">WARN</span></td>
+            <td class="mono">2.5</td>
+            <td><span class="badge b-low">Low</span></td>
+            <td class="text-muted">Access logging not enabled</td>
+          </tr>
+          <tr>
+            <td>S3 Public Access Block</td>
+            <td class="mono">static-assets</td>
+            <td><span class="badge b-pass">PASS</span></td>
+            <td class="mono">2.1</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">All block settings enabled</td>
+          </tr>
+          <tr>
+            <td>S3 Encryption</td>
+            <td class="mono">static-assets</td>
+            <td><span class="badge b-pass">PASS</span></td>
+            <td class="mono">2.3</td>
+            <td><span class="badge b-medium">Medium</span></td>
+            <td class="text-muted">SSE-S3 encryption enabled</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Security Group Findings -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="icon-box icon-sg">&#128737;</div>
+        Security Group Findings
+        <span class="badge-count">4 findings</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Security Group</th>
+            <th>Result</th>
+            <th>CIS Control</th>
+            <th>Severity</th>
+            <th>Exposure</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Open SSH Port</td>
+            <td class="mono">sg-0abc123 (web-servers)</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">4.1</td>
+            <td><span class="badge b-critical">Critical</span></td>
+            <td class="text-muted">Port 22 open to 0.0.0.0/0</td>
+          </tr>
+          <tr>
+            <td>Open RDP Port</td>
+            <td class="mono">sg-0abc123 (web-servers)</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">4.2</td>
+            <td><span class="badge b-critical">Critical</span></td>
+            <td class="text-muted">Port 3389 open to 0.0.0.0/0</td>
+          </tr>
+          <tr>
+            <td>Open MySQL Port</td>
+            <td class="mono">sg-0def456 (database)</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">4.3</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Port 3306 open to 0.0.0.0/0</td>
+          </tr>
+          <tr>
+            <td>Open Elasticsearch Port</td>
+            <td class="mono">sg-0def456 (database)</td>
+            <td><span class="badge b-fail">FAIL</span></td>
+            <td class="mono">4.3</td>
+            <td><span class="badge b-high">High</span></td>
+            <td class="text-muted">Port 9200 open to 0.0.0.0/0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CIS Scorecard + Donut -->
+  <div class="section" id="cis">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="icon-box icon-cis">&#9745;</div>
+        CIS Benchmark Scorecard
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+      <div class="cis-grid" id="cisGrid"></div>
+      <div class="chart-wrap" style="flex-direction:column;align-items:center;gap:20px">
+        <canvas id="donutChart" width="200" height="200"></canvas>
+        <div class="chart-legend" style="width:100%">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> PASS (7)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> FAIL (11)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> WARN (2)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remediation Accordion -->
+  <div class="section" id="remediation">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="icon-box icon-iam">&#128295;</div>
+        Remediation Guide
+      </div>
+    </div>
+    <div id="accordionContainer"></div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<footer>
+  <p>Cloud Security Misconfiguration Scanner &mdash; AWS CIS Foundations Benchmark v1.4 &nbsp;|&nbsp; <a href="https://github.com/jasstejsingh" target="_blank">github.com/jasstejsingh</a></p>
+  <p style="margin-top:6px">Run <code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 6px;border-radius:4px">python cloud_scanner.py --demo</code> to generate a live report</p>
+</footer>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+const cisControls = [
+  { id:"1.1", title:"Avoid use of the root account", status:"pass" },
+  { id:"1.2", title:"MFA enabled for root account", status:"fail" },
+  { id:"1.3", title:"Credentials unused 90+ days disabled", status:"fail" },
+  { id:"1.4", title:"MFA enabled for all console users", status:"fail" },
+  { id:"1.5", title:"No root account access keys", status:"fail" },
+  { id:"1.6", title:"Access keys rotated every 90 days", status:"warn" },
+  { id:"1.7", title:"Password policy: minimum 14 chars", status:"fail" },
+  { id:"1.8", title:"Password policy: uppercase required", status:"fail" },
+  { id:"1.9", title:"Support role created for incidents", status:"pass" },
+  { id:"2.1", title:"S3 Block Public Access enabled", status:"fail" },
+  { id:"2.2", title:"S3 bucket policy not public", status:"fail" },
+  { id:"2.3", title:"S3 default encryption enabled", status:"fail" },
+  { id:"2.4", title:"S3 MFA Delete / versioning enabled", status:"warn" },
+  { id:"2.5", title:"S3 access logging enabled", status:"pass" },
+  { id:"3.1", title:"CloudTrail enabled in all regions", status:"pass" },
+  { id:"3.2", title:"CloudTrail log file validation on", status:"pass" },
+  { id:"4.1", title:"No SG allows 0.0.0.0/0 on port 22", status:"fail" },
+  { id:"4.2", title:"No SG allows 0.0.0.0/0 on port 3389", status:"fail" },
+  { id:"4.3", title:"VPC flow logging enabled", status:"pass" },
+  { id:"5.1", title:"AWS Config enabled in all regions", status:"pass" },
+];
+
+const remediations = [
+  {
+    title: "FAIL 1.2 — Enable MFA for Root Account",
+    severity: "Critical",
+    steps: [
+      "Sign in to the AWS Management Console as the root user.",
+      "Click on your account name in the top-right and select Security credentials.",
+      "In the Multi-factor authentication section, click Assign MFA device.",
+      "Select Virtual MFA device and follow the wizard to scan the QR code with an authenticator app.",
+      "Enter two consecutive OTP codes to verify and activate MFA.",
+      "Store your MFA recovery codes in a secure location.",
+    ],
+    code: "# Verify root MFA status via CLI\naws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'"
+  },
+  {
+    title: "FAIL 1.5 — Delete Root Access Keys",
+    severity: "Critical",
+    steps: [
+      "Sign in to the AWS Console as root.",
+      "Navigate to IAM > Security credentials.",
+      "Under Access keys, locate any active access keys.",
+      "Click Delete for each key — this action cannot be undone.",
+      "If applications use root keys, create dedicated IAM users or roles with least-privilege policies first.",
+      "Rotate any secrets in applications that referenced the root key.",
+    ],
+    code: "# List root access keys (requires root or full IAM access)\naws iam list-access-keys --user-name root 2>/dev/null || echo 'Use console for root keys'"
+  },
+  {
+    title: "FAIL 1.3 — Disable Credentials Unused for 90+ Days",
+    severity: "High",
+    steps: [
+      "List all IAM users with their access key last used dates.",
+      "Identify keys with LastUsedDate older than 90 days.",
+      "Notify the key owner before disabling (if the key may still be in use).",
+      "Deactivate the key: IAM > Users > Security credentials > set key to Inactive.",
+      "After 30 days with no complaints, permanently delete the key.",
+      "Set up an AWS Config rule (access-keys-rotated) for continuous monitoring.",
+    ],
+    code: "# Find access keys not used in 90+ days\naws iam generate-credential-report\naws iam get-credential-report --query 'Content' --output text | base64 -d | awk -F',' 'NR>1 {print $1,$9,$10}'"
+  },
+  {
+    title: "FAIL 2.1 — Enable S3 Block Public Access",
+    severity: "High",
+    steps: [
+      "Navigate to the S3 console and select the bucket.",
+      "Go to the Permissions tab.",
+      "Under Block public access, click Edit.",
+      "Enable all four settings: BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, RestrictPublicBuckets.",
+      "Save changes — this may block access to intentionally public content.",
+      "Also enable at the account level: S3 > Block Public Access settings for this account.",
+    ],
+    code: "# Block public access on a specific bucket\naws s3api put-public-access-block \\\n  --bucket BUCKET_NAME \\\n  --public-access-block-configuration \\\n  'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'"
+  },
+  {
+    title: "FAIL 4.1/4.2 — Remove Open SSH/RDP from Security Groups",
+    severity: "Critical",
+    steps: [
+      "Identify the security group and the specific inbound rule allowing 0.0.0.0/0 on port 22 or 3389.",
+      "Determine which resources use this security group and who needs remote access.",
+      "If SSH/RDP is needed, restrict the source CIDR to your office IP or VPN endpoint.",
+      "If using AWS Systems Manager Session Manager, SSH/RDP rules can be completely removed.",
+      "Revoke the existing rule and add a replacement with a specific CIDR.",
+      "Test connectivity through the narrowed rule before removing the broad rule.",
+    ],
+    code: "# Remove SSH inbound rule from 0.0.0.0/0\naws ec2 revoke-security-group-ingress \\\n  --group-id sg-0abc123 \\\n  --protocol tcp --port 22 --cidr 0.0.0.0/0\n\n# Add restricted rule (replace with your IP)\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-0abc123 \\\n  --protocol tcp --port 22 --cidr YOUR_IP/32"
+  },
+];
+
+// ── Terminal animation ────────────────────────────────────────────────────
+const termLines = [
+  { text: "Connecting to AWS (profile: prod-audit, region: us-east-1)...", cls: "t-muted", delay: 300 },
+  { text: "✓ Authentication successful", cls: "t-green", delay: 800 },
+  { text: "", delay: 100 },
+  { text: "[+] Running IAM checks...", cls: "t-blue", delay: 200 },
+  { text: "  [*] Checking root MFA...", cls: "t-muted", delay: 400 },
+  { text: "  [!] Root MFA not enabled — FAIL (Critical, CIS 1.2)", cls: "t-red", delay: 500 },
+  { text: "  [*] Checking root access keys...", cls: "t-muted", delay: 300 },
+  { text: "  [!] Root access keys present — FAIL (Critical, CIS 1.5)", cls: "t-red", delay: 500 },
+  { text: "  [*] Checking password policy...", cls: "t-muted", delay: 300 },
+  { text: "  [!] Password policy: min length < 14 — FAIL (Medium, CIS 1.7)", cls: "t-yellow", delay: 500 },
+  { text: "  [*] Checking user MFA (4 users found)...", cls: "t-muted", delay: 300 },
+  { text: "  [!] alice: console access without MFA — FAIL (High, CIS 1.4)", cls: "t-red", delay: 400 },
+  { text: "  [*] Checking unused access keys...", cls: "t-muted", delay: 300 },
+  { text: "  [!] alice/AKIAIOSFODNN7EXAMPLE: last used 120 days ago — FAIL", cls: "t-red", delay: 500 },
+  { text: "", delay: 100 },
+  { text: "[+] Running S3 checks...", cls: "t-blue", delay: 200 },
+  { text: "  [*] Found 2 buckets", cls: "t-muted", delay: 300 },
+  { text: "  [*] Auditing my-company-data...", cls: "t-muted", delay: 400 },
+  { text: "  [!] Public access block not enabled — FAIL (High, CIS 2.1)", cls: "t-red", delay: 400 },
+  { text: "  [!] Bucket policy grants Principal: * — FAIL (High, CIS 2.2)", cls: "t-red", delay: 400 },
+  { text: "  [!] No default encryption — FAIL (Medium, CIS 2.3)", cls: "t-yellow", delay: 400 },
+  { text: "  [*] Auditing static-assets... PASS", cls: "t-green", delay: 400 },
+  { text: "", delay: 100 },
+  { text: "[+] Running Security Group checks...", cls: "t-blue", delay: 200 },
+  { text: "  [!] sg-0abc123: port 22 open to 0.0.0.0/0 — FAIL (Critical, CIS 4.1)", cls: "t-red", delay: 400 },
+  { text: "  [!] sg-0abc123: port 3389 open to 0.0.0.0/0 — FAIL (Critical, CIS 4.2)", cls: "t-red", delay: 400 },
+  { text: "  [!] sg-0def456: port 3306 open to 0.0.0.0/0 — FAIL (High, CIS 4.3)", cls: "t-red", delay: 400 },
+  { text: "  [!] sg-0def456: port 9200 open to 0.0.0.0/0 — FAIL (High, CIS 4.3)", cls: "t-red", delay: 400 },
+  { text: "", delay: 100 },
+  { text: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", cls: "t-muted", delay: 200 },
+  { text: "  Scan complete  |  18 findings  |  CIS Compliance: 38.9%", cls: "t-white", delay: 200 },
+  { text: "  Critical: 4    High: 8    Medium: 3    Low: 3", cls: "t-yellow", delay: 100 },
+  { text: "  Report saved: scan_report.json  scan_report.html", cls: "t-green", delay: 100 },
+];
+
+function runScan() {
+  const body = document.getElementById('termBody');
+  body.innerHTML = '';
+  document.getElementById('terminal').classList.add('visible');
+  let i = 0;
+  function addLine() {
+    if (i >= termLines.length) {
+      const cur = document.createElement('span');
+      cur.className = 'cursor';
+      body.appendChild(cur);
+      return;
+    }
+    const line = termLines[i++];
+    const div = document.createElement('div');
+    div.className = line.cls || '';
+    div.textContent = line.text;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+    setTimeout(addLine, line.delay);
+  }
+  addLine();
+}
+
+// ── CIS Scorecard ─────────────────────────────────────────────────────────
+function buildCISGrid() {
+  const grid = document.getElementById('cisGrid');
+  cisControls.forEach(c => {
+    const card = document.createElement('div');
+    card.className = `cis-card ${c.status}`;
+    const statusLabel = { pass: 'PASS', fail: 'FAIL', warn: 'WARN' }[c.status];
+    card.innerHTML = `<div class="cis-id">${c.id}</div>
+      <div class="cis-info">
+        <div class="cis-title">${c.title}</div>
+        <div class="cis-status">${statusLabel}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Donut Chart ───────────────────────────────────────────────────────────
+function drawDonut() {
+  const canvas = document.getElementById('donutChart');
+  const ctx = canvas.getContext('2d');
+  const cx = 100, cy = 100, r = 80, lineW = 22;
+  const segments = [
+    { val: 7, color: '#40c463' },
+    { val: 11, color: '#f85149' },
+    { val: 2, color: '#f0883e' },
+  ];
+  const total = segments.reduce((s, x) => s + x.val, 0);
+  let angle = -Math.PI / 2;
+  ctx.clearRect(0, 0, 200, 200);
+  segments.forEach(seg => {
+    const sweep = (seg.val / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, angle, angle + sweep);
+    ctx.strokeStyle = seg.color;
+    ctx.lineWidth = lineW;
+    ctx.stroke();
+    angle += sweep;
+  });
+  ctx.fillStyle = '#c9d1d9';
+  ctx.font = 'bold 22px Inter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('38.9%', cx, cy - 10);
+  ctx.font = '11px Inter';
+  ctx.fillStyle = '#8b949e';
+  ctx.fillText('CIS Score', cx, cy + 14);
+}
+
+// ── Remediation Accordion ─────────────────────────────────────────────────
+function buildAccordion() {
+  const container = document.getElementById('accordionContainer');
+  remediations.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'accordion-item' + (idx === 0 ? ' open' : '');
+    const sevClass = { Critical: 'b-critical', High: 'b-high', Medium: 'b-medium', Low: 'b-low' }[item.severity] || 'b-low';
+    const stepsHTML = item.steps.map(s => `<li>${s}</li>`).join('');
+    el.innerHTML = `
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <div class="title">
+          <span class="badge ${sevClass}">${item.severity}</span>
+          ${item.title}
+        </div>
+        <span class="accordion-arrow">&#9658;</span>
+      </div>
+      <div class="accordion-body">
+        <ol class="steps">${stepsHTML}</ol>
+        <div class="code-block">${item.code.replace(/</g,'&lt;')}</div>
+      </div>`;
+    container.appendChild(el);
+  });
+}
+
+function toggleAccordion(header) {
+  const item = header.closest('.accordion-item');
+  item.classList.toggle('open');
+}
+
+// ── Export ────────────────────────────────────────────────────────────────
+function exportReport() {
+  const report = {
+    generated: new Date().toISOString(),
+    tool: "Cloud Security Misconfiguration Scanner",
+    score: { total: 18, pass: 7, fail: 11, warn: 2, cis_compliance_pct: 38.9 },
+    cis_controls: cisControls,
+    note: "Run python cloud_scanner.py --demo for a full live report.",
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cloud_scan_report_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildCISGrid();
+  drawDonut();
+  buildAccordion();
+  // Run scan animation on load
+  setTimeout(runScan, 600);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Enterprise Cyber Defense Simulation Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #080c14;
+    --surface:  #0d1424;
+    --surface2: #111c30;
+    --surface3: #162038;
+    --border:   #1e2d47;
+    --border2:  #273d5a;
+    --text:     #e2e8f0;
+    --muted:    #7a8fa8;
+    --dim:      #4a5a70;
+    --accent:   #3b82f6;
+    --accent2:  #1d4ed8;
+    --purple:   #8b5cf6;
+    --purple2:  #6d28d9;
+    --crit:     #ef4444;
+    --high:     #f97316;
+    --med:      #eab308;
+    --low:      #22c55e;
+    --success:  #10b981;
+    --teal:     #14b8a6;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', sans-serif;
+    --glow-blue: 0 0 20px rgba(59,130,246,0.15);
+    --glow-purple: 0 0 20px rgba(139,92,246,0.15);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 90% 90%, rgba(139,92,246,0.05) 0%, transparent 50%);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(59,130,246,0.3); }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  button { cursor: pointer; font-family: var(--font-sans); border: none; outline: none; }
+
+  /* ── Nav ──────────────────────────────────────────────────────── */
+  nav {
+    background: rgba(13,20,36,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 12px; }
+  .nav-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--glow-blue);
+  }
+  .nav-title {
+    font-size: 15px; font-weight: 800;
+    background: linear-gradient(90deg, var(--text) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.4px;
+  }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px;
+    color: var(--success);
+    font-family: var(--font-mono);
+  }
+  .pulse { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: glow 2s infinite; }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  }
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+  }
+  .btn-primary:hover { box-shadow: 0 4px 20px rgba(59,130,246,0.5); transform: translateY(-1px); }
+  .btn-launch {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #fff;
+    padding: 12px 32px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(239,68,68,0.35);
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(239,68,68,0.5); }
+  .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-export {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+  .btn-export:hover { background: var(--border); }
+
+  /* ── Layout ───────────────────────────────────────────────────── */
+  .page { max-width: 1480px; margin: 0 auto; padding: 28px 28px 60px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 22px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-bottom: 22px; }
+  .grid-main { display: grid; grid-template-columns: 320px 1fr; gap: 20px; margin-bottom: 22px; }
+
+  /* ── Scenario Cards ───────────────────────────────────────────── */
+  .scenario-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+  .scenario-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .scenario-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .scenario-card.selected { border-color: var(--accent); box-shadow: var(--glow-blue); }
+  .scenario-card.selected::before { opacity: 1; background: linear-gradient(135deg, rgba(59,130,246,0.06), transparent); }
+  .sc-icon { font-size: 28px; margin-bottom: 10px; }
+  .sc-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .sc-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .sc-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+  }
+  .sc-badge.apt     { background: rgba(239,68,68,0.15); color: var(--crit); border:1px solid rgba(239,68,68,0.3); }
+  .sc-badge.ransomware { background: rgba(249,115,22,0.15); color: var(--high); border:1px solid rgba(249,115,22,0.3); }
+  .sc-badge.insider { background: rgba(234,179,8,0.15); color: var(--med); border:1px solid rgba(234,179,8,0.3); }
+  .sc-badge.webapp  { background: rgba(59,130,246,0.15); color: var(--accent); border:1px solid rgba(59,130,246,0.3); }
+
+  /* ── Controls Panel ───────────────────────────────────────────── */
+  .controls-panel { display: flex; flex-direction: column; gap: 0; }
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .control-item:last-child { border-bottom: none; }
+  .control-name { font-size: 13px; font-weight: 500; width: 100px; flex-shrink: 0; }
+  .toggle {
+    position: relative;
+    width: 36px; height: 20px;
+    background: var(--border2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--success); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+  .maturity-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
+  .maturity-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    outline: none;
+  }
+  .maturity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .mat-label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); width: 20px; text-align: center; }
+  .eff-bar {
+    width: 40px; height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .eff-fill { height: 100%; border-radius: 3px; transition: width 0.3s; background: linear-gradient(90deg, var(--success), var(--teal)); }
+
+  /* ── Defense Score ────────────────────────────────────────────── */
+  .defense-score-wrap {
+    text-align: center;
+    padding: 24px 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .defense-score-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .defense-score-value {
+    font-size: 52px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    line-height: 1;
+    transition: all 0.3s;
+  }
+  .defense-score-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ── Kill Chain Flow ──────────────────────────────────────────── */
+  .kc-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 12px 0;
+  }
+  .kc-box {
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 110px;
+    transition: all 0.4s;
+    position: relative;
+  }
+  .kc-box .kc-num { font-size: 10px; color: var(--muted); font-family: var(--font-mono); margin-bottom: 4px; }
+  .kc-box .kc-name { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .kc-box .kc-status { font-size: 10px; font-family: var(--font-mono); margin-top: 4px; color: var(--muted); }
+  .kc-box.detected  { border-color: var(--success); background: rgba(16,185,129,0.08); }
+  .kc-box.bypassed  { border-color: var(--crit);    background: rgba(239,68,68,0.08); }
+  .kc-box.stopped   { border-color: var(--med);     background: rgba(234,179,8,0.08); }
+  .kc-box.running   { border-color: var(--accent);  background: rgba(59,130,246,0.08); animation: kcPulse 1s infinite; }
+  @keyframes kcPulse {
+    0%,100% { box-shadow: none; }
+    50% { box-shadow: 0 0 12px rgba(59,130,246,0.4); }
+  }
+  .kc-arrow {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: var(--border2);
+    padding: 0 4px;
+    transition: color 0.3s;
+  }
+  .kc-arrow.active { color: var(--crit); }
+
+  /* ── Phase Simulation Steps ───────────────────────────────────── */
+  .phase-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .phase-entry {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .phase-entry .pe-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+  }
+  .phase-entry .pe-phase { font-weight: 700; font-size: 13px; }
+  .pe-result {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .pe-result.detected { background: rgba(16,185,129,0.15); color: var(--success); border:1px solid rgba(16,185,129,0.3); }
+  .pe-result.bypassed { background: rgba(239,68,68,0.15);  color: var(--crit);    border:1px solid rgba(239,68,68,0.3); }
+  .phase-entry .pe-tech { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+
+  /* ── Verdict ──────────────────────────────────────────────────── */
+  .verdict {
+    text-align: center;
+    padding: 20px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 18px;
+    margin-top: 16px;
+    display: none;
+    letter-spacing: 0.5px;
+  }
+  .verdict.stopped { background: rgba(16,185,129,0.12); border: 1px solid var(--success); color: var(--success); }
+  .verdict.partial { background: rgba(234,179,8,0.12);  border: 1px solid var(--med);     color: var(--med); }
+  .verdict.breached{ background: rgba(239,68,68,0.12);  border: 1px solid var(--crit);    color: var(--crit); }
+
+  /* ── Risk Dashboard ───────────────────────────────────────────── */
+  .risk-score-big {
+    font-size: 72px;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    line-height: 1;
+    transition: all 0.5s;
+    margin-bottom: 8px;
+  }
+  .risk-bar-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .risk-bar-label { font-size: 12px; color: var(--muted); width: 80px; flex-shrink: 0; }
+  .risk-bar-track {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .risk-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--success), var(--med), var(--crit));
+    background-size: 300px 100%;
+    transition: width 0.5s;
+  }
+  .risk-bar-val { font-size: 12px; font-family: var(--font-mono); width: 36px; text-align: right; }
+  .whatif-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;
+  }
+  .whatif-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .whatif-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .whatif-val { font-size: 26px; font-weight: 800; font-family: var(--font-mono); }
+
+  /* ── Executive Summary Card ───────────────────────────────────── */
+  .posture-ring-wrap {
+    display: flex; justify-content: center; margin-bottom: 16px;
+  }
+  .rec-item {
+    display: flex; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--high); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* ── MITRE ATT&CK Mini Matrix ─────────────────────────────────── */
+  .mitre-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .mitre-col { }
+  .mitre-tactic {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 6px 4px;
+    text-align: center;
+    background: var(--surface2);
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+  .mitre-tech {
+    font-size: 10px;
+    padding: 5px 6px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    font-family: var(--font-mono);
+    text-align: center;
+    transition: all 0.3s;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .mitre-tech.detected { background: rgba(16,185,129,0.15); color: var(--success); border-color: rgba(16,185,129,0.3); }
+  .mitre-tech.missed   { background: rgba(239,68,68,0.15);  color: var(--crit);    border-color: rgba(239,68,68,0.3); }
+
+  /* ── Detection Coverage Matrix ────────────────────────────────── */
+  .cov-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .cov-table th {
+    padding: 6px 8px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .cov-table th:first-child { text-align: left; }
+  .cov-table td { padding: 5px 6px; text-align: center; }
+  .cov-table td:first-child { text-align: left; font-family: var(--font-mono); color: var(--text); padding-left: 0; font-size: 12px; }
+  .cov-cell {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 28px;
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  /* ── SIEM Feed ────────────────────────────────────────────────── */
+  .siem-feed {
+    height: 280px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 0;
+  }
+  .siem-entry {
+    padding: 5px 10px;
+    border-left: 2px solid transparent;
+    line-height: 1.5;
+    animation: siemFade 0.25s ease;
+  }
+  @keyframes siemFade { from { opacity: 0; } to { opacity: 1; } }
+  .siem-ts  { color: var(--dim); margin-right: 8px; }
+  .siem-sev { font-weight: 700; margin-right: 6px; }
+  .siem-sev.CRITICAL { color: var(--crit); }
+  .siem-sev.HIGH     { color: var(--high); }
+  .siem-sev.MEDIUM   { color: var(--med); }
+  .siem-sev.LOW      { color: var(--muted); }
+  .siem-entry.CRITICAL { border-left-color: var(--crit); background: rgba(239,68,68,0.03); }
+  .siem-entry.HIGH     { border-left-color: var(--high); }
+  .siem-entry.MEDIUM   { border-left-color: var(--med); }
+
+  /* ── Footer ───────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 36px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  footer strong { color: var(--text); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+
+  @media (max-width: 1200px) {
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .scenario-grid { grid-template-columns: repeat(2,1fr); }
+    .grid-main { grid-template-columns: 1fr; }
+    .mitre-grid { grid-template-columns: repeat(3,1fr); }
+  }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">🛡</div>
+    <div class="nav-title">Enterprise Cyber Defense Simulation Platform</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-status">
+      <div class="pulse"></div>
+      SIMULATION ENGINE READY
+    </div>
+    <button class="btn btn-export" onclick="exportReport()">⬇ Export JSON</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ── Scenario Selector ────────────────────────────────────── -->
+  <div class="section-label">Select Attack Scenario</div>
+  <div class="scenario-grid" id="scenarioGrid">
+    <div class="scenario-card selected" onclick="selectScenario(0)" id="sc-0">
+      <div class="sc-icon">🌐</div>
+      <div class="sc-name">Web Application Attack</div>
+      <div class="sc-desc">SQL injection, XSS, and web shell upload targeting customer portal</div>
+      <span class="sc-badge webapp">Opportunistic</span>
+    </div>
+    <div class="scenario-card" onclick="selectScenario(1)" id="sc-1">
+      <div class="sc-icon">🔒</div>
+      <div class="sc-name">Ransomware Campaign</div>
+      <div class="sc-desc">Phishing-delivered ransomware with full kill chain propagation</div>
+      <span class="sc-badge ransomware">Financial</span>
+    </div>
+    <div class="scenario-card" onclick="selectScenario(2)" id="sc-2">
+      <div class="sc-icon">🕵</div>
+      <div class="sc-name">APT Intrusion</div>
+      <div class="sc-desc">Nation-state APT targeting financial records with 7-phase kill chain</div>
+      <span class="sc-badge apt">Nation-State</span>
+    </div>
+    <div class="scenario-card" onclick="selectScenario(3)" id="sc-3">
+      <div class="sc-icon">👤</div>
+      <div class="sc-name">Insider Threat</div>
+      <div class="sc-desc">Disgruntled employee exfiltrating IP before resignation</div>
+      <span class="sc-badge insider">Insider</span>
+    </div>
+  </div>
+
+  <!-- ── Main Grid: Controls + Simulation ─────────────────────── -->
+  <div class="grid-main">
+
+    <!-- Controls Panel -->
+    <div class="card" style="position:sticky;top:78px;align-self:start;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0">Security Controls</div>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--font-mono)" id="enabledCount">10/10 enabled</span>
+      </div>
+
+      <!-- Defense Score -->
+      <div class="defense-score-wrap">
+        <div class="defense-score-label">Defense Score</div>
+        <div class="defense-score-value" id="defenseScore" style="color:var(--success)">74</div>
+        <div class="defense-score-sub">/ 100 — Adequate</div>
+      </div>
+
+      <div class="controls-panel" id="controlsPanel">
+        <!-- injected by JS -->
+      </div>
+
+      <hr class="divider"/>
+
+      <button class="btn-launch" id="launchBtn" onclick="launchSimulation()">
+        ⚡ LAUNCH SIMULATION
+      </button>
+    </div>
+
+    <!-- Simulation Area -->
+    <div>
+
+      <!-- Kill Chain Flow -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Kill Chain Flow</div>
+        <div class="kc-flow" id="kcFlow">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <!-- Phase Feed + Verdict -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0">Simulation Feed</div>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--font-mono)" id="simStatus">Awaiting launch</span>
+        </div>
+        <div class="phase-feed" id="phaseFeed">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">
+            Configure controls and click LAUNCH SIMULATION to begin.
+          </div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+
+      <!-- Risk Dashboard + Executive Summary -->
+      <div class="grid-2">
+        <!-- Risk Dashboard -->
+        <div class="card">
+          <div class="card-title">Risk Dashboard</div>
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">Current Risk Score</div>
+            <div class="risk-score-big" id="riskScore" style="color:var(--high)">46</div>
+            <div style="font-size:12px;color:var(--muted)">/100</div>
+          </div>
+          <div class="risk-bar-row">
+            <div class="risk-bar-label">Likelihood</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" id="likelihoodBar" style="width:55%"></div></div>
+            <div class="risk-bar-val" id="likelihoodVal">55%</div>
+          </div>
+          <div class="risk-bar-row">
+            <div class="risk-bar-label">Impact</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" id="impactBar" style="width:84%"></div></div>
+            <div class="risk-bar-val" id="impactVal">84%</div>
+          </div>
+          <div class="risk-bar-row">
+            <div class="risk-bar-label">Residual</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" id="residualBar" style="width:38%"></div></div>
+            <div class="risk-bar-val" id="residualVal">38%</div>
+          </div>
+          <div class="whatif-row">
+            <div class="whatif-card">
+              <div class="whatif-label">Before Controls</div>
+              <div class="whatif-val" style="color:var(--crit)" id="beforeRisk">89</div>
+            </div>
+            <div class="whatif-card">
+              <div class="whatif-label">After Controls</div>
+              <div class="whatif-val" style="color:var(--success)" id="afterRisk">46</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="card">
+          <div class="card-title">Executive Summary</div>
+          <div style="display:flex;gap:20px;margin-bottom:18px;">
+            <div style="text-align:center;">
+              <canvas id="postureCanvas" width="100" height="100"></canvas>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Posture</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Attack Success Probability</div>
+              <div style="font-size:28px;font-weight:800;font-family:var(--font-mono);color:var(--med)" id="attackProbVal">32%</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:8px">Scenario: <span id="scenarioNameLabel" style="color:var(--text)">Web Application Attack</span></div>
+              <div style="font-size:12px;color:var(--muted)">Attacker Skill: <span style="color:var(--high)">High</span></div>
+            </div>
+          </div>
+          <div class="section-label" style="margin-bottom:8px;">Top Recommendations</div>
+          <div id="recList">
+            <div class="rec-item"><div class="rec-num">1</div><div>Increase EDR maturity from 3 to 5 to close Exploitation phase gap (est. −18 risk points)</div></div>
+            <div class="rec-item"><div class="rec-num">2</div><div>Deploy DNS filtering at maturity 4 to improve C2 detection coverage to &gt;70%</div></div>
+            <div class="rec-item"><div class="rec-num">3</div><div>Enforce MFA on all privileged accounts to reduce lateral movement success rate</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── MITRE ATT&CK Mini Matrix ──────────────────────────────── -->
+  <div class="card" style="margin-bottom:22px;">
+    <div class="card-title">MITRE ATT&CK Coverage Matrix</div>
+    <div class="mitre-grid" id="mitreGrid">
+      <!-- injected by JS -->
+    </div>
+  </div>
+
+  <!-- ── Detection Coverage + SIEM Feed ────────────────────────── -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Detection Coverage Matrix (Controls × Kill Chain)</div>
+      <div style="overflow-x:auto;" id="covMatrixWrap"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0">SIEM Event Feed</div>
+        <span style="font-size:10px;font-family:var(--font-mono);color:var(--success)">● LIVE</span>
+      </div>
+      <div class="siem-feed" id="siemFeed"></div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer>
+  <strong>Enterprise Cyber Defense Simulation Platform</strong> &nbsp;·&nbsp;
+  Purple Team Kill Chain Simulation &amp; Risk Quantification &nbsp;·&nbsp;
+  Powered by <strong>defense_sim.py</strong> &nbsp;·&nbsp;
+  All simulations run in a sandboxed model — no real network impact
+</footer>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────
+const CONTROLS_DEF = [
+  { name:"Firewall",     type:"network",   maturity:3, enabled:true,  eff:[0.35,0.10,0.30,0.20,0.15,0.50,0.40] },
+  { name:"EDR",          type:"endpoint",  maturity:4, enabled:true,  eff:[0.05,0.10,0.40,0.85,0.90,0.80,0.85] },
+  { name:"SIEM",         type:"monitor",   maturity:3, enabled:true,  eff:[0.20,0.10,0.35,0.50,0.55,0.65,0.70] },
+  { name:"MFA",          type:"identity",  maturity:2, enabled:true,  eff:[0.05,0.05,0.10,0.30,0.20,0.30,0.35] },
+  { name:"PAM",          type:"identity",  maturity:2, enabled:true,  eff:[0.05,0.05,0.10,0.25,0.35,0.40,0.55] },
+  { name:"WAF",          type:"network",   maturity:3, enabled:true,  eff:[0.15,0.10,0.60,0.55,0.20,0.25,0.30] },
+  { name:"IDS/IPS",      type:"network",   maturity:3, enabled:true,  eff:[0.30,0.10,0.45,0.55,0.35,0.60,0.55] },
+  { name:"Email GW",     type:"email",     maturity:4, enabled:true,  eff:[0.05,0.15,0.80,0.20,0.10,0.05,0.05] },
+  { name:"DLP",          type:"data",      maturity:2, enabled:true,  eff:[0.10,0.05,0.15,0.20,0.30,0.30,0.75] },
+  { name:"DNS Filter",   type:"network",   maturity:3, enabled:true,  eff:[0.20,0.10,0.35,0.25,0.20,0.70,0.45] },
+];
+
+const KILL_CHAIN_PHASES = [
+  { name:"Reconnaissance", short:"Recon",   icon:"🔍" },
+  { name:"Weaponization",  short:"Weapon",  icon:"⚒" },
+  { name:"Delivery",       short:"Deliver", icon:"📨" },
+  { name:"Exploitation",   short:"Exploit", icon:"💥" },
+  { name:"Installation",   short:"Install", icon:"⚙" },
+  { name:"Command & Control", short:"C2",   icon:"📡" },
+  { name:"Actions",        short:"Actions", icon:"🎯" },
+];
+
+const SCENARIOS = [
+  {
+    name: "Web Application Attack",
+    attacker: "Opportunistic Hacker",
+    skill: "medium",
+    evasion: 0.20,
+    phase_success: [0.90,0.75,0.85,0.78,0.60,0.65,0.50],
+    techniques: [
+      ["T1596","T1589"],["T1588","T1608"],["T1190","T1189"],
+      ["T1059","T1203"],["T1505.003","T1547"],["T1071","T1102"],
+      ["T1190","T1041","T1499"]
+    ]
+  },
+  {
+    name: "Ransomware Campaign",
+    attacker: "Ransomware Affiliate",
+    skill: "high",
+    evasion: 0.30,
+    phase_success: [0.92,0.85,0.72,0.68,0.78,0.81,0.55],
+    techniques: [
+      ["T1589","T1596"],["T1587","T1566"],["T1566.001","T1534"],
+      ["T1059.001","T1203"],["T1547.001","T1053"],["T1071.001","T1090"],
+      ["T1486","T1003","T1041"]
+    ]
+  },
+  {
+    name: "APT Intrusion",
+    attacker: "APT-41 (Simulated)",
+    skill: "nation-state",
+    evasion: 0.40,
+    phase_success: [0.95,0.88,0.75,0.72,0.82,0.85,0.60],
+    techniques: [
+      ["T1589.002","T1596.005","T1593"],["T1587.001","T1608.001"],["T1566.001","T1534"],
+      ["T1059.001","T1203"],["T1547.001","T1053.005","T1105"],["T1071.001","T1573.002","T1090"],
+      ["T1003.001","T1021.002","T1041","T1486"]
+    ]
+  },
+  {
+    name: "Insider Threat",
+    attacker: "Malicious Insider",
+    skill: "low",
+    evasion: 0.15,
+    phase_success: [0.60,0.50,0.70,0.55,0.45,0.50,0.80],
+    techniques: [
+      ["T1589","T1087"],["T1608","T1587"],["T1078","T1534"],
+      ["T1059","T1078"],["T1547","T1553"],["T1071","T1102"],
+      ["T1048","T1052","T1567"]
+    ]
+  },
+];
+
+const MITRE_TACTICS = [
+  { name:"Recon",   techs:["T1589","T1596","T1593","T1598"] },
+  { name:"Init Acc",techs:["T1566","T1190","T1133","T1078"] },
+  { name:"Exec",    techs:["T1059","T1203","T1053","T1106"] },
+  { name:"Persist", techs:["T1547","T1543","T1053","T1137"] },
+  { name:"PrivEsc", techs:["T1548","T1134","T1068","T1055"] },
+  { name:"Exfil",   techs:["T1041","T1048","T1052","T1011"] },
+];
+
+const SIEM_TEMPLATES = [
+  { sev:"CRITICAL", msg:"T1486 - Ransomware encryption activity on WORKSTATION-07" },
+  { sev:"HIGH",     msg:"T1059.001 - PowerShell encoded command bypass detected" },
+  { sev:"HIGH",     msg:"T1003.001 - LSASS memory access by non-system process" },
+  { sev:"CRITICAL", msg:"T1490 - Volume shadow copy deletion via vssadmin.exe" },
+  { sev:"MEDIUM",   msg:"T1071.001 - Anomalous HTTPS beacon to cdn-delivery-net[.]io" },
+  { sev:"HIGH",     msg:"T1566.001 - Macro-enabled attachment opened by cford@fincorp.com" },
+  { sev:"HIGH",     msg:"T1078 - Successful login from TOR exit node 185.220.101.47" },
+  { sev:"MEDIUM",   msg:"T1016 - Internal network discovery commands executed" },
+  { sev:"LOW",      msg:"T1057 - Process enumeration: tasklist.exe /svc from cmd.exe" },
+  { sev:"CRITICAL", msg:"T1021.002 - SMB lateral movement to DC-PRIMARY with admin credentials" },
+  { sev:"HIGH",     msg:"T1547.001 - New registry run key created: HKCU\\Software\\MS\\CurrentVersion\\Run" },
+  { sev:"MEDIUM",   msg:"T1041 - 1.8GB outbound to 203.176.135.12 over HTTPS in 12 minutes" },
+  { sev:"HIGH",     msg:"T1190 - CVE-2023-23397 exploitation attempt on MAIL-SERVER" },
+  { sev:"LOW",      msg:"T1087 - AD account enumeration via LDAP from DEV-LAPTOP-09" },
+  { sev:"CRITICAL", msg:"T1003 - Credential dump tool detected: mimikatz x64/20230921" },
+];
+
+// ── State ─────────────────────────────────────────────────────────
+let state = {
+  selectedScenario: 0,
+  controls: JSON.parse(JSON.stringify(CONTROLS_DEF)),
+  simRunning: false,
+  simResults: null,
+  siemIndex: 0,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────
+function calcDetectionRate(phaseIdx) {
+  const activeControls = state.controls.filter(c => c.enabled);
+  if (activeControls.length === 0) return 0;
+  const probs = activeControls.map(c => {
+    const base = c.eff[phaseIdx];
+    const mat = c.maturity;
+    const mult = 0.5 + (mat / 5) * 0.7;
+    return Math.min(1.0, base * mult);
+  });
+  const combined = 1 - probs.reduce((acc, p) => acc * (1 - p), 1);
+  return Math.min(0.95, combined);
+}
+
+function calcDefenseScore() {
+  const rates = Array.from({length:7}, (_, i) => calcDetectionRate(i));
+  const avg = rates.reduce((a,b) => a+b, 0) / rates.length;
+  const maturityBonus = state.controls.filter(c=>c.enabled).reduce((s,c) => s + c.maturity, 0) / (state.controls.length * 5) * 15;
+  return Math.min(100, Math.round(avg * 85 + maturityBonus));
+}
+
+function calcRiskScore() {
+  const likelihood = 1 - calcDetectionRate(3) * 0.85;  // Exploitation phase as proxy
+  const impact = 0.84;  // Fixed for enterprise scenario
+  return Math.round(likelihood * impact * 100);
+}
+
+function getRiskColor(score) {
+  if (score < 30) return 'var(--success)';
+  if (score < 50) return 'var(--med)';
+  if (score < 70) return 'var(--high)';
+  return 'var(--crit)';
+}
+
+// ── Render Controls ───────────────────────────────────────────────
+function renderControls() {
+  const panel = document.getElementById('controlsPanel');
+  panel.innerHTML = '';
+  state.controls.forEach((ctrl, idx) => {
+    const avgEff = ctrl.eff.reduce((a,b)=>a+b,0)/ctrl.eff.length;
+    const matEff = avgEff * (0.5 + ctrl.maturity/5*0.7);
+    const effPct = Math.round(Math.min(1,matEff) * 100);
+    const div = document.createElement('div');
+    div.className = 'control-item';
+    div.innerHTML = `
+      <div class="control-name" style="color:${ctrl.enabled?'var(--text)':'var(--muted)'}">${ctrl.name}</div>
+      <div class="toggle${ctrl.enabled?' on':''}" onclick="toggleControl(${idx})" id="toggle-${idx}"></div>
+      <div class="maturity-wrap">
+        <input type="range" class="maturity-slider" min="1" max="5" value="${ctrl.maturity}"
+          oninput="setMaturity(${idx},this.value)" ${ctrl.enabled?'':'disabled'}
+          style="opacity:${ctrl.enabled?1:0.4}"/>
+        <div class="mat-label" id="mat-${idx}">${ctrl.maturity}</div>
+      </div>
+      <div class="eff-bar"><div class="eff-fill" id="eff-${idx}" style="width:${effPct}%"></div></div>
+    `;
+    panel.appendChild(div);
+  });
+  updateScoreDisplay();
+}
+
+function toggleControl(idx) {
+  state.controls[idx].enabled = !state.controls[idx].enabled;
+  const toggle = document.getElementById(`toggle-${idx}`);
+  toggle.classList.toggle('on', state.controls[idx].enabled);
+  renderControls();
+}
+
+function setMaturity(idx, val) {
+  state.controls[idx].maturity = parseInt(val);
+  document.getElementById(`mat-${idx}`).textContent = val;
+  const avgEff = state.controls[idx].eff.reduce((a,b)=>a+b,0)/7;
+  const matEff = avgEff * (0.5 + val/5*0.7);
+  const effPct = Math.round(Math.min(1,matEff)*100);
+  document.getElementById(`eff-${idx}`).style.width = effPct + '%';
+  updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+  const score = calcDefenseScore();
+  const riskScore = calcRiskScore();
+  const dsEl = document.getElementById('defenseScore');
+  dsEl.textContent = score;
+  dsEl.style.color = score >= 70 ? 'var(--success)' : score >= 50 ? 'var(--med)' : 'var(--crit)';
+  dsEl.parentElement.querySelector('.defense-score-sub').textContent =
+    `/ 100 — ${score>=80?'Strong':score>=60?'Adequate':score>=40?'Weak':'Critical'}`;
+
+  const rsEl = document.getElementById('riskScore');
+  rsEl.textContent = riskScore;
+  rsEl.style.color = getRiskColor(riskScore);
+  document.getElementById('afterRisk').textContent = riskScore;
+  document.getElementById('afterRisk').style.color = getRiskColor(riskScore);
+
+  const likelihood = Math.round((1 - calcDetectionRate(3)) * 100);
+  document.getElementById('likelihoodBar').style.width = likelihood + '%';
+  document.getElementById('likelihoodVal').textContent = likelihood + '%';
+  document.getElementById('attackProbVal').textContent = likelihood + '%';
+
+  const enabledCount = state.controls.filter(c=>c.enabled).length;
+  document.getElementById('enabledCount').textContent = `${enabledCount}/${state.controls.length} enabled`;
+
+  updateCovMatrix();
+  drawPostureRing(score);
+}
+
+// ── Kill Chain Flow ────────────────────────────────────────────────
+function renderKcFlow() {
+  const container = document.getElementById('kcFlow');
+  container.innerHTML = '';
+  KILL_CHAIN_PHASES.forEach((p, i) => {
+    const box = document.createElement('div');
+    box.className = 'kc-box';
+    box.id = `kc-${i}`;
+    box.innerHTML = `
+      <div class="kc-num">${p.icon}</div>
+      <div class="kc-name">${p.short}</div>
+      <div class="kc-status" id="kc-status-${i}">—</div>
+    `;
+    container.appendChild(box);
+    if (i < KILL_CHAIN_PHASES.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'kc-arrow';
+      arrow.id = `kc-arrow-${i}`;
+      arrow.textContent = '→';
+      container.appendChild(arrow);
+    }
+  });
+}
+
+// ── MITRE Matrix ───────────────────────────────────────────────────
+function renderMitre(detectedTechs = [], missedTechs = []) {
+  const grid = document.getElementById('mitreGrid');
+  grid.innerHTML = '';
+  MITRE_TACTICS.forEach(tactic => {
+    const col = document.createElement('div');
+    col.className = 'mitre-col';
+    let html = `<div class="mitre-tactic">${tactic.name}</div>`;
+    tactic.techs.forEach(tid => {
+      const cls = detectedTechs.includes(tid) ? 'detected' : missedTechs.includes(tid) ? 'missed' : '';
+      html += `<div class="mitre-tech ${cls}">${tid}</div>`;
+    });
+    col.innerHTML = html;
+    grid.appendChild(col);
+  });
+}
+
+// ── Detection Coverage Matrix ──────────────────────────────────────
+function updateCovMatrix() {
+  const wrap = document.getElementById('covMatrixWrap');
+  const phases = KILL_CHAIN_PHASES.map(p => p.short);
+  let html = '<table class="cov-table"><thead><tr><th></th>';
+  phases.forEach(p => { html += `<th>${p}</th>`; });
+  html += '</tr></thead><tbody>';
+  state.controls.forEach(ctrl => {
+    html += `<tr><td>${ctrl.name}</td>`;
+    phases.forEach((_, pi) => {
+      if (!ctrl.enabled) {
+        html += `<td><div class="cov-cell" style="background:var(--surface2);color:var(--dim);border:1px solid var(--border)">OFF</div></td>`;
+        return;
+      }
+      const base = ctrl.eff[pi];
+      const mult = 0.5 + ctrl.maturity/5*0.7;
+      const adj = Math.min(1, base * mult);
+      const pct = Math.round(adj * 100);
+      const bg = pct >= 70 ? `rgba(16,185,129,${0.1+adj*0.2})` :
+                 pct >= 40 ? `rgba(234,179,8,${0.1+adj*0.2})` :
+                              `rgba(239,68,68,${0.08+adj*0.15})`;
+      const border = pct >= 70 ? 'rgba(16,185,129,0.35)' :
+                     pct >= 40 ? 'rgba(234,179,8,0.35)' :
+                                  'rgba(239,68,68,0.25)';
+      const txtColor = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--med)' : '#ff6b6b';
+      html += `<td><div class="cov-cell" style="background:${bg};border:1px solid ${border};color:${txtColor}">${pct}%</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ── Posture Ring (canvas) ──────────────────────────────────────────
+function drawPostureRing(score) {
+  const canvas = document.getElementById('postureCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,100,100);
+  const cx=50, cy=50, r=38;
+  const startAngle = -Math.PI/2;
+  const endAngle = startAngle + (score/100) * Math.PI * 2;
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  const color = score>=70 ? '#10b981' : score>=50 ? '#eab308' : '#ef4444';
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,startAngle,endAngle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = 'bold 20px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(score, cx, cy);
+}
+
+// ── Scenario Selection ─────────────────────────────────────────────
+function selectScenario(idx) {
+  state.selectedScenario = idx;
+  document.querySelectorAll('.scenario-card').forEach((c,i) => {
+    c.classList.toggle('selected', i === idx);
+  });
+  const sc = SCENARIOS[idx];
+  document.getElementById('scenarioNameLabel').textContent = sc.name;
+  updateScoreDisplay();
+  resetSimulation();
+}
+
+function resetSimulation() {
+  document.getElementById('phaseFeed').innerHTML =
+    '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">Configure controls and click LAUNCH SIMULATION to begin.</div>';
+  document.getElementById('verdict').style.display = 'none';
+  document.getElementById('simStatus').textContent = 'Awaiting launch';
+  KILL_CHAIN_PHASES.forEach((_,i) => {
+    const box = document.getElementById(`kc-${i}`);
+    if (box) {
+      box.className = 'kc-box';
+      document.getElementById(`kc-status-${i}`).textContent = '—';
+    }
+    const arrow = document.getElementById(`kc-arrow-${i}`);
+    if (arrow) arrow.classList.remove('active');
+  });
+  renderMitre();
+}
+
+// ── SIEM Feed ──────────────────────────────────────────────────────
+function addSiemEvent(ev) {
+  const feed = document.getElementById('siemFeed');
+  const ts = new Date().toISOString().replace('T',' ').slice(0,19);
+  const div = document.createElement('div');
+  div.className = `siem-entry ${ev.sev}`;
+  div.innerHTML = `<span class="siem-ts">${ts}</span><span class="siem-sev ${ev.sev}">[${ev.sev}]</span>${ev.msg}`;
+  feed.insertBefore(div, feed.firstChild);
+  while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+}
+
+let siemTimer = null;
+function startSiemFeed(fast = false) {
+  if (siemTimer) clearInterval(siemTimer);
+  const delay = fast ? 600 : 2200;
+  siemTimer = setInterval(() => {
+    const ev = SIEM_TEMPLATES[state.siemIndex % SIEM_TEMPLATES.length];
+    addSiemEvent(ev);
+    state.siemIndex++;
+  }, delay);
+}
+
+// ── Main Simulation ────────────────────────────────────────────────
+function launchSimulation() {
+  if (state.simRunning) return;
+  state.simRunning = true;
+  const btn = document.getElementById('launchBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ SIMULATION RUNNING...';
+
+  const feed = document.getElementById('phaseFeed');
+  feed.innerHTML = '';
+  document.getElementById('verdict').style.display = 'none';
+  document.getElementById('simStatus').textContent = 'Running...';
+
+  const scenario = SCENARIOS[state.selectedScenario];
+  startSiemFeed(true);
+
+  const detectedTechs = [], missedTechs = [];
+  let attackStopped = false;
+  let stoppedAt = null;
+  let phaseCount = 0;
+
+  const runPhase = (idx) => {
+    if (idx >= KILL_CHAIN_PHASES.length || attackStopped) {
+      finishSimulation(attackStopped, stoppedAt, phaseCount, detectedTechs, missedTechs);
+      return;
+    }
+
+    const phase = KILL_CHAIN_PHASES[idx];
+    const kcBox = document.getElementById(`kc-${idx}`);
+    if (kcBox) {
+      kcBox.className = 'kc-box running';
+      document.getElementById(`kc-status-${idx}`).textContent = 'RUNNING';
+      const prevArrow = document.getElementById(`kc-arrow-${idx-1}`);
+      if (prevArrow) prevArrow.classList.add('active');
+    }
+
+    document.getElementById('simStatus').textContent = `Phase ${idx+1}/7: ${phase.name}`;
+
+    setTimeout(() => {
+      const detRate = calcDetectionRate(idx);
+      const detected = Math.random() < detRate;
+      const evasion = scenario.evasion;
+      const succeeded = !detected || (Math.random() < evasion);
+
+      const techniques = scenario.techniques[idx] || [];
+      techniques.forEach(tid => {
+        if (detected && Math.random() < detRate) {
+          detectedTechs.push(tid);
+        } else {
+          missedTechs.push(tid);
+        }
+      });
+
+      const entry = document.createElement('div');
+      entry.className = 'phase-entry';
+      entry.innerHTML = `
+        <div class="pe-header">
+          <div class="pe-phase">${phase.icon} ${phase.name}</div>
+          <div class="pe-result ${detected?'detected':'bypassed'}">${detected?'✓ DETECTED':'✗ BYPASSED'}</div>
+        </div>
+        <div class="pe-tech">${techniques.join(' · ')}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">
+          Detection Rate: ${Math.round(detRate*100)}% ·
+          ${succeeded ? (detected?'<span style="color:var(--med)">Detected but evaded</span>':'<span style="color:var(--crit)">Undetected — phase succeeded</span>') : '<span style="color:var(--success)">Attack stopped</span>'}
+        </div>
+      `;
+      feed.appendChild(entry);
+      feed.scrollTop = feed.scrollHeight;
+
+      if (kcBox) {
+        kcBox.className = `kc-box ${detected?(succeeded?'bypassed':'stopped'):('bypassed')}`;
+        document.getElementById(`kc-status-${idx}`).textContent = detected ? (succeeded?'EVADED':'STOPPED') : 'BYPASS';
+      }
+
+      phaseCount = idx + 1;
+      if (!succeeded) {
+        attackStopped = true;
+        stoppedAt = phase.name;
+        renderMitre(detectedTechs, missedTechs);
+        finishSimulation(true, stoppedAt, phaseCount, detectedTechs, missedTechs);
+        return;
+      }
+
+      renderMitre(detectedTechs, missedTechs);
+      runPhase(idx + 1);
+    }, 1500);
+  };
+
+  runPhase(0);
+}
+
+function finishSimulation(stopped, stoppedAt, phaseCount, detectedTechs, missedTechs) {
+  state.simRunning = false;
+  clearInterval(siemTimer);
+  startSiemFeed(false);
+
+  const btn = document.getElementById('launchBtn');
+  btn.disabled = false;
+  btn.textContent = '⚡ LAUNCH SIMULATION';
+  document.getElementById('simStatus').textContent = `Complete — ${phaseCount} phases simulated`;
+
+  const verdict = document.getElementById('verdict');
+  verdict.style.display = 'block';
+  const detectedPhases = phaseCount - (stopped ? 0 : 0);
+
+  if (stopped) {
+    verdict.className = 'verdict stopped';
+    verdict.textContent = `✓ ATTACK STOPPED — Defense held at "${stoppedAt}". ${detectedTechs.length} techniques detected.`;
+  } else if (detectedTechs.length >= KILL_CHAIN_PHASES.length * 2) {
+    verdict.className = 'verdict partial';
+    verdict.textContent = `⚠ PARTIAL CONTAINMENT — Attacker reached objectives. ${detectedTechs.length} detections fired but evasion succeeded.`;
+  } else {
+    verdict.className = 'verdict breached';
+    verdict.textContent = `✗ ATTACKER SUCCEEDED — Breach confirmed. ${missedTechs.length} techniques evaded detection entirely.`;
+  }
+
+  // Update risk display post-simulation
+  const residual = stopped ? Math.max(10, calcRiskScore() - 15) : calcRiskScore() + 10;
+  document.getElementById('residualBar').style.width = Math.min(100,residual) + '%';
+  document.getElementById('residualVal').textContent = Math.min(100,residual) + '%';
+
+  state.simResults = { stopped, stoppedAt, detectedTechs, missedTechs, phaseCount };
+}
+
+// ── Export Report ──────────────────────────────────────────────────
+function exportReport() {
+  const score = calcDefenseScore();
+  const risk = calcRiskScore();
+  const report = {
+    generated_at: new Date().toISOString(),
+    scenario: SCENARIOS[state.selectedScenario].name,
+    defense_score: score,
+    risk_score: risk,
+    control_summary: state.controls.map(c => ({
+      name: c.name, enabled: c.enabled, maturity: c.maturity,
+      avg_effectiveness: Math.round(c.eff.reduce((a,b)=>a+b,0)/7*100)/100
+    })),
+    simulation_results: state.simResults || "No simulation run yet",
+    coverage_matrix: KILL_CHAIN_PHASES.map((p,i) => ({
+      phase: p.name,
+      detection_rate: Math.round(calcDetectionRate(i)*100)/100
+    })),
+  };
+  const blob = new Blob([JSON.stringify(report,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `defense_sim_report_${Date.now()}.json`;
+  a.click();
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderControls();
+  renderKcFlow();
+  renderMitre();
+  updateCovMatrix();
+  drawPostureRing(74);
+  startSiemFeed(false);
+});
+</script>
+</body>
+</html>

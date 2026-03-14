@@ -1,0 +1,188 @@
+{
+  "name": "Ransomware Response Playbook",
+  "version": "1.2",
+  "trigger_conditions": {
+    "alert_types": ["Ransomware Indicator", "Malware Detection", "C2 Communication"],
+    "severity": ["CRITICAL", "HIGH"],
+    "keywords": ["ransom", "encrypt", "locker", "wannacry", "ryuk", "lockbit", "conti", "cobalt strike"],
+    "file_extensions": [".encrypted", ".locked", ".crypt", ".rnsmwr"],
+    "ioc_match": true
+  },
+  "description": "Automated response playbook for ransomware incidents. Executes containment, evidence preservation, notification, and recovery steps in sequence to minimize damage and ensure forensic integrity.",
+  "metadata": {
+    "author": "SOC Team",
+    "created": "2025-01-10",
+    "last_updated": "2025-11-20",
+    "severity": "CRITICAL",
+    "estimated_duration_minutes": 45,
+    "compliance_frameworks": ["NIST CSF", "ISO 27035", "CIS Controls"]
+  },
+  "steps": [
+    {
+      "id": "step_01",
+      "name": "detect_ransomware_indicators",
+      "type": "detection",
+      "action": "enrich_ip",
+      "params": {
+        "check_file_extensions": [".encrypted", ".locked", ".crypt", ".rnsmwr", ".zepto"],
+        "check_processes": ["vssadmin.exe", "wbadmin.exe", "bcdedit.exe", "wmic.exe"],
+        "check_registry_keys": ["HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"],
+        "check_shadow_copies": true,
+        "threat_intel_lookup": true,
+        "timeout_seconds": 60
+      },
+      "on_success": "step_02",
+      "on_failure": "step_08",
+      "description": "Scan endpoint for known ransomware IOCs, file extension changes, shadow copy deletion attempts, and process anomalies."
+    },
+    {
+      "id": "step_02",
+      "name": "isolate_affected_host",
+      "type": "containment",
+      "action": "isolate_host",
+      "params": {
+        "method": "network_isolation",
+        "allow_management_traffic": true,
+        "firewall_rule": "block_all_except_management",
+        "notify_endpoint_agent": true,
+        "log_network_state": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_03",
+      "on_failure": "step_05",
+      "description": "Immediately isolate the affected host from the network to prevent lateral movement and further encryption spread."
+    },
+    {
+      "id": "step_03",
+      "name": "block_c2_ip",
+      "type": "containment",
+      "action": "block_ip",
+      "params": {
+        "block_at": ["firewall", "proxy", "dns", "sinkhole"],
+        "direction": "both",
+        "duration_hours": 720,
+        "add_to_threat_intel": true,
+        "notify_upstream_providers": false,
+        "timeout_seconds": 20
+      },
+      "on_success": "step_04",
+      "on_failure": "step_04",
+      "description": "Block identified C2 IP addresses and domains at all network control points to cut off attacker communication."
+    },
+    {
+      "id": "step_04",
+      "name": "preserve_evidence_snapshot",
+      "type": "forensics",
+      "action": "run_script",
+      "params": {
+        "script": "forensic_snapshot.sh",
+        "capture_memory": true,
+        "capture_disk_image": false,
+        "capture_network_connections": true,
+        "capture_process_list": true,
+        "capture_event_logs": true,
+        "capture_registry_hives": true,
+        "storage_location": "/forensics/cases/{{incident_id}}/",
+        "hash_verification": "sha256",
+        "timeout_seconds": 300
+      },
+      "on_success": "step_05",
+      "on_failure": "step_05",
+      "description": "Capture forensic evidence including memory dump, process list, network connections, and relevant log files before any remediation."
+    },
+    {
+      "id": "step_05",
+      "name": "alert_security_team",
+      "type": "notification",
+      "action": "notify_team",
+      "params": {
+        "channels": ["slack", "pagerduty", "email"],
+        "recipients": ["soc-team@company.com", "incident-response@company.com"],
+        "priority": "P1",
+        "message_template": "CRITICAL: Ransomware incident detected on {{affected_asset}}. Incident ID: {{incident_id}}. Host has been isolated. Immediate response required.",
+        "include_ioc_summary": true,
+        "include_timeline": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_06",
+      "on_failure": "step_06",
+      "description": "Send immediate P1 alert to the security team via all available channels with incident summary."
+    },
+    {
+      "id": "step_06",
+      "name": "scan_network_for_spread",
+      "type": "investigation",
+      "action": "run_script",
+      "params": {
+        "script": "lateral_movement_scan.sh",
+        "scan_targets": "subnet",
+        "check_ioc_matches": true,
+        "check_smb_connections": true,
+        "check_wmi_events": true,
+        "check_scheduled_tasks": true,
+        "max_concurrent_scans": 10,
+        "timeout_seconds": 180
+      },
+      "on_success": "step_07",
+      "on_failure": "step_07",
+      "description": "Scan the local network segment for signs of lateral movement and ransomware propagation to other hosts."
+    },
+    {
+      "id": "step_07",
+      "name": "disable_affected_accounts",
+      "type": "containment",
+      "action": "disable_user",
+      "params": {
+        "disable_ad_account": true,
+        "revoke_active_sessions": true,
+        "reset_service_accounts": false,
+        "notify_hr": true,
+        "preserve_account_audit_trail": true,
+        "timeout_seconds": 60
+      },
+      "on_success": "step_08",
+      "on_failure": "step_08",
+      "description": "Disable compromised user accounts and revoke all active sessions to prevent further unauthorized access."
+    },
+    {
+      "id": "step_08",
+      "name": "report_to_management",
+      "type": "notification",
+      "action": "create_ticket",
+      "params": {
+        "ticket_system": "jira",
+        "project": "INCIDENT",
+        "issue_type": "Security Incident",
+        "priority": "Critical",
+        "notify_ciso": true,
+        "notify_cto": true,
+        "include_business_impact": true,
+        "regulatory_notification_required": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_09",
+      "on_failure": "step_09",
+      "description": "Create formal incident ticket and notify executive management including CISO with business impact assessment."
+    },
+    {
+      "id": "step_09",
+      "name": "post_incident_documentation",
+      "type": "documentation",
+      "action": "run_script",
+      "params": {
+        "script": "generate_ir_report.py",
+        "template": "ransomware_report_template.docx",
+        "include_timeline": true,
+        "include_ioc_list": true,
+        "include_forensic_summary": true,
+        "include_lessons_learned": true,
+        "output_format": ["pdf", "json"],
+        "store_in_case_management": true,
+        "timeout_seconds": 120
+      },
+      "on_success": null,
+      "on_failure": null,
+      "description": "Generate comprehensive post-incident documentation including timeline, IOCs, forensic findings, and lessons learned."
+    }
+  ]
+}

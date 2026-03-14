@@ -1,0 +1,177 @@
+{
+  "name": "Brute Force Response Playbook",
+  "version": "1.1",
+  "trigger_conditions": {
+    "alert_types": ["SSH Brute Force", "RDP Brute Force", "Web Application Brute Force", "Account Lockout"],
+    "severity": ["HIGH", "MEDIUM"],
+    "thresholds": {
+      "failed_logins_per_minute": 10,
+      "failed_logins_per_hour": 50,
+      "distinct_accounts_targeted": 3,
+      "lockout_triggered": true
+    },
+    "keywords": ["brute force", "password spray", "credential stuffing", "failed authentication", "account lockout"]
+  },
+  "description": "Automated response playbook for brute force and credential-based attacks. Evaluates attack success, blocks malicious sources, notifies affected users, and escalates if account compromise is confirmed.",
+  "metadata": {
+    "author": "SOC Team",
+    "created": "2025-02-15",
+    "last_updated": "2025-11-20",
+    "severity": "HIGH",
+    "estimated_duration_minutes": 20,
+    "compliance_frameworks": ["NIST CSF", "CIS Controls v8", "PCI-DSS"]
+  },
+  "steps": [
+    {
+      "id": "step_01",
+      "name": "check_failed_login_threshold",
+      "type": "detection",
+      "action": "enrich_ip",
+      "params": {
+        "query_siem": true,
+        "time_window_minutes": 10,
+        "count_failed_logins": true,
+        "identify_targeted_accounts": true,
+        "identify_source_ips": true,
+        "check_geo_anomaly": true,
+        "check_time_anomaly": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_02",
+      "on_failure": "step_07",
+      "description": "Query SIEM to confirm failed login count exceeds threshold and gather source IP and targeted account information."
+    },
+    {
+      "id": "step_02",
+      "name": "block_source_ip",
+      "type": "containment",
+      "action": "block_ip",
+      "params": {
+        "block_at": ["firewall", "waf", "ids"],
+        "direction": "inbound",
+        "duration_hours": 24,
+        "auto_extend_on_repeat": true,
+        "add_to_threat_intel_feed": true,
+        "check_whitelist_before_block": true,
+        "notify_on_whitelist_hit": true,
+        "timeout_seconds": 20
+      },
+      "on_success": "step_03",
+      "on_failure": "step_03",
+      "description": "Block the attacking source IP at the firewall and WAF. Verify against IP whitelist before blocking to prevent false positives."
+    },
+    {
+      "id": "step_03",
+      "name": "check_account_lockout_status",
+      "type": "investigation",
+      "action": "run_script",
+      "params": {
+        "script": "check_ad_lockout.ps1",
+        "check_active_directory": true,
+        "check_azure_ad": true,
+        "check_radius": false,
+        "list_locked_accounts": true,
+        "check_bad_password_count": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_04",
+      "on_failure": "step_07",
+      "description": "Check Active Directory and Azure AD for locked accounts resulting from the brute force attack."
+    },
+    {
+      "id": "step_04",
+      "name": "notify_affected_user",
+      "type": "notification",
+      "action": "notify_team",
+      "params": {
+        "channels": ["email", "sms"],
+        "recipients_type": "affected_users",
+        "message_template": "Security Alert: Your account {{username}} has been targeted in a brute force attack. If this was not you, please contact the IT Security team immediately. Incident: {{incident_id}}",
+        "include_password_reset_link": true,
+        "include_mfa_setup_link": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_05",
+      "on_failure": "step_05",
+      "description": "Notify affected users about the attack via email and SMS with instructions for account security review."
+    },
+    {
+      "id": "step_05",
+      "name": "check_if_login_succeeded",
+      "type": "investigation",
+      "action": "run_script",
+      "params": {
+        "script": "check_successful_logins.py",
+        "time_window_minutes": 60,
+        "check_same_source_ip": true,
+        "check_all_targeted_accounts": true,
+        "check_session_anomalies": true,
+        "check_mfa_bypass": true,
+        "correlate_with_endpoint_events": true,
+        "timeout_seconds": 60
+      },
+      "on_success": "step_06",
+      "on_failure": "step_07",
+      "description": "Determine whether any brute force attempts were successful by checking for successful authentication events from the attacking IP."
+    },
+    {
+      "id": "step_06",
+      "name": "escalate_if_compromised",
+      "type": "escalation",
+      "action": "create_ticket",
+      "params": {
+        "condition": "successful_login_detected",
+        "escalate_to": "incident_response_team",
+        "ticket_system": "servicenow",
+        "priority": "P1",
+        "trigger_ransomware_playbook": false,
+        "trigger_account_takeover_playbook": true,
+        "notify_ciso": true,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_07",
+      "on_failure": "step_07",
+      "description": "If a successful login from the attacking IP is confirmed, immediately escalate to the incident response team as a full account compromise."
+    },
+    {
+      "id": "step_07",
+      "name": "generate_ir_ticket",
+      "type": "documentation",
+      "action": "create_ticket",
+      "params": {
+        "ticket_system": "jira",
+        "project": "SECURITY",
+        "issue_type": "Security Event",
+        "priority": "High",
+        "auto_populate_fields": true,
+        "include_evidence_links": true,
+        "include_blocked_ips": true,
+        "include_affected_accounts": true,
+        "sla_hours": 4,
+        "timeout_seconds": 30
+      },
+      "on_success": "step_08",
+      "on_failure": "step_08",
+      "description": "Create a formal IR ticket with all collected evidence, blocked IPs, and affected accounts for analyst review."
+    },
+    {
+      "id": "step_08",
+      "name": "update_blocklist",
+      "type": "remediation",
+      "action": "run_script",
+      "params": {
+        "script": "update_threat_feeds.py",
+        "update_firewall_blocklist": true,
+        "update_proxy_blocklist": true,
+        "update_ids_signatures": true,
+        "share_with_isac": false,
+        "ttl_days": 30,
+        "add_reputation_score": true,
+        "timeout_seconds": 60
+      },
+      "on_success": null,
+      "on_failure": null,
+      "description": "Update all threat intelligence feeds and blocklists with the confirmed attacker IP to prevent future attacks."
+    }
+  ]
+}

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "1.1",
+    "title": "Avoid the use of the 'root' account",
+    "description": "The 'root' account has unrestricted access to all resources in the AWS account. It is highly recommended that the use of this account be avoided and all activities performed using root credentials are logged and reviewed.",
+    "rationale": "The root account is the most privileged AWS account. Minimizing the use of this account and adopting the principle of least privilege for access management will reduce the risk of accidental changes and unintended disclosure of highly privileged credentials.",
+    "remediation": "Follow the remediation instructions of the Ensure IAM policies are attached only to groups or roles recommendation. If you have root access keys, delete them. Create IAM users with least privilege access for day-to-day tasks.",
+    "severity": "Critical",
+    "service": "IAM"
+  },
+  {
+    "id": "1.2",
+    "title": "Ensure MFA is enabled for the 'root' account",
+    "description": "The root account is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a user name and password. With MFA enabled, when a user signs in to an AWS website, they are prompted for their user name and password as well as for an authentication code from their AWS MFA device.",
+    "rationale": "Enabling MFA provides increased security for console access as it requires the authenticating principal to possess a device that emits a time-sensitive key and have knowledge of a credential.",
+    "remediation": "Log in to the AWS Management Console as root. Enable a virtual MFA device or hardware MFA device for the root account via IAM > Security credentials > Multi-factor authentication.",
+    "severity": "Critical",
+    "service": "IAM"
+  },
+  {
+    "id": "1.3",
+    "title": "Ensure credentials unused for 90 days or greater are disabled",
+    "description": "AWS IAM users can access AWS resources using different types of credentials, such as passwords or access keys. It is recommended that all credentials that have been unused for 90 or more days be removed or deactivated.",
+    "rationale": "Disabling or removing unnecessary credentials will reduce the window of opportunity for credentials associated with a compromised or abandoned account to be used.",
+    "remediation": "From the IAM console, identify users with last activity older than 90 days. Delete or disable their access keys and passwords. Consider removing users that are no longer required.",
+    "severity": "High",
+    "service": "IAM"
+  },
+  {
+    "id": "1.4",
+    "title": "Ensure MFA is enabled for all IAM users that have a console password",
+    "description": "Multi-Factor Authentication (MFA) adds an extra layer of protection on top of a username and password. With MFA enabled, when a user signs in to an AWS website, they will be prompted for their username and password as well as for an authentication code from their AWS MFA device.",
+    "rationale": "Enabling MFA provides increased security for console access as it requires the authenticating principal to possess a device that emits a time-sensitive key and have knowledge of a credential.",
+    "remediation": "Enable MFA for all IAM users with console access. This can be done through the IAM console under Users > Security credentials > Assigned MFA device.",
+    "severity": "High",
+    "service": "IAM"
+  },
+  {
+    "id": "1.5",
+    "title": "Ensure no root account access key exists",
+    "description": "The root account is the most privileged user in an AWS account. AWS Access Keys provide programmatic access to a given AWS account. It is recommended that all access keys associated with the root account be removed.",
+    "rationale": "Removing access keys associated with the root account limits vectors by which the account can be compromised. Additionally, removing root access keys encourages the creation and use of role-based accounts that are least privileged.",
+    "remediation": "Log into the AWS Management Console as root. Navigate to IAM > Security credentials. Under Access keys, delete any existing root access keys.",
+    "severity": "Critical",
+    "service": "IAM"
+  },
+  {
+    "id": "1.6",
+    "title": "Ensure access keys are rotated every 90 days or less",
+    "description": "Access keys consist of an access key ID and secret access key, which are used to sign programmatic requests that you make to AWS. AWS users need their own access keys to make programmatic calls to AWS from the CLI, Tools for Windows PowerShell, the AWS SDKs, or direct HTTP calls using the APIs for individual AWS services.",
+    "rationale": "Rotating access keys will reduce the window of opportunity for an access key that is associated with a compromised or terminated account to be used. Access keys should be rotated to ensure that data cannot be accessed with an old key which might have been lost, cracked, or stolen.",
+    "remediation": "Use the IAM console to identify access keys older than 90 days. Create new access keys, update applications to use the new keys, then deactivate and delete the old keys.",
+    "severity": "High",
+    "service": "IAM"
+  },
+  {
+    "id": "1.7",
+    "title": "Ensure IAM password policy requires minimum length of 14 or greater",
+    "description": "Password policies are, in part, used to enforce password complexity requirements. IAM password policies can be used to ensure passwords are at least a given length. It is recommended that the password policy require a minimum password length of 14 characters.",
+    "rationale": "Setting a password complexity policy increases account resiliency against brute force login attempts.",
+    "remediation": "Update the IAM password policy to require a minimum length of 14 characters. This can be done through IAM > Account settings > Password policy.",
+    "severity": "Medium",
+    "service": "IAM"
+  },
+  {
+    "id": "1.8",
+    "title": "Ensure IAM password policy requires at least one uppercase letter",
+    "description": "Password policies are, in part, used to enforce password complexity requirements. IAM password policies can be used to ensure passwords use different character sets. It is recommended that the password policy require at least one uppercase letter.",
+    "rationale": "Setting a password complexity policy increases account resiliency against brute force login attempts.",
+    "remediation": "Update the IAM password policy to require at least one uppercase letter. Navigate to IAM > Account settings > Password policy and enable the uppercase letter requirement.",
+    "severity": "Medium",
+    "service": "IAM"
+  },
+  {
+    "id": "1.9",
+    "title": "Ensure a support role has been created to manage incidents with AWS Support",
+    "description": "AWS provides a support center that can be used for incident notification and response, as well as technical support and customer services. Create an IAM Role to allow authorized users to manage incidents with AWS Support.",
+    "rationale": "By implementing least privilege for access control, an IAM Role will require an appropriate IAM Policy to allow Support Center Access in order to manage Incidents with AWS Support.",
+    "remediation": "Create an IAM role with the AWSSupportAccess managed policy attached. Assign this role to authorized users who need to manage AWS support tickets.",
+    "severity": "Low",
+    "service": "IAM"
+  },
+  {
+    "id": "2.1",
+    "title": "Ensure S3 bucket access is blocked at account level",
+    "description": "Amazon S3 provides Block Public Access settings at both the bucket and account levels to help manage public access to S3 resources. Enable S3 Block Public Access settings at the account level to ensure no S3 buckets in the account can be made public.",
+    "rationale": "Amazon S3 Block Public Access provides settings for access points, buckets, and accounts to help you manage public access to Amazon S3 resources. Enabling Block Public Access at the account level provides a strong guard against accidental public exposure of sensitive data.",
+    "remediation": "Navigate to S3 > Block Public Access settings for this account. Enable all four block public access settings: BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, RestrictPublicBuckets.",
+    "severity": "High",
+    "service": "S3"
+  },
+  {
+    "id": "2.2",
+    "title": "Ensure S3 bucket policy does not allow public access",
+    "description": "S3 bucket policies can be configured to allow public access to bucket contents. Bucket policies that grant public access should be reviewed and tightened to follow the principle of least privilege.",
+    "rationale": "Allowing public access via bucket policies can expose sensitive data to unauthorized users and the internet at large. Each bucket policy should be carefully reviewed to ensure only intended parties have access.",
+    "remediation": "Review S3 bucket policies and remove any statements that grant public access (Principal: '*'). Replace with specific IAM principals or use pre-signed URLs for temporary access.",
+    "severity": "High",
+    "service": "S3"
+  },
+  {
+    "id": "2.3",
+    "title": "Ensure all data in Amazon S3 has been discovered, classified and secured when required",
+    "description": "Amazon S3 buckets can contain sensitive data that for security purposes should be discovered, monitored, classified and protected. Macie along with other third party tools can automatically provide an inventory of Amazon S3 buckets.",
+    "rationale": "Encrypting data at rest reduces the likelihood that it is accessible to unauthorized parties. It also satisfies compliance requirements for data protection at rest.",
+    "remediation": "Enable default encryption on all S3 buckets using either SSE-S3 or SSE-KMS. Navigate to S3 > Bucket > Properties > Default encryption and select the appropriate encryption method.",
+    "severity": "Medium",
+    "service": "S3"
+  },
+  {
+    "id": "2.4",
+    "title": "Ensure MFA Delete is enabled on S3 buckets",
+    "description": "Once MFA Delete is enabled on your sensitive and classified S3 bucket it requires the user to have two forms of authentication. MFA Delete requires additional authentication for either of the following operations: Changing the versioning state of your bucket or Permanently deleting an object version.",
+    "rationale": "Adding MFA delete to an S3 bucket, requires additional authentication when you change the versioning state of the bucket or you delete an object version adding another layer of security in the event your security credentials are compromised or unauthorized access is granted.",
+    "remediation": "Enable versioning on the S3 bucket first. Then enable MFA delete using the AWS CLI: aws s3api put-bucket-versioning --bucket BUCKET_NAME --versioning-configuration Status=Enabled,MFADelete=Enabled --mfa 'SERIAL_NUMBER TOKEN_CODE'",
+    "severity": "Low",
+    "service": "S3"
+  },
+  {
+    "id": "2.5",
+    "title": "Ensure that S3 Buckets are configured with 'Block public access'",
+    "description": "Amazon S3 provides Block Public Access settings for buckets and objects that provide URL-addressable access control. Enabling these settings restricts public access to buckets and objects.",
+    "rationale": "Enabling Block Public Access for S3 buckets ensures that data stored in S3 cannot be accidentally made public through ACLs or bucket policies.",
+    "remediation": "For each S3 bucket, navigate to Permissions > Block public access and enable all four block public access settings.",
+    "severity": "High",
+    "service": "S3"
+  },
+  {
+    "id": "3.1",
+    "title": "Ensure CloudTrail is enabled in all regions",
+    "description": "AWS CloudTrail is a web service that records AWS API calls for your account and delivers log files to you. The recorded information includes the identity of the API caller, the time of the API call, the source IP address of the API caller, the request parameters, and the response elements returned by the AWS service.",
+    "rationale": "AWS CloudTrail is a web service that records AWS API calls for an account and makes those logs available to users and resources in accordance with IAM policies. AWS Key Management Service (KMS) is a managed service that helps create and control the encryption keys used to encrypt account data, and uses Hardware Security Modules (HSMs) to protect the security of encryption keys.",
+    "remediation": "Create a CloudTrail trail that applies to all regions. Enable the trail, configure S3 bucket for log storage, and optionally enable CloudWatch Logs integration.",
+    "severity": "High",
+    "service": "CloudTrail"
+  },
+  {
+    "id": "3.2",
+    "title": "Ensure CloudTrail log file validation is enabled",
+    "description": "CloudTrail log file validation creates a digitally signed digest file containing a hash of each log that CloudTrail writes to S3. These digest files can be used to determine whether a log file was changed, deleted, or unchanged after CloudTrail delivered the log.",
+    "rationale": "Enabling log file validation will provide additional integrity checking of CloudTrail logs. Log file validation is important to detect unauthorized modifications to log files.",
+    "remediation": "Update the CloudTrail trail configuration to enable log file validation: aws cloudtrail update-trail --name TRAIL_NAME --enable-log-file-validation",
+    "severity": "Medium",
+    "service": "CloudTrail"
+  },
+  {
+    "id": "4.1",
+    "title": "Ensure no security groups allow ingress from 0.0.0.0/0 to port 22",
+    "description": "Security groups provide stateful filtering of ingress and egress network traffic to AWS resources. It is recommended that no security group allows unrestricted ingress access to port 22 (SSH).",
+    "rationale": "Removing unfettered connectivity to remote console services reduces a server's exposure to risk. Allowing unrestricted SSH access to a security group increases the attack surface and the risk of unauthorized access.",
+    "remediation": "Edit the security group rules to restrict SSH access (port 22) to only known and trusted IP addresses. Remove any rules allowing 0.0.0.0/0 or ::/0 for port 22.",
+    "severity": "High",
+    "service": "Networking"
+  },
+  {
+    "id": "4.2",
+    "title": "Ensure no security groups allow ingress from 0.0.0.0/0 to port 3389",
+    "description": "Security groups provide stateful filtering of ingress and egress network traffic to AWS resources. It is recommended that no security group allows unrestricted ingress access to port 3389 (RDP).",
+    "rationale": "Removing unfettered connectivity to remote console services reduces a server's exposure to risk. Allowing unrestricted RDP access to a security group increases the attack surface and the risk of unauthorized access.",
+    "remediation": "Edit the security group rules to restrict RDP access (port 3389) to only known and trusted IP addresses. Remove any rules allowing 0.0.0.0/0 or ::/0 for port 3389.",
+    "severity": "High",
+    "service": "Networking"
+  },
+  {
+    "id": "4.3",
+    "title": "Ensure VPC flow logging is enabled in all VPCs",
+    "description": "VPC Flow Logs is a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC. After you create a flow log, you can view and retrieve its data in Amazon CloudWatch Logs.",
+    "rationale": "VPC Flow Logs provide visibility into network traffic that traverses the VPC and can be used to detect anomalous traffic or insight during security workflows.",
+    "remediation": "Enable VPC Flow Logs for each VPC. Navigate to VPC > Your VPCs, select the VPC, then Actions > Create flow log. Choose to send logs to CloudWatch Logs or S3.",
+    "severity": "Medium",
+    "service": "Networking"
+  },
+  {
+    "id": "5.1",
+    "title": "Ensure AWS Config is enabled in all regions",
+    "description": "AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration item, relationships between configuration items, and any configuration changes between resources.",
+    "rationale": "The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.",
+    "remediation": "Enable AWS Config in each region. Create a configuration recorder and delivery channel. Specify which resources to record (all or specific types). Enable Config rules for continuous compliance evaluation.",
+    "severity": "Medium",
+    "service": "CloudTrail"
+  }
+]

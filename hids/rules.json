@@ -1,0 +1,110 @@
+[
+  {
+    "id": "RULE-001",
+    "name": "SSH Brute Force Attempt",
+    "pattern": "Failed password for .* from .* port \\d+ ssh",
+    "log_source": "auth",
+    "severity": "HIGH",
+    "description": "Multiple failed SSH authentication attempts detected, indicating a possible brute-force attack against the SSH service.",
+    "mitre_technique": "T1110.001 - Brute Force: Password Guessing"
+  },
+  {
+    "id": "RULE-002",
+    "name": "Sudo Command Abuse",
+    "pattern": "sudo:.*COMMAND=.*",
+    "log_source": "auth",
+    "severity": "MEDIUM",
+    "description": "A privileged command was executed via sudo. Frequent or unexpected sudo usage may indicate privilege escalation attempts.",
+    "mitre_technique": "T1548.003 - Abuse Elevation Control Mechanism: Sudo and Sudo Caching"
+  },
+  {
+    "id": "RULE-003",
+    "name": "New User Account Created",
+    "pattern": "useradd|adduser",
+    "log_source": "auth",
+    "severity": "HIGH",
+    "description": "A new user account has been created on the system. Unauthorized account creation is a common persistence technique.",
+    "mitre_technique": "T1136.001 - Create Account: Local Account"
+  },
+  {
+    "id": "RULE-004",
+    "name": "Crontab Modification Detected",
+    "pattern": "CRON.*edited|crontab.*edited|cron.*modified",
+    "log_source": "syslog",
+    "severity": "MEDIUM",
+    "description": "A crontab file has been modified. Attackers frequently modify cron jobs to establish persistent scheduled execution.",
+    "mitre_technique": "T1053.003 - Scheduled Task/Job: Cron"
+  },
+  {
+    "id": "RULE-005",
+    "name": "SUID Binary Modification",
+    "pattern": "chmod.*[4-7][0-7][0-7][0-7].*bin|chmod.*\\+s.*bin",
+    "log_source": "syslog",
+    "severity": "CRITICAL",
+    "description": "A binary in a system path has had its SUID bit set. SUID binaries can be exploited for privilege escalation.",
+    "mitre_technique": "T1548.001 - Abuse Elevation Control Mechanism: Setuid and Setgid"
+  },
+  {
+    "id": "RULE-006",
+    "name": "Log File Clearing",
+    "pattern": "> /var/log/|truncate.*--size.*0.*/var/log/|echo.*> /var/log/",
+    "log_source": "syslog",
+    "severity": "CRITICAL",
+    "description": "An attempt to clear or truncate system log files was detected. Log clearing is a common defense evasion tactic.",
+    "mitre_technique": "T1070.002 - Indicator Removal on Host: Clear Linux or Mac System Logs"
+  },
+  {
+    "id": "RULE-007",
+    "name": "Kernel Module Loaded",
+    "pattern": "insmod|modprobe|module.*loaded|init_module",
+    "log_source": "syslog",
+    "severity": "HIGH",
+    "description": "A kernel module has been loaded. Malicious kernel modules (rootkits) can hide processes, files, and network connections.",
+    "mitre_technique": "T1014 - Rootkit"
+  },
+  {
+    "id": "RULE-008",
+    "name": "Reverse Shell Indicator",
+    "pattern": "nc.*-e.*sh|nc.*-e.*/bin/bash|bash.*-i.*>.*tcp|bash.*-i.*>&.*/dev/tcp",
+    "log_source": "process",
+    "severity": "CRITICAL",
+    "description": "A command pattern consistent with a reverse shell was detected. This may indicate active exploitation of the host.",
+    "mitre_technique": "T1059.004 - Command and Scripting Interpreter: Unix Shell"
+  },
+  {
+    "id": "RULE-009",
+    "name": "Suspicious File Download",
+    "pattern": "wget.*http://|wget.*https://|curl.*-o.*|curl.*--output",
+    "log_source": "process",
+    "severity": "MEDIUM",
+    "description": "A file download command was executed. Attackers often download tools or payloads onto compromised systems.",
+    "mitre_technique": "T1105 - Ingress Tool Transfer"
+  },
+  {
+    "id": "RULE-010",
+    "name": "Privilege Escalation via Su/Sudo",
+    "pattern": "su - root|sudo -i|sudo -s|sudo su|su root",
+    "log_source": "auth",
+    "severity": "HIGH",
+    "description": "An attempt to switch to the root user was detected. This may indicate privilege escalation activity.",
+    "mitre_technique": "T1548 - Abuse Elevation Control Mechanism"
+  },
+  {
+    "id": "RULE-011",
+    "name": "Password File Access Attempt",
+    "pattern": "/etc/shadow|cat.*passwd|grep.*shadow|openssl.*passwd",
+    "log_source": "auth",
+    "severity": "CRITICAL",
+    "description": "Access to the system password or shadow file was detected. This is a strong indicator of credential harvesting.",
+    "mitre_technique": "T1003.008 - OS Credential Dumping: /etc/passwd and /etc/shadow"
+  },
+  {
+    "id": "RULE-012",
+    "name": "Netcat Listener Detected",
+    "pattern": "nc.*-l.*-p|nc.*-lvp|ncat.*--listen|netcat.*-l",
+    "log_source": "process",
+    "severity": "HIGH",
+    "description": "A netcat listener was detected on the system. Netcat listeners are commonly used as part of bind shells or data exfiltration channels.",
+    "mitre_technique": "T1571 - Non-Standard Port"
+  }
+]
