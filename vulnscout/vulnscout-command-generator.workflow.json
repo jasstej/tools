@@ -1,0 +1,222 @@
+{
+  "name": "VulnScout Command Runner (No Webhook)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    domain: 'example.com',\n    requestedSections: ['subdomain', 'urls', 'sensitive', 'xss', 'lfi', 'cors', 'wordpress'],\n    workingDirectory: '/tmp/vulnscout-run'\n  }\n}];"
+      },
+      "id": "2",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -920,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $json || {};\n\nconst domainRaw = (source.domain || '').toString().trim().toLowerCase();\nconst cleanedDomain = domainRaw\n  .replace(/^https?:\\/\\//, '')\n  .replace(/^\\*\\./, '')\n  .replace(/\\/$/, '');\n\nconst isValidDomain = /^(?=.{1,253}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/.test(cleanedDomain);\n\nlet requestedSections = source.requestedSections;\nif (typeof requestedSections === 'string') {\n  requestedSections = requestedSections.split(',').map((s) => s.trim()).filter(Boolean);\n}\nif (!Array.isArray(requestedSections) || requestedSections.length === 0) {\n  requestedSections = ['subdomain', 'urls', 'sensitive', 'xss', 'lfi', 'cors', 'wordpress'];\n}\n\nreturn [{\n  json: {\n    domain: cleanedDomain,\n    isValidDomain,\n    requestedSections,\n    workingDirectory: source.workingDirectory || '/tmp/vulnscout-run'\n  }\n}];"
+      },
+      "id": "3",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { domain, isValidDomain, requestedSections, workingDirectory } = $json;\n\nconst templates = {\n  subdomain: [\n    \"subfinder -d example.com -all -recursive -o subdomains.txt\",\n    \"assetfinder --subs-only example.com > assetfinder.txt\",\n    \"curl -s \\\"https://crt.sh/?q=example.com&output=json\\\" | jq -r '.[].name_value' | sed 's/\\\\*\\\\.//g' | sort -u > crtsh.txt\",\n    \"cat subdomains.txt assetfinder.txt crtsh.txt | sort -u > all_subdomains.txt\",\n    \"cat all_subdomains.txt | httpx -silent -o subdomains_alive.txt\"\n  ],\n  urls: [\n    \"katana -l subdomains_alive.txt -d 5 -ps -o allurls.txt\",\n    \"cat subdomains_alive.txt | gau | urldedupe >> allurls.txt\",\n    \"cat allurls.txt | grep '=' | sort -u > urls_with_params.txt\"\n  ],\n  sensitive: [\n    \"cat allurls.txt | grep -E '\\\\.(bak|sql|zip|conf|env|key)$' > sensitive_findings.txt\",\n    \"s3scanner scan -d example.com -o s3_buckets.txt\",\n    \"cat allurls.txt | httpx -path '/.git/' -mc 200 -o git_repos.txt\",\n    \"cat allurls.txt | grep -E \\\"\\\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|zip|tar\\\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|tar|xz|7zip|p12|pem|key|crt|csr|sh|pl|py|java|class|jar|war|ear|sqlitedb|sqlite3|dbf|db3|accdb|mdb|sqlcipher|gitignore|env|ini|conf|properties|plist|cfg)$\\\" > sensitive_disclosure.txt\",\n    \"s3scanner scan -d example.com -o s3_buckets_full.txt\",\n    \"cat allurls.txt | grep -E \\\"\\\\.js$\\\" | httpx -mc 200 -content-type | grep -E \\\"application/javascript|text/javascript\\\" | cut -d' ' -f1 | xargs -I{} curl -s {} | grep -E \\\"(API_KEY|api_key|apikey|secret|token|password)\\\" > api_keys.txt\"\n  ],\n  xss: [\n    \"cat allurls.txt | gf xss | Gxss | tee xss_findings.txt\",\n    \"cat urls_with_params.txt | dalfox pipe -o xss_dalfox.txt\",\n    \"nuclei -l allurls.txt -t xss -o xss_nuclei.txt\",\n    \"cat allurls.txt | grep -E \\\"\\\\.js$\\\" > js_files.txt && cat js_files.txt | Gxss -c 100 | sort -u | dalfox pipe -o dom_xss_results.txt\"\n  ],\n  lfi: [\n    \"cat allurls.txt | gf lfi | uro > lfi_findings.txt\",\n    \"ffuf -l lfi_findings.txt -w payloads/lfi.txt -mr \\\"root:\\\" -o lfi_results.json\",\n    \"cat lfi_findings.txt | head -1 | xargs -I{} curl -s '{}' > lfi_test.txt\"\n  ],\n  cors: [\n    \"cat subdomains_alive.txt | head -1 | xargs -I{} curl -I -H \\\"Origin: http://example.com\\\" {} > cors_check.txt\",\n    \"python3 CORScanner.py -u subdomains_alive.txt -d -t 10 -o cors_results.txt\",\n    \"cat subdomains_alive.txt | httpx -silent | nuclei -t cors -o cors_findings.txt\"\n  ],\n  wordpress: [\n    \"cat subdomains_alive.txt | grep -i \\\"wordpress\\\\|wp-\\\" | head -1 | xargs -I{} wpscan --url {} --disable-tls-checks -e at,ap,u -o wordpress_scan.json\",\n    \"wpscan --url https://example.com --no-banner -e t -o theme_results.json\",\n    \"wpscan --url https://example.com -e u,ap -o wordpress_full.json\"\n  ]\n};\n\nif (!isValidDomain) {\n  return [{\n    json: {\n      ok: false,\n      domain,\n      requestedSections,\n      workingDirectory,\n      message: 'Invalid domain format. Use a bare domain like example.com',\n      commands: {}\n    }\n  }];\n}\n\nconst commands = {};\nfor (const section of requestedSections) {\n  if (!templates[section]) continue;\n  commands[section] = templates[section].map((cmd) => cmd.replace(/example\\\\.com/g, domain));\n}\n\nreturn [{\n  json: {\n    ok: true,\n    domain,\n    requestedSections,\n    workingDirectory,\n    commands\n  }\n}];"
+      },
+      "id": "4",
+      "name": "Generate Commands",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.ok}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Is Valid Domain",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $json;\nconst queue = [];\n\nfor (const [section, sectionCommands] of Object.entries(src.commands || {})) {\n  sectionCommands.forEach((command, idx) => {\n    queue.push({\n      domain: src.domain,\n      section,\n      order: idx + 1,\n      command,\n      workingDirectory: src.workingDirectory\n    });\n  });\n}\n\nreturn queue.map((item) => ({ json: item }));"
+      },
+      "id": "6",
+      "name": "Build Command Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "command": "={{$json.command}}",
+        "options": {
+          "workingDirectory": "={{$json.workingDirectory}}"
+        }
+      },
+      "id": "7",
+      "name": "Execute Command",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        300,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\n\nconst summary = items.map((item, i) => ({\n  index: i + 1,\n  command: item.json.command,\n  section: item.json.section,\n  stdout: item.json.stdout || '',\n  stderr: item.json.stderr || '',\n  exitCode: item.json.exitCode ?? null\n}));\n\nconst failed = summary.filter((x) => x.exitCode !== 0 && x.exitCode !== null);\n\nreturn [{\n  json: {\n    ok: failed.length === 0,\n    total: summary.length,\n    failed: failed.length,\n    results: summary\n  }\n}];"
+      },
+      "id": "8",
+      "name": "Execution Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ok: false,\n    message: $json.message || 'Invalid input',\n    domain: $json.domain || ''\n  }\n}];"
+      },
+      "id": "9",
+      "name": "Invalid Input Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        360
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Generate Commands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Commands": {
+      "main": [
+        [
+          {
+            "node": "Is Valid Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid Domain": {
+      "main": [
+        [
+          {
+            "node": "Build Command Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Command Queue": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Execution Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "pinData": {},
+  "versionId": "3"
+}
