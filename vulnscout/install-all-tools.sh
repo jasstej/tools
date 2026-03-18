@@ -176,16 +176,31 @@ install_go_tools() {
 # Install Python-based tools
 install_python_tools() {
     print_header "Installing Python-based Tools"
-    
+
     # Check if pip is installed
     if ! command_exists pip3; then
         print_error "pip3 is not installed"
         exit 1
     fi
-    
-    print_info "Updating pip..."
-    pip3 install --upgrade pip setuptools wheel
-    
+
+    # Set virtual environment path
+    VENV_PATH="$HOME/.vulnscout-env"
+
+    print_info "Creating Python virtual environment at $VENV_PATH..."
+    if python3 -m venv "$VENV_PATH" 2>/dev/null; then
+        print_success "Virtual environment created"
+    else
+        print_error "Failed to create virtual environment"
+        exit 1
+    fi
+
+    # Activate virtual environment
+    source "$VENV_PATH/bin/activate"
+    print_success "Virtual environment activated"
+
+    print_info "Updating pip in virtual environment..."
+    pip install --upgrade pip setuptools wheel
+
     # Python packages to install
     local packages=(
         "LinkFinder"
@@ -199,15 +214,18 @@ install_python_tools() {
         "SubDomainizer"
         "anew"
     )
-    
+
     for package in "${packages[@]}"; do
         print_info "Installing $package..."
-        if pip3 install "$package" 2>/dev/null; then
+        if pip install "$package" 2>/dev/null; then
             print_success "Installed $package"
         else
             print_warning "Failed to install $package (may not exist or may need special installation)"
         fi
     done
+
+    print_success "Python packages installed in $VENV_PATH"
+    print_info "To activate venv in future sessions: source $VENV_PATH/bin/activate"
 }
 
 # Install utility tools from GitHub
@@ -297,26 +315,32 @@ ${YELLOW}Quick Start Guide:${NC}
 2. Load Go environment (macOS):
    ${BLUE}source ~/.zprofile${NC}
 
-3. Update all tools:
+3. Activate Python virtual environment:
+   ${BLUE}source ~/.vulnscout-env/bin/activate${NC}
+
+4. Update all tools:
    ${BLUE}./update-all-tools.sh${NC}
 
-4. Verify installations:
+5. Verify installations:
    ${BLUE}which subfinder httpx katana nuclei${NC}
 
-5. Start using VulnScout:
-   ${BLUE}cd c:\\Users\\spector\\Documents\\Tools\\VulnScout${NC}
+6. Start using VulnScout:
+   ${BLUE}cd ~/VulnScout${NC}
 
 ${YELLOW}Important Notes:${NC}
+- Python tools are installed in isolated virtual environment: ~/.vulnscout-env
 - Some tools require additional API keys (Shodan, SecurityTrails, etc.)
 - Configure ~/.config/subfinder/provider-config.yaml for API keys
 - Use 'anew' to manage unique findings across scans
 - Install optional tools at: ~/security-tools/
+- See PYTHON_PACKAGES.md for forking strategy
 
 ${YELLOW}Useful Commands:${NC}
 - subfinder -d example.com -all -recursive
 - httpx -l domains.txt -status-code
 - katana -u https://example.com -d 5 -ps
 - nuclei -l hosts.txt -t ~/nuclei-templates/
+- Activate venv: source ~/.vulnscout-env/bin/activate
 
 EOF
 }
