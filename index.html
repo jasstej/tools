@@ -188,13 +188,144 @@
 
         /* ── Page layout helpers ─────────────────────── */
         .lab-hero {
-            padding: 8rem 1.5rem 4rem;
-            display: flex;
-            justify-content: center;
+            padding: 6rem 1.5rem 4rem;
+            background: linear-gradient(135deg, rgba(64,196,99,.04) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
         }
-        .lab-hero .terminal-box {
-            max-width: 680px;
-            width: 100%;
+        .lab-hero-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .lab-hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .lab-hero-headline {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--foreground);
+            font-family: 'Outfit', sans-serif;
+        }
+        .lab-hero-headline span {
+            background: linear-gradient(90deg, #40C463, #00D9FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .lab-hero-subline {
+            font-size: 1.1rem;
+            color: var(--muted-foreground);
+            line-height: 1.6;
+            max-width: 600px;
+            font-family: 'Inter', sans-serif;
+        }
+        .lab-hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        .lab-hero-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .lab-hero-button.primary {
+            background: linear-gradient(135deg, rgba(64,196,99,.8) 0%, rgba(64,196,99,.6) 100%);
+            border-color: rgba(64,196,99,.5);
+            color: white;
+        }
+        .lab-hero-button.primary:hover {
+            background: linear-gradient(135deg, rgba(64,196,99,.9) 0%, rgba(64,196,99,.7) 100%);
+            box-shadow: 0 8px 24px rgba(64,196,99,.2);
+            transform: translateY(-2px);
+        }
+        .lab-hero-button.secondary {
+            background: transparent;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .lab-hero-button.secondary:hover {
+            background: rgba(64,196,99,.08);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(64,196,99,.1);
+        }
+        .lab-hero-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .lab-hero-feature {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1.25rem;
+            background: rgba(64,196,99,.04);
+            border: 1px solid rgba(64,196,99,.1);
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        .lab-hero-feature:hover {
+            background: rgba(64,196,99,.08);
+            border-color: rgba(64,196,99,.2);
+            transform: translateY(-2px);
+        }
+        .lab-hero-feature-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(64,196,99,.15);
+            border-radius: 0.25rem;
+            color: var(--primary);
+        }
+        .lab-hero-feature-title {
+            font-weight: 600;
+            color: var(--foreground);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+        }
+        .lab-hero-feature-desc {
+            font-size: 0.85rem;
+            color: var(--muted-foreground);
+            line-height: 1.5;
+        }
+        @media (max-width: 640px) {
+            .lab-hero {
+                padding: 4rem 1.5rem 3rem;
+            }
+            .lab-hero-headline {
+                font-size: 1.8rem;
+            }
+            .lab-hero-subline {
+                font-size: 1rem;
+            }
+            .lab-hero-buttons {
+                flex-direction: column;
+            }
+            .lab-hero-button {
+                justify-content: center;
+                width: 100%;
+            }
+            .lab-hero-features {
+                grid-template-columns: 1fr;
+            }
         }
         .lab-section {
             padding: 3rem 1.5rem 6rem;
@@ -284,40 +415,88 @@
         </div>
     </nav>
 
-    <!-- Terminal Hero -->
+    <!-- Modern Hero Section -->
     <div class="lab-hero">
-        <div class="terminal-box">
-            <div class="terminal-header">
-                <div class="terminal-button red"></div>
-                <div class="terminal-button yellow"></div>
-                <div class="terminal-button green"></div>
-                <span class="terminal-title">~/tools</span>
+        <div class="lab-hero-container">
+            <div class="lab-hero-content">
+                <h1 class="lab-hero-headline">
+                    Security Tools & <span>Pentesting Utilities</span>
+                </h1>
+                <p class="lab-hero-subline">
+                    A complete Arsenal of 24+ tools for reconnaissance, vulnerability analysis, code security, and threat simulation. Browser-based utilities and Python frameworks for security researchers, pentesters, and defenders.
+                </p>
+                <div class="lab-hero-buttons">
+                    <a href="#all-tools" class="lab-hero-button primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Browse All Tools
+                    </a>
+                    <a href="./vulnscout/index.html" class="lab-hero-button secondary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        VulnScout
+                    </a>
+                </div>
             </div>
-            <div class="terminal-body">
-                <div class="terminal-line">
-                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command"> ls -1 | head -8</span>
+
+            <!-- Feature Highlights -->
+            <div class="lab-hero-features">
+                <div class="lab-hero-feature">
+                    <div class="lab-hero-feature-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v6m0 6v6"></path>
+                            <circle cx="12" cy="19" r="2"></circle>
+                            <path d="M4.22 10.22a5 5 0 0 0 7.07-7.07"></path>
+                            <path d="M19.78 19.78a5 5 0 0 0-7.07-7.07"></path>
+                        </svg>
+                    </div>
+                    <div class="lab-hero-feature-title">Complete Recon</div>
+                    <div class="lab-hero-feature-desc">Subdomain enumeration, OSINT, tech detection, and reconnaissance tools</div>
                 </div>
-                <div class="terminal-line terminal-output">aes-tool/</div>
-                <div class="terminal-line terminal-output">anomaly-detection/</div>
-                <div class="terminal-line terminal-output">cloud-scanner/</div>
-                <div class="terminal-line terminal-output">cyber-defense-sim/</div>
-                <div class="terminal-line terminal-output">malware-analysis/</div>
-                <div class="terminal-line terminal-output">network-recon/</div>
-                <div class="terminal-line terminal-output">redteam-toolkit/</div>
-                <div class="terminal-line terminal-output">vulnscout/</div>
-                <div class="terminal-line">
-                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command"> ls | wc -l</span>
+                <div class="lab-hero-feature">
+                    <div class="lab-hero-feature-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div class="lab-hero-feature-title">Vulnerability Analysis</div>
+                    <div class="lab-hero-feature-desc">CVE lookup, OWASP guides, payload generators, and security testing</div>
                 </div>
-                <div class="terminal-line terminal-output">      24</div>
-                <div class="terminal-line">
-                    <span class="terminal-prompt">ghost@jasstej</span><span class="terminal-separator">:</span><span class="terminal-path">~/tools</span><span class="terminal-dollar">$</span><span class="terminal-command terminal-cursor"> _</span>
+                <div class="lab-hero-feature">
+                    <div class="lab-hero-feature-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"></path>
+                            <path d="M12.5 7H11v6l5.25 3.15"></path>
+                        </svg>
+                    </div>
+                    <div class="lab-hero-feature-title">Real-time Simulation</div>
+                    <div class="lab-hero-feature-desc">Purple team scenarios, incident response, and attack simulations</div>
+                </div>
+                <div class="lab-hero-feature">
+                    <div class="lab-hero-feature-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v6m0 4v6"></path>
+                            <circle cx="12" cy="7" r="1"></circle>
+                            <circle cx="12" cy="19" r="1"></circle>
+                            <path d="M8 12h8"></path>
+                        </svg>
+                    </div>
+                    <div class="lab-hero-feature-title">Zero Setup</div>
+                    <div class="lab-hero-feature-desc">Browser-based tools work instantly, no installation required</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main Section -->
-    <section class="lab-section">
+    <section class="lab-section" id="all-tools">
         <div class="section-container">
 
             <div class="section-header">
