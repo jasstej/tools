@@ -807,7 +807,7 @@ class FileManagerHandler(SimpleHTTPRequestHandler):
             connection_stats["total_downloads"] += 1
 
         self.send_response(200)
-        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Type", get_mime_type(full_path))
         self.send_header("Content-Length", str(file_size))
         self.send_header("Content-Disposition", f'attachment; filename="{quote(filename)}"')
         self.end_headers()
