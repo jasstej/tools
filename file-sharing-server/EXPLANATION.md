@@ -125,7 +125,8 @@ file-sharing-server/
 │   └── index.html                ← Complete web UI (pure HTML + CSS + JS)
 │
 ├── fileserver.py                 ← Standalone all-in-one enhanced server
-├── filebrowser/                  ← Future filebrowser component (see filebrowser/README.md)
+├── filebrowser/                  ← Git submodule: placeholder for a future dedicated
+│                                    filebrowser frontend (currently empty)
 ├── setup.py                      ← pip-installable package config
 ├── requirements.txt              ← Runtime dependencies (only colorama)
 ├── README.md                     ← User-facing documentation
@@ -1246,6 +1247,83 @@ The `ShareManager` already supports multiple shares — just call `add_share()` 
 
 ### Add File Deletion
 Add a `DELETE /api/file?share_id=...&path=...&token=...` endpoint that calls `Path.unlink()` after path validation.
+
+### Build Out the `filebrowser/` Submodule
+
+The `filebrowser/` directory is registered as a **git submodule** — a placeholder for a dedicated, standalone filebrowser frontend application. Right now the current UI lives in `ui/index.html` as a single-file implementation.
+
+To evolve it into a full filebrowser component, you could:
+
+1. **Initialize the submodule** with a proper frontend project:
+   ```bash
+   cd file-sharing-server/filebrowser
+   # Start a new frontend project (e.g., plain HTML or a build-tool project)
+   npm init   # or just create index.html manually
+   ```
+
+2. **What a dedicated filebrowser UI would include:**
+   - Upload progress bars (using `XMLHttpRequest.upload.onprogress`)
+   - Inline file previews (images, PDFs, text/code with syntax highlighting)
+   - Multi-select + bulk download as ZIP
+   - Sort by name, size, or date
+   - Search/filter files by name
+   - Mobile-responsive layout
+   - Keyboard navigation shortcuts
+
+3. **How it connects to the backend** — same API as the current UI:
+
+   | Action | API call |
+   |--------|----------|
+   | List shares | `GET /api/list?token=TOKEN` |
+   | Browse directory | `GET /api/explore?share_id=ID&path=PATH&token=TOKEN` |
+   | Download file | `GET /download/SHARE_ID/PATH?token=TOKEN` |
+   | Upload file | `POST /api/upload?share_id=ID&token=TOKEN` (multipart) |
+   | Create folder | `POST /api/create_folder?share_id=ID&token=TOKEN` (JSON body) |
+
+4. **Minimal working filebrowser in ~40 lines of HTML:**
+   ```html
+   <!DOCTYPE html>
+   <html>
+   <body>
+     <div id="files"></div>
+     <input type="file" id="upload" multiple>
+     <script>
+       const token = new URLSearchParams(location.search).get('token');
+       let shareId = null;
+
+       async function init() {
+         const res = await fetch(`/api/list?token=${token}`);
+         const data = await res.json();
+         shareId = data.shares[0].id;
+         loadDir('');
+       }
+
+       async function loadDir(path) {
+         const res = await fetch(
+           `/api/explore?share_id=${shareId}&path=${encodeURIComponent(path)}&token=${token}`
+         );
+         const data = await res.json();
+         document.getElementById('files').innerHTML = data.items.map(item =>
+           item.type === 'dir'
+             ? `<div onclick="loadDir('${item.path}')">📁 ${item.name}</div>`
+             : `<a href="/download/${shareId}/${item.path}?token=${token}">📄 ${item.name}</a>`
+         ).join('');
+       }
+
+       document.getElementById('upload').addEventListener('change', async (e) => {
+         const form = new FormData();
+         form.append('file', e.target.files[0]);
+         await fetch(`/api/upload?share_id=${shareId}&token=${token}`, {
+           method: 'POST', body: form
+         });
+         loadDir('');
+       });
+
+       init();
+     </script>
+   </body>
+   </html>
+   ```
 
 ---
 
