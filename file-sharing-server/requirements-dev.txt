@@ -10,5 +10,8 @@ black>=22.0
 flake8>=4.0
 isort>=5.0
 
-# Packaging
+# HTTPS support (optional)
+cryptography>=41.0
+
+# Packaging & executables
 pyinstaller>=6.0
