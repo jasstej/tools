@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "file-sharing-server"
+version = "1.0.0"
+description = "Simple, secure LAN file sharing server with web UI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Security Tools Team"}
+]
+keywords = ["file-sharing", "lan", "http-server", "web-ui"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: File Transfer Protocol (HTTP)",
+    "Topic :: System :: File Systems",
+]
+dependencies = [
+    "colorama>=0.4.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=22.0",
+    "flake8>=4.0",
+]
+executable = [
+    "pyinstaller>=6.0",
+]
+
+[project.scripts]
+file-sharing-server = "file_sharing_server.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/file-sharing-server"
+Documentation = "https://github.com/yourusername/file-sharing-server#readme"
+Repository = "https://github.com/yourusername/file-sharing-server.git"
+Issues = "https://github.com/yourusername/file-sharing-server/issues"
+
+[tool.setuptools]
+packages = ["file_sharing_server"]
+
+[tool.setuptools.package-data]
+file_sharing_server = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

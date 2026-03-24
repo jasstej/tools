@@ -10,6 +10,8 @@ from typing import Optional
 from .auth import TokenManager, MasterTokenManager
 from .file_manager import ShareManager
 from .logger import ActivityLogger
+from .rate_limiter import EndpointRateLimiter
+from .https_support import HTTPSServer, ensure_certificates
 
 
 class FileShareHandler(BaseHTTPRequestHandler):
@@ -20,6 +22,7 @@ class FileShareHandler(BaseHTTPRequestHandler):
     activity_logger: ActivityLogger = None
     master_token_manager: MasterTokenManager = None
     ui_file: Path = None
+    rate_limiter: EndpointRateLimiter = None
 
     def do_GET(self):
         """Handle GET requests."""
@@ -30,6 +33,16 @@ class FileShareHandler(BaseHTTPRequestHandler):
         # Extract token from query params
         token = params.get("token", [None])[0]
         client_ip = self.client_address[0]
+
+        # Check rate limit
+        if self.rate_limiter and not self.rate_limiter.is_allowed(path, client_ip):
+            retry_after = self.rate_limiter.get_retry_after(path, client_ip)
+            self.send_response(429)
+            self.send_header("Retry-After", str(int(retry_after)))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": "Rate limit exceeded"}')
+            return
 
         # Routes
         if path == "/" or path == "/index.html":
@@ -54,6 +67,16 @@ class FileShareHandler(BaseHTTPRequestHandler):
 
         token = params.get("token", [None])[0]
         client_ip = self.client_address[0]
+
+        # Check rate limit
+        if self.rate_limiter and not self.rate_limiter.is_allowed(path, client_ip):
+            retry_after = self.rate_limiter.get_retry_after(path, client_ip)
+            self.send_response(429)
+            self.send_header("Retry-After", str(int(retry_after)))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": "Rate limit exceeded"}')
+            return
 
         if path.startswith("/api/"):
             return self._handle_api_post(path, params, token, client_ip)
@@ -691,6 +714,8 @@ class FileShareServer:
         port: int = 8000,
         data_dir: Path = None,
         ui_file: Path = None,
+        use_https: bool = False,
+        enable_rate_limit: bool = True,
     ):
         """
         Initialize server.
@@ -700,27 +725,48 @@ class FileShareServer:
             port: Bind port
             data_dir: Data directory for shares and logs
             ui_file: Path to UI HTML file
+            use_https: Enable HTTPS/TLS
+            enable_rate_limit: Enable rate limiting
         """
         self.host = host
         self.port = port
         self.data_dir = Path(data_dir or "./data")
         self.ui_file = Path(ui_file) if ui_file else None
+        self.use_https = use_https
+        self.enable_rate_limit = enable_rate_limit
 
         # Initialize managers
         self.share_manager = ShareManager(self.data_dir)
         self.activity_logger = ActivityLogger(self.data_dir / "activity.log")
         self.master_token_manager = MasterTokenManager(self.data_dir / "master_token.txt")
+        self.rate_limiter = EndpointRateLimiter() if enable_rate_limit else None
 
         # Set class variables for handler
         FileShareHandler.share_manager = self.share_manager
         FileShareHandler.activity_logger = self.activity_logger
         FileShareHandler.master_token_manager = self.master_token_manager
         FileShareHandler.ui_file = self.ui_file
+        FileShareHandler.rate_limiter = self.rate_limiter
 
     def run(self) -> None:
         """Start the HTTP server."""
-        server = HTTPServer((self.host, self.port), FileShareHandler)
-        print(f"Server running on http://{self.host}:{self.port}")
+        if self.use_https:
+            # Generate or load certificates
+            certs = ensure_certificates(self.data_dir)
+            if not certs:
+                print("Error: Could not generate HTTPS certificates")
+                print("Install cryptography package: pip install cryptography")
+                return
+
+            certfile, keyfile = certs
+            print(f"Using HTTPS certificate: {certfile}")
+            server = HTTPSServer((self.host, self.port), FileShareHandler, certfile, keyfile)
+            print(f"Server running on https://{self.host}:{self.port}")
+            print("⚠️  Self-signed certificate - browser will show security warning")
+        else:
+            server = HTTPServer((self.host, self.port), FileShareHandler)
+            print(f"Server running on http://{self.host}:{self.port}")
+
         try:
             server.serve_forever()
         except KeyboardInterrupt:

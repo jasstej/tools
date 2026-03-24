@@ -34,6 +34,8 @@ class FileShareCLI:
         allowed_types: Optional[str] = None,
         expires_in: Optional[int] = None,
         ui_file: str = None,
+        use_https: bool = False,
+        enable_rate_limit: bool = True,
     ) -> int:
         """
         Add a share and start server.
@@ -77,7 +79,7 @@ class FileShareCLI:
         print()
 
         # Start server
-        print(f"Starting server on http://{host}:{port}")
+        protocol = "https" if use_https else "http"
         print()
         print("Access share:")
         print(f"  http://{host}:{port}/?token={token}")
@@ -90,7 +92,19 @@ class FileShareCLI:
 
         # Create server
         ui_path = Path(ui_file) if ui_file else self._get_default_ui_path()
-        server = FileShareServer(host=host, port=port, data_dir=self.data_dir, ui_file=ui_path)
+
+        # Print protocol
+        protocol = "https" if use_https else "http"
+        print(f"Starting server on {protocol}://{host}:{port}")
+
+        server = FileShareServer(
+            host=host,
+            port=port,
+            data_dir=self.data_dir,
+            ui_file=ui_path,
+            use_https=use_https,
+            enable_rate_limit=enable_rate_limit,
+        )
 
         try:
             server.run()
@@ -234,6 +248,16 @@ def main() -> int:
         "--ui-file",
         help="Path to custom UI HTML file",
     )
+    share_parser.add_argument(
+        "--https",
+        action="store_true",
+        help="Enable HTTPS/TLS (generates self-signed cert)",
+    )
+    share_parser.add_argument(
+        "--no-rate-limit",
+        action="store_true",
+        help="Disable rate limiting",
+    )
 
     # list command
     subparsers.add_parser("list", help="List active shares")
@@ -271,6 +295,8 @@ def main() -> int:
             allowed_types=args.allowed_types,
             expires_in=args.expires_in,
             ui_file=args.ui_file,
+            use_https=args.https,
+            enable_rate_limit=not args.no_rate_limit,
         )
     elif args.command == "list":
         return cli.cmd_list()

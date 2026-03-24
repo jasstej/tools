@@ -1,0 +1,6 @@
+include README.md
+include QUICKSTART.md
+include CONTRIBUTING.md
+include LICENSE
+recursive-include file_sharing_server *.py
+recursive-include ui *
