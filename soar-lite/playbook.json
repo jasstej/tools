@@ -1,9 +1,0 @@
-{
-  "rules": [
-    {
-      "name": "critical-endpoint-alert",
-      "if": {"severity": "high", "source": "endpoint"},
-      "actions": ["notify-soc", "isolate-host-mock"]
-    }
-  ]
-}
