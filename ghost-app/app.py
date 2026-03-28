@@ -702,13 +702,27 @@ if __name__ == '__main__':
     print(f"  SHARE: {ngrok_url}/note")
     print("="*60 + "\\n")
 
+    def run_socketio_server():
+        """Run Socket.IO with compatibility for different Flask/Werkzeug versions."""
+        try:
+            socketio.run(
+                app,
+                host='0.0.0.0',
+                port=PORT,
+                debug=False,
+                allow_unsafe_werkzeug=True,
+            )
+        except TypeError:
+            # Older Flask/Werkzeug versions do not support allow_unsafe_werkzeug.
+            socketio.run(app, host='0.0.0.0', port=PORT, debug=False)
+
     # Use eventlet or gevent for better performance with socketio
     try:
         import eventlet
         eventlet.monkey_patch()
         print("[*] Using eventlet for async mode.")
-        socketio.run(app, host='0.0.0.0', port=PORT, debug=False)
+        run_socketio_server()
     except ImportError:
         print("[!] Warning: eventlet not found. Performance may be limited.")
         print("[!] Install with: pip install eventlet")
-        socketio.run(app, host='0.0.0.0', port=PORT, debug=False, allow_unsafe_werkzeug=True)
+        run_socketio_server()
