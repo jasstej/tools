@@ -1,0 +1,32 @@
+[
+  {
+    "victim_id": "tWHXN42Q0odSOCE4AAAB",
+    "ip": "127.0.0.1",
+    "connected_at": "2026-03-31T14:42:31.374259",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+  },
+  {
+    "victim_id": "tVKiB5gpt0rVivy7AAAD",
+    "ip": "127.0.0.1",
+    "connected_at": "2026-03-31T14:42:32.510700",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+  },
+  {
+    "victim_id": "AnPdC1OR1HMAWFwoAAAB",
+    "ip": "127.0.0.1",
+    "connected_at": "2026-03-31T14:43:03.968093",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+  },
+  {
+    "victim_id": "AS9ziwfd5bAXrvt9AAAD",
+    "ip": "127.0.0.1",
+    "connected_at": "2026-03-31T14:43:04.511691",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+  },
+  {
+    "victim_id": "yeAILV6j9rOcjM_7AAAF",
+    "ip": "127.0.0.1",
+    "connected_at": "2026-03-31T14:43:13.325711",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+  }
+]
